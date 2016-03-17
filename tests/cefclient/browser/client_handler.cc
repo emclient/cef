@@ -21,6 +21,10 @@
 #include "cefclient/browser/test_runner.h"
 #include "cefclient/common/client_switches.h"
 
+#include <time.h>
+#include <stdlib.h>
+
+
 namespace client {
 
 #if defined(OS_WIN)
@@ -201,20 +205,20 @@ void ClientHandler::OnBeforeContextMenu(
     CefRefPtr<CefMenuModel> model) {
   CEF_REQUIRE_UI_THREAD();
 
-  if ((params->GetTypeFlags() & (CM_TYPEFLAG_PAGE | CM_TYPEFLAG_FRAME)) != 0) {
-    // Add a separator if the menu already has items.
-    if (model->GetCount() > 0)
-      model->AddSeparator();
+  //if ((params->GetTypeFlags() & (CM_TYPEFLAG_PAGE | CM_TYPEFLAG_FRAME)) != 0) {
+  //  // Add a separator if the menu already has items.
+  //  if (model->GetCount() > 0)
+  //    model->AddSeparator();
 
-    // Add DevTools items to all context menus.
-    model->AddItem(CLIENT_ID_SHOW_DEVTOOLS, "&Show DevTools");
-    model->AddItem(CLIENT_ID_CLOSE_DEVTOOLS, "Close DevTools");
-    model->AddSeparator();
-    model->AddItem(CLIENT_ID_INSPECT_ELEMENT, "Inspect Element");
+  //  // Add DevTools items to all context menus.
+  //  model->AddItem(CLIENT_ID_SHOW_DEVTOOLS, "&Show DevTools");
+  //  model->AddItem(CLIENT_ID_CLOSE_DEVTOOLS, "Close DevTools");
+  //  model->AddSeparator();
+  //  model->AddItem(CLIENT_ID_INSPECT_ELEMENT, "Inspect Element");
 
-    // Test context menu features.
-    BuildTestMenu(model);
-  }
+  //  // Test context menu features.
+  //  BuildTestMenu(model);
+  //}
 }
 
 bool ClientHandler::OnContextMenuCommand(
@@ -225,19 +229,20 @@ bool ClientHandler::OnContextMenuCommand(
     EventFlags event_flags) {
   CEF_REQUIRE_UI_THREAD();
 
-  switch (command_id) {
-    case CLIENT_ID_SHOW_DEVTOOLS:
-      ShowDevTools(browser, CefPoint());
-      return true;
-    case CLIENT_ID_CLOSE_DEVTOOLS:
-      CloseDevTools(browser);
-      return true;
-    case CLIENT_ID_INSPECT_ELEMENT:
-      ShowDevTools(browser, CefPoint(params->GetXCoord(), params->GetYCoord()));
-      return true;
-    default:  // Allow default handling, if any.
-      return ExecuteTestMenu(command_id);
-  }
+  return false;
+  //switch (command_id) {
+  //  case CLIENT_ID_SHOW_DEVTOOLS:
+  //    ShowDevTools(browser, CefPoint());
+  //    return true;
+  //  case CLIENT_ID_CLOSE_DEVTOOLS:
+  //    CloseDevTools(browser);
+  //    return true;
+  //  case CLIENT_ID_INSPECT_ELEMENT:
+  //    ShowDevTools(browser, CefPoint(params->GetXCoord(), params->GetYCoord()));
+  //    return true;
+  //  default:  // Allow default handling, if any.
+  //    return ExecuteTestMenu(command_id);
+  //}
 }
 
 void ClientHandler::OnAddressChange(CefRefPtr<CefBrowser> browser,
@@ -642,6 +647,11 @@ void ClientHandler::OnRenderProcessTerminated(CefRefPtr<CefBrowser> browser,
     return;
 
   frame->LoadURL(startup_url_);
+}
+
+bool ClientHandler::IsWordMisspelled(const CefString& word)
+{
+	return word.length() < 5;
 }
 
 int ClientHandler::GetBrowserCount() const {

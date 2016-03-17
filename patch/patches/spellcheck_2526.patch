@@ -1,0 +1,557 @@
+ chrome/browser/spellchecker/spellcheck_handler.cc  |  11 ++
+ chrome/browser/spellchecker/spellcheck_handler.h   |  25 ++++
+ .../spellchecker/spellcheck_message_filter.cc      | 146 ++++++++++++++-------
+ .../spellchecker/spellcheck_message_filter.h       |   7 +-
+ chrome/common/pref_names.cc                        |   3 +
+ chrome/common/pref_names.h                         |   1 +
+ chrome/common/spellcheck_messages.h                |  12 ++
+ chrome/renderer/spellchecker/spellcheck.cc         |  24 ++--
+ .../renderer/spellchecker/spellcheck_provider.cc   |   4 +-
+ content/browser/web_contents/web_contents_impl.cc  |  10 ++
+ content/browser/web_contents/web_contents_impl.h   |   1 +
+ content/common/input_messages.h                    |   2 +
+ content/public/browser/web_contents.h              |   3 +
+ content/renderer/render_frame_impl.cc              |   8 ++
+ content/renderer/render_frame_impl.h               |   1 +
+ .../WebKit/Source/web/WebLocalFrameImpl.cpp        |  17 +++
+ third_party/WebKit/Source/web/WebLocalFrameImpl.h  |   1 +
+ .../WebKit/Source/web/WebRemoteFrameImpl.cpp       |   5 +
+ third_party/WebKit/Source/web/WebRemoteFrameImpl.h |   1 +
+ third_party/WebKit/public/web/WebFrame.h           |   1 +
+ 20 files changed, 219 insertions(+), 64 deletions(-)
+
+diff --git chrome/browser/spellchecker/spellcheck_handler.cc chrome/browser/spellchecker/spellcheck_handler.cc
+new file mode 100644
+index 0000000..421b6c2
+--- chrome/browser/spellchecker/spellcheck_handler.cc
++++ chrome/browser/spellchecker/spellcheck_handler.cc
+@@ -0,0 +1,11 @@
++// Copyright (c) 2013 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include "chrome/browser/spellchecker/spellcheck_handler.h"
++
++
++SpellcheckHandler::SpellcheckHandler() {}
++
++
++SpellcheckHandler::~SpellcheckHandler() {}
+\ No newline at end of file
+diff --git chrome/browser/spellchecker/spellcheck_handler.h chrome/browser/spellchecker/spellcheck_handler.h
+new file mode 100644
+index 0000000..a0340ce
+--- chrome/browser/spellchecker/spellcheck_handler.h
++++ chrome/browser/spellchecker/spellcheck_handler.h
+@@ -0,0 +1,25 @@
++// Copyright (c) 2013 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#ifndef CHROME_BROWSER_SPELLCHECKER_SPELLCHECK_HANDLER_H_
++#define CHROME_BROWSER_SPELLCHECKER_SPELLCHECK_HANDLER_H_
++
++#include "content/public/browser/render_process_host.h"
++
++#include "base/strings/string16.h"
++#include "chrome/common/spellcheck_result.h"
++
++struct SpellCheckResult;
++
++class SpellCheckHandler {
++ public:
++
++  virtual void OnTextCheck(
++	  int route_id,
++	  const base::string16& text,
++	  std::vector<SpellCheckResult>& results) =0;
++
++};
++
++#endif  // CHROME_BROWSER_SPELLCHECKER_SPELLCHECK_HANDLER_H_
+\ No newline at end of file
+diff --git chrome/browser/spellchecker/spellcheck_message_filter.cc chrome/browser/spellchecker/spellcheck_message_filter.cc
+index 0519253..be1fdc4 100644
+--- chrome/browser/spellchecker/spellcheck_message_filter.cc
++++ chrome/browser/spellchecker/spellcheck_message_filter.cc
+@@ -20,12 +20,29 @@
+ #include "content/public/browser/render_process_host.h"
+ #include "net/url_request/url_fetcher.h"
+ 
++#include "content/public/browser/browser_thread.h"
++
++
++#include "base/prefs/pref_service.h"
++#include "chrome/common/pref_names.h"
++#include "chrome/common/spellcheck_common.h"
++#include "chrome/common/spellcheck_result.h"
++#include "components/user_prefs/user_prefs.h"
++#include "content/public/browser/browser_context.h"
++
++#include "content/public/renderer/render_thread.h"
++
++#include "chrome/browser/spellchecker/spellcheck_handler.h"
++
++
+ using content::BrowserThread;
+ 
+-SpellCheckMessageFilter::SpellCheckMessageFilter(int render_process_id)
+-    : BrowserMessageFilter(SpellCheckMsgStart),
+-      render_process_id_(render_process_id),
+-      client_(new SpellingServiceClient) {
++SpellCheckMessageFilter::SpellCheckMessageFilter(int render_process_id, SpellCheckHandler* handler)
++	: BrowserMessageFilter(SpellCheckMsgStart),
++	render_process_id_(render_process_id),
++	client_(new SpellingServiceClient),
++	handler_(handler) {
++
+ }
+ 
+ void SpellCheckMessageFilter::OverrideThreadForMessage(
+@@ -125,42 +142,63 @@ void SpellCheckMessageFilter::OnCallSpellingService(
+ }
+ 
+ void SpellCheckMessageFilter::OnTextCheckComplete(
+-    int route_id,
+-    int identifier,
+-    const std::vector<SpellCheckMarker>& markers,
+-    bool success,
+-    const base::string16& text,
+-    const std::vector<SpellCheckResult>& results) {
+-  SpellcheckService* spellcheck = GetSpellcheckService();
+-  // Spellcheck service may not be available for a renderer process that is
+-  // shutting down.
+-  if (!spellcheck)
+-    return;
+-  std::vector<SpellCheckResult> results_copy = results;
+-  spellcheck->GetFeedbackSender()->OnSpellcheckResults(
+-      render_process_id_, text, markers, &results_copy);
+-
+-  // Erase custom dictionary words from the spellcheck results and record
+-  // in-dictionary feedback.
+-  std::vector<SpellCheckResult>::iterator write_iter;
+-  std::vector<SpellCheckResult>::iterator iter;
+-  std::string text_copy = base::UTF16ToUTF8(text);
+-  for (iter = write_iter = results_copy.begin();
+-       iter != results_copy.end();
+-       ++iter) {
+-    if (spellcheck->GetCustomDictionary()->HasWord(
+-            text_copy.substr(iter->location, iter->length))) {
+-      spellcheck->GetFeedbackSender()->RecordInDictionary(iter->hash);
+-    } else {
+-      if (write_iter != iter)
+-        *write_iter = *iter;
+-      ++write_iter;
+-    }
+-  }
+-  results_copy.erase(write_iter, results_copy.end());
+-
+-  Send(new SpellCheckMsg_RespondSpellingService(
+-      route_id, identifier, success, text, results_copy));
++	int route_id,
++	int identifier,
++	const std::vector<SpellCheckMarker>& markers,
++	bool success,
++	const base::string16& text,
++	const std::vector<SpellCheckResult>& results) {
++
++	SpellcheckService* spellcheck = GetSpellcheckService();
++	// Spellcheck service may not be available for a renderer process that is
++	// shutting down.
++	if (!spellcheck)
++		return;
++
++	std::vector<SpellCheckResult> results_copy = results;
++
++	content::RenderProcessHost* host = content::RenderProcessHost::FromID(render_process_id_);
++	content::BrowserContext* context = host ? host->GetBrowserContext() : NULL;
++
++	const PrefService* pref = user_prefs::UserPrefs::Get(context);
++	if (pref->GetBoolean(prefs::kSpellCheckUseSpellingCallback) && handler_)
++	{
++		spellcheck->GetFeedbackSender()->OnSpellcheckResults(
++			render_process_id_, text, markers, &results_copy);
++
++		handler_->OnTextCheck(route_id, text, results_copy);
++		
++		Send(new SpellCheckMsg_RespondSpellingService(
++			route_id, identifier, true, text, results_copy));
++	}
++	else
++	{
++		spellcheck->GetFeedbackSender()->OnSpellcheckResults(
++			render_process_id_, text, markers, &results_copy);
++
++		// Erase custom dictionary words from the spellcheck results and record
++		// in-dictionary feedback.
++		std::vector<SpellCheckResult>::iterator write_iter;
++		std::vector<SpellCheckResult>::iterator iter;
++		std::string text_copy = base::UTF16ToUTF8(text);
++		for (iter = write_iter = results_copy.begin();
++		iter != results_copy.end();
++			++iter) {
++			if (spellcheck->GetCustomDictionary()->HasWord(
++				text_copy.substr(iter->location, iter->length))) {
++				spellcheck->GetFeedbackSender()->RecordInDictionary(iter->hash);
++			}
++			else {
++				if (write_iter != iter)
++					*write_iter = *iter;
++				++write_iter;
++			}
++		}
++		results_copy.erase(write_iter, results_copy.end());
++	
++		Send(new SpellCheckMsg_RespondSpellingService(
++			route_id, identifier, success, text, results_copy));
++	}
+ }
+ 
+ // CallSpellingService always executes the callback OnTextCheckComplete.
+@@ -173,15 +211,25 @@ void SpellCheckMessageFilter::CallSpellingService(
+   content::RenderProcessHost* host =
+       content::RenderProcessHost::FromID(render_process_id_);
+ 
+-  client_->RequestTextCheck(
+-    host ? host->GetBrowserContext() : NULL,
+-    SpellingServiceClient::SPELLCHECK,
+-    text,
+-    base::Bind(&SpellCheckMessageFilter::OnTextCheckComplete,
+-               base::Unretained(this),
+-               route_id,
+-               identifier,
+-               markers));
++	content::BrowserContext* context = host ? host->GetBrowserContext() : NULL;
++
++	const PrefService* pref = context ? user_prefs::UserPrefs::Get(context) : NULL;
++	if (pref && (pref->GetBoolean(prefs::kSpellCheckUseSpellingCallback)))
++	{
++		OnTextCheckComplete(route_id, identifier, markers, false, text, std::vector<SpellCheckResult>());
++	}
++	else
++	{
++		client_->RequestTextCheck(
++			context,
++			SpellingServiceClient::SPELLCHECK,
++			text,
++			base::Bind(&SpellCheckMessageFilter::OnTextCheckComplete,
++				base::Unretained(this),
++				route_id,
++				identifier,
++				markers));
++	}
+ }
+ #endif
+ 
+diff --git chrome/browser/spellchecker/spellcheck_message_filter.h chrome/browser/spellchecker/spellcheck_message_filter.h
+index 43671a8..708cc98 100644
+--- chrome/browser/spellchecker/spellcheck_message_filter.h
++++ chrome/browser/spellchecker/spellcheck_message_filter.h
+@@ -11,6 +11,8 @@
+ #include "base/memory/scoped_ptr.h"
+ #include "chrome/browser/spellchecker/spelling_service_client.h"
+ #include "content/public/browser/browser_message_filter.h"
++#include "content/public/browser/render_process_host.h"
++#include "chrome/browser/spellchecker/spellcheck_handler.h"
+ 
+ class SpellCheckMarker;
+ class SpellcheckService;
+@@ -20,7 +22,7 @@ struct SpellCheckResult;
+ // SpellCheckProvider.
+ class SpellCheckMessageFilter : public content::BrowserMessageFilter {
+  public:
+-  explicit SpellCheckMessageFilter(int render_process_id);
++  explicit SpellCheckMessageFilter(int render_process_id, SpellCheckHandler* handler);
+ 
+   // content::BrowserMessageFilter implementation.
+   void OverrideThreadForMessage(const IPC::Message& message,
+@@ -68,9 +70,12 @@ class SpellCheckMessageFilter : public content::BrowserMessageFilter {
+   virtual SpellcheckService* GetSpellcheckService() const;
+ 
+   int render_process_id_;
++  SpellCheckHandler* handler_;
+ 
+   // A JSON-RPC client that calls the Spelling service in the background.
+   scoped_ptr<SpellingServiceClient> client_;
++
++  content::RenderProcessHost* host_;
+ };
+ 
+ #endif  // CHROME_BROWSER_SPELLCHECKER_SPELLCHECK_MESSAGE_FILTER_H_
+diff --git chrome/common/pref_names.cc chrome/common/pref_names.cc
+index e6824b4..15c1cc4 100644
+--- chrome/common/pref_names.cc
++++ chrome/common/pref_names.cc
+@@ -1396,6 +1396,9 @@ const char kSpellCheckDictionaries[] = "spellcheck.dictionaries";
+ // String which represents whether we use the spelling service.
+ const char kSpellCheckUseSpellingService[] = "spellcheck.use_spelling_service";
+ 
++// String which represents whether we use the spelling service.
++const char kSpellCheckUseSpellingCallback[] = "spellcheck.use_spelling_callback";
++
+ // Dictionary of schemes used by the external protocol handler.
+ // The value is true if the scheme must be ignored.
+ const char kExcludedSchemes[] = "protocol_handler.excluded_schemes";
+diff --git chrome/common/pref_names.h chrome/common/pref_names.h
+index 647407d..552a0a4 100644
+--- chrome/common/pref_names.h
++++ chrome/common/pref_names.h
+@@ -483,6 +483,7 @@ extern const char kPluginMessageResponseTimeout[];
+ extern const char kSpellCheckDictionaries[];
+ extern const char kSpellCheckDictionary[];
+ extern const char kSpellCheckUseSpellingService[];
++extern const char kSpellCheckUseSpellingCallback[];
+ 
+ extern const char kExcludedSchemes[];
+ 
+diff --git chrome/common/spellcheck_messages.h chrome/common/spellcheck_messages.h
+index a8dac39..5071515 100644
+--- chrome/common/spellcheck_messages.h
++++ chrome/common/spellcheck_messages.h
+@@ -76,6 +76,18 @@ IPC_MESSAGE_ROUTED4(SpellCheckMsg_RespondSpellingService,
+                     bool            /* succeeded calling service */,
+                     base::string16  /* sentence */,
+                     std::vector<SpellCheckResult>)
++					
++IPC_MESSAGE_CONTROL4(SpellCheckMsg_RespondSpellingCallback,
++					int             /* request identifier given by WebKit */,
++					bool            /* succeeded calling service */,
++					base::string16  /* sentence */,
++					std::vector<SpellCheckResult>)
++
++IPC_MESSAGE_CONTROL4(SpellCheckMsg_CallSpellingCallback,
++					int             /* request identifier given by WebKit */,
++					bool            /* succeeded calling service */,
++					base::string16  /* sentence */,
++					std::vector<SpellCheckResult>)
+ #endif
+ 
+ #if defined(USE_BROWSER_SPELLCHECKER)
+diff --git chrome/renderer/spellchecker/spellcheck.cc chrome/renderer/spellchecker/spellcheck.cc
+index cb8040e..c46da51 100644
+--- chrome/renderer/spellchecker/spellcheck.cc
++++ chrome/renderer/spellchecker/spellcheck.cc
+@@ -514,18 +514,18 @@ void SpellCheck::CreateTextCheckingResults(
+       continue;
+ 
+     if (filter == USE_NATIVE_CHECKER) {
+-      // Double-check misspelled words with out spellchecker and attach grammar
+-      // markers to them if our spellchecker tells us they are correct words,
+-      // i.e. they are probably contextually-misspelled words.
+-      int unused_misspelling_start = 0;
+-      int unused_misspelling_length = 0;
+-      if (decoration == SpellCheckResult::SPELLING &&
+-          SpellCheckWord(misspelled_word.c_str(), kNoOffset,
+-                         misspelled_word.length(), kNoTag,
+-                         &unused_misspelling_start, &unused_misspelling_length,
+-                         nullptr)) {
+-        decoration = SpellCheckResult::GRAMMAR;
+-      }
++      //// Double-check misspelled words with out spellchecker and attach grammar
++      //// markers to them if our spellchecker tells us they are correct words,
++      //// i.e. they are probably contextually-misspelled words.
++      //int unused_misspelling_start = 0;
++      //int unused_misspelling_length = 0;
++      //if (decoration == SpellCheckResult::SPELLING &&
++      //    SpellCheckWord(misspelled_word.c_str(), kNoOffset,
++      //                   misspelled_word.length(), kNoTag,
++      //                   &unused_misspelling_start, &unused_misspelling_length,
++      //                   nullptr)) {
++      //  decoration = SpellCheckResult::GRAMMAR;
++      //}
+     }
+ 
+     results.push_back(WebTextCheckingResult(
+diff --git chrome/renderer/spellchecker/spellcheck_provider.cc chrome/renderer/spellchecker/spellcheck_provider.cc
+index 576460e..1ec0da0 100644
+--- chrome/renderer/spellchecker/spellcheck_provider.cc
++++ chrome/renderer/spellchecker/spellcheck_provider.cc
+@@ -65,8 +65,8 @@ void SpellCheckProvider::RequestTextChecking(
+   }
+ 
+   // Try to satisfy check from cache.
+-  if (SatisfyRequestFromCache(text, completion))
+-    return;
++  /*if (SatisfyRequestFromCache(text, completion))
++    return;*/
+ 
+   // Send this text to a browser. A browser checks the user profile and send
+   // this text to the Spelling service only if a user enables this feature.
+diff --git content/browser/web_contents/web_contents_impl.cc content/browser/web_contents/web_contents_impl.cc
+index 2ee9174..b1fdea6 100644
+--- content/browser/web_contents/web_contents_impl.cc
++++ content/browser/web_contents/web_contents_impl.cc
+@@ -2447,6 +2447,16 @@ void WebContentsImpl::ReplaceMisspelling(const base::string16& word) {
+       focused_frame->GetRoutingID(), word));
+ }
+ 
++void WebContentsImpl::Recheck() {
++	RenderFrameHost* focused_frame = GetFocusedFrame();
++	if (!focused_frame)
++		return;
++	
++	focused_frame->Send(new InputMsg_Recheck(
++			focused_frame->GetRoutingID()));
++	
++}
++
+ void WebContentsImpl::NotifyContextMenuClosed(
+     const CustomContextMenuContext& context) {
+   RenderFrameHost* focused_frame = GetFocusedFrame();
+diff --git content/browser/web_contents/web_contents_impl.h content/browser/web_contents/web_contents_impl.h
+index 5e05471..c91c3375 100644
+--- content/browser/web_contents/web_contents_impl.h
++++ content/browser/web_contents/web_contents_impl.h
+@@ -313,6 +313,7 @@ class CONTENT_EXPORT WebContentsImpl
+   void Unselect() override;
+   void Replace(const base::string16& word) override;
+   void ReplaceMisspelling(const base::string16& word) override;
++  void Recheck() override;
+   void NotifyContextMenuClosed(
+       const CustomContextMenuContext& context) override;
+   void ExecuteCustomContextMenuCommand(
+diff --git content/common/input_messages.h content/common/input_messages.h
+index a511d01..c35e8f9 100644
+--- content/common/input_messages.h
++++ content/common/input_messages.h
+@@ -200,6 +200,8 @@ IPC_MESSAGE_ROUTED1(InputMsg_Replace,
+ // Replaces the misspelling in the selected region with the specified string.
+ IPC_MESSAGE_ROUTED1(InputMsg_ReplaceMisspelling,
+                     base::string16)
++// Rechecks a selection.
++IPC_MESSAGE_ROUTED0(InputMsg_Recheck)
+ IPC_MESSAGE_ROUTED0(InputMsg_Delete)
+ IPC_MESSAGE_ROUTED0(InputMsg_SelectAll)
+ 
+diff --git content/public/browser/web_contents.h content/public/browser/web_contents.h
+index d0a6772..8f895a0 100644
+--- content/public/browser/web_contents.h
++++ content/public/browser/web_contents.h
+@@ -448,6 +448,9 @@ class WebContents : public PageNavigator,
+   // Replaces the misspelling in the current selection.
+   virtual void ReplaceMisspelling(const base::string16& word) = 0;
+ 
++  // Rechecks the current selection.
++  virtual void Recheck() = 0;
++
+   // Let the renderer know that the menu has been closed.
+   virtual void NotifyContextMenuClosed(
+       const CustomContextMenuContext& context) = 0;
+diff --git content/renderer/render_frame_impl.cc content/renderer/render_frame_impl.cc
+index 7515ef2..80106fd 100644
+--- content/renderer/render_frame_impl.cc
++++ content/renderer/render_frame_impl.cc
+@@ -1317,6 +1317,7 @@ bool RenderFrameImpl::OnMessageReceived(const IPC::Message& msg) {
+                         OnMoveRangeSelectionExtent)
+     IPC_MESSAGE_HANDLER(InputMsg_Replace, OnReplace)
+     IPC_MESSAGE_HANDLER(InputMsg_ReplaceMisspelling, OnReplaceMisspelling)
++	IPC_MESSAGE_HANDLER(InputMsg_Recheck, OnRecheck)
+     IPC_MESSAGE_HANDLER(InputMsg_ExtendSelectionAndDelete,
+                         OnExtendSelectionAndDelete)
+     IPC_MESSAGE_HANDLER(InputMsg_SetCompositionFromExistingText,
+@@ -1733,6 +1734,13 @@ void RenderFrameImpl::OnReplaceMisspelling(const base::string16& text) {
+   frame_->replaceMisspelledRange(text);
+ }
+ 
++void RenderFrameImpl::OnRecheck() {
++	/*if (!frame_->hasSelection())
++		return;*/
++		
++	frame_->recheck();
++}
++
+ void RenderFrameImpl::OnCSSInsertRequest(const std::string& css) {
+   frame_->document().insertStyleSheet(WebString::fromUTF8(css));
+ }
+diff --git content/renderer/render_frame_impl.h content/renderer/render_frame_impl.h
+index 72fd2a7..e97260b 100644
+--- content/renderer/render_frame_impl.h
++++ content/renderer/render_frame_impl.h
+@@ -739,6 +739,7 @@ class CONTENT_EXPORT RenderFrameImpl
+   void OnMoveRangeSelectionExtent(const gfx::Point& point);
+   void OnReplace(const base::string16& text);
+   void OnReplaceMisspelling(const base::string16& text);
++  void OnRecheck();
+   void OnCSSInsertRequest(const std::string& css);
+   void OnAddMessageToConsole(ConsoleMessageLevel level,
+                              const std::string& message);
+diff --git third_party/WebKit/Source/weWebLocalFrameImpl.cpp third_party/WebKit/Source/web/WebLocalFrameImpl.cpp
+index 3225ae5..03b8be8 100644
+--- third_party/WebKit/Source/web/WebLocalFrameImpl.cpp
++++ third_party/WebKit/Source/web/WebLocalFrameImpl.cpp
+@@ -1216,6 +1216,23 @@ void WebLocalFrameImpl::replaceMisspelledRange(const WebString& text)
+         return;
+     frame()->spellChecker().replaceMisspelledRange(text);
+ }
++ 
++void WebLocalFrameImpl::recheck()
++{
++	// If this caret selection has two or more markers, this function replace the range covered by the first marker with the specified word as Microsoft Word does.
++	if (pluginContainerFromFrame(frame()))
++		return;
++
++	if (hasSelection())
++	{		
++		frame()->spellChecker().chunkAndMarkAllMisspellingsAndBadGrammar((frame()->selection().rootEditableElement()));
++	}
++	else
++	{
++		blink::HTMLElement* body = frame()->document()->body();
++		frame()->spellChecker().chunkAndMarkAllMisspellingsAndBadGrammar(body);
++	}
++}
+ 
+ void WebLocalFrameImpl::removeSpellingMarkers()
+ {
+diff --git third_party/WebKit/Source/web/WebLocalFrameImpl.h third_party/WebKit/Source/web/WebLocalFrameImpl.h
+index 2b6eba7..d2fd675 100644
+--- third_party/WebKit/Source/web/WebLocalFrameImpl.h
++++ third_party/WebKit/Source/web/WebLocalFrameImpl.h
+@@ -164,6 +164,7 @@ public:
+     bool isContinuousSpellCheckingEnabled() const override;
+     void requestTextChecking(const WebElement&) override;
+     void replaceMisspelledRange(const WebString&) override;
++	void recheck() override;
+     void removeSpellingMarkers() override;
+     bool hasSelection() const override;
+     WebRange selectionRange() const override;
+diff --git third_party/WebKit/Source/web/WebRemoteFrameImpl.cpp third_party/WebKit/Source/web/WebRemoteFrameImpl.cpp
+index a383c3f..21637e0 100644
+--- third_party/WebKit/Source/web/WebRemoteFrameImpl.cpp
++++ third_party/WebKit/Source/web/WebRemoteFrameImpl.cpp
+@@ -447,6 +447,11 @@ void WebRemoteFrameImpl::requestTextChecking(const WebElement&)
+     ASSERT_NOT_REACHED();
+ }
+ 
++void WebRemoteFrameImpl::recheck()
++{
++	ASSERT_NOT_REACHED();
++}
++
+ void WebRemoteFrameImpl::removeSpellingMarkers()
+ {
+     ASSERT_NOT_REACHED();
+diff --git third_party/WebKit/Source/web/WebRemoteFrameImpl.h third_party/WebKit/Source/web/WebRemoteFrameImpl.h
+index 0088077..3addd2c 100644
+--- third_party/WebKit/Source/web/WebRemoteFrameImpl.h
++++ third_party/WebKit/Source/weWebRemoteFrameImpl.h
+@@ -108,6 +108,7 @@ public:
+     void enableContinuousSpellChecking(bool) override;
+     bool isContinuousSpellCheckingEnabled() const override;
+     void requestTextChecking(const WebElement&) override;
++	void recheck() override;
+     void removeSpellingMarkers() override;
+     bool hasSelection() const override;
+     WebRange selectionRange() const override;
+diff --git third_party/WebKit/public/web/WebFrame.h third_party/WebKit/public/web/WebFrame.h
+index 9ae9234..b75211e 100644
+--- third_party/WebKit/public/web/WebFrame.h
++++ third_party/WebKit/public/web/WebFrame.h
+@@ -462,6 +462,7 @@ public:
+     virtual void enableContinuousSpellChecking(bool) = 0;
+     virtual bool isContinuousSpellCheckingEnabled() const = 0;
+     virtual void requestTextChecking(const WebElement&) = 0;
++	virtual void recheck() = 0;
+     virtual void removeSpellingMarkers() = 0;
+ 
+     // Selection -----------------------------------------------------------

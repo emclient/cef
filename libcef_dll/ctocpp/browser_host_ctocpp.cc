@@ -435,6 +435,17 @@ void CefBrowserHostCToCpp::AddWordToDictionary(const CefString& word) {
       word.GetStruct());
 }
 
+void CefBrowserHostCToCpp::Recheck() {
+  cef_browser_host_t* _struct = GetStruct();
+  if (CEF_MEMBER_MISSING(_struct, recheck))
+    return;
+
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  // Execute
+  _struct->recheck(_struct);
+}
+
 bool CefBrowserHostCToCpp::IsWindowRenderingDisabled() {
   cef_browser_host_t* _struct = GetStruct();
   if (CEF_MEMBER_MISSING(_struct, is_window_rendering_disabled))

@@ -32,7 +32,8 @@ class ClientHandler : public CefClient,
                       public CefKeyboardHandler,
                       public CefLifeSpanHandler,
                       public CefLoadHandler,
-                      public CefRequestHandler {
+                      public CefRequestHandler,
+					  public CefSpellCheckHandler {
  public:
   // Implement this interface to receive notification of ClientHandler
   // events. The methods of this class will be called on the main thread.
@@ -108,6 +109,9 @@ class ClientHandler : public CefClient,
   }
   CefRefPtr<CefRequestHandler> GetRequestHandler() OVERRIDE {
     return this;
+  }
+  CefRefPtr<CefSpellCheckHandler> GetSpellCheckHandler() OVERRIDE {
+	  return this;
   }
   bool OnProcessMessageReceived(CefRefPtr<CefBrowser> browser,
                                 CefProcessId source_process,
@@ -247,6 +251,9 @@ class ClientHandler : public CefClient,
       CefRefPtr<CefRequestCallback> callback) OVERRIDE;
   void OnRenderProcessTerminated(CefRefPtr<CefBrowser> browser,
                                  TerminationStatus status) OVERRIDE;
+
+  bool IsWordMisspelled(const CefString& word) OVERRIDE;
+
 
   // Returns the number of browsers currently using this handler. Can only be
   // called on the CEF UI thread.

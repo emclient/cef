@@ -145,7 +145,8 @@ scoped_ptr<PrefService> CreatePrefService(const base::FilePath& pref_path) {
                            IDS_SPELLCHECK_DICTIONARY);
   }
   registry->RegisterBooleanPref(prefs::kSpellCheckUseSpellingService,
-      command_line->HasSwitch(switches::kEnableSpellingService));
+	  command_line->HasSwitch(switches::kEnableSpellingService));
+  registry->RegisterBooleanPref(prefs::kSpellCheckUseSpellingCallback, true);
   registry->RegisterBooleanPref(prefs::kEnableContinuousSpellcheck, true);
 
   // Pepper flash preferences.

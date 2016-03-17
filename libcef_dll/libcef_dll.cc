@@ -109,6 +109,7 @@
 #include "libcef_dll/ctocpp/run_file_dialog_callback_ctocpp.h"
 #include "libcef_dll/ctocpp/scheme_handler_factory_ctocpp.h"
 #include "libcef_dll/ctocpp/set_cookie_callback_ctocpp.h"
+#include "libcef_dll/ctocpp/spell_check_handler_ctocpp.h"
 #include "libcef_dll/ctocpp/string_visitor_ctocpp.h"
 #include "libcef_dll/ctocpp/task_ctocpp.h"
 #include "libcef_dll/ctocpp/urlrequest_client_ctocpp.h"
@@ -263,6 +264,7 @@ CEF_EXPORT void cef_shutdown() {
       &CefSchemeHandlerFactoryCToCpp::DebugObjCt));
   DCHECK(base::AtomicRefCountIsZero(&CefSchemeRegistrarCppToC::DebugObjCt));
   DCHECK(base::AtomicRefCountIsZero(&CefSetCookieCallbackCToCpp::DebugObjCt));
+  DCHECK(base::AtomicRefCountIsZero(&CefSpellCheckHandlerCToCpp::DebugObjCt));
   DCHECK(base::AtomicRefCountIsZero(&CefStreamReaderCppToC::DebugObjCt));
   DCHECK(base::AtomicRefCountIsZero(&CefStreamWriterCppToC::DebugObjCt));
   DCHECK(base::AtomicRefCountIsZero(&CefStringVisitorCToCpp::DebugObjCt));

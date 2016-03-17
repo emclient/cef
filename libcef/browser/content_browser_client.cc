@@ -34,12 +34,14 @@
 #include "libcef/common/extensions/extensions_util.h"
 #include "libcef/common/net/scheme_registration.h"
 #include "libcef/common/request_impl.h"
+#include "libcef/browser/spellcheck_proxy_handler.h"
 
 #include "base/base_switches.h"
 #include "base/command_line.h"
 #include "base/files/file_path.h"
 #include "base/path_service.h"
 #include "chrome/browser/spellchecker/spellcheck_message_filter.h"
+#include "chrome/browser/spellchecker/spellcheck_handler.h"
 #include "chrome/common/chrome_switches.h"
 #include "components/navigation_interception/intercept_navigation_throttle.h"
 #include "components/navigation_interception/navigation_params.h"
@@ -438,7 +440,9 @@ void CefContentBrowserClient::RenderProcessWillLaunch(
   host->AddFilter(new printing::PrintingMessageFilter(id));
 
   if (!command_line->HasSwitch(switches::kDisableSpellChecking)) {
-    host->AddFilter(new SpellCheckMessageFilter(id));
+    CefSpellCheckProxyHandler* handler = new CefSpellCheckProxyHandler(host);
+	  
+	host->AddFilter(new SpellCheckMessageFilter(id, handler));
 #if defined(OS_MACOSX)
     host->AddFilter(new SpellCheckMessageFilterPlatform(id));
 #endif

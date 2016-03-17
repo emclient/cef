@@ -54,6 +54,7 @@
 #include "include/cef_process_message.h"
 #include "include/cef_render_handler.h"
 #include "include/cef_request_handler.h"
+#include "include/cef_spellcheck_handler.h"
 
 ///
 // Implement this interface to provide handler implementations.
@@ -176,6 +177,14 @@ class CefClient : public virtual CefBase {
   /*--cef()--*/
   virtual CefRefPtr<CefRequestHandler> GetRequestHandler() {
     return NULL;
+  }
+
+  ///
+  // Return the handler for spellcheck events.
+  ///
+  /*--cef()--*/
+  virtual CefRefPtr<CefSpellCheckHandler> GetSpellCheckHandler() {
+	  return NULL;
   }
 
   ///

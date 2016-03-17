@@ -65,6 +65,7 @@ class CefBrowserHostCToCpp
   bool IsMouseCursorChangeDisabled() OVERRIDE;
   void ReplaceMisspelling(const CefString& word) OVERRIDE;
   void AddWordToDictionary(const CefString& word) OVERRIDE;
+  void Recheck() OVERRIDE;
   bool IsWindowRenderingDisabled() OVERRIDE;
   void WasResized() OVERRIDE;
   void WasHidden(bool hidden) OVERRIDE;

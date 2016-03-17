@@ -38,6 +38,7 @@
 #include "base/command_line.h"
 #include "chrome/browser/spellchecker/spellcheck_factory.h"
 #include "chrome/browser/spellchecker/spellcheck_service.h"
+#include "chrome/browser/spellchecker/feedback_sender.h"
 #include "chrome/browser/ui/prefs/prefs_tab_helper.h"
 #include "content/browser/frame_host/render_frame_host_impl.h"
 #include "content/browser/gpu/compositor_util.h"
@@ -848,6 +849,17 @@ void CefBrowserHostImpl::AddWordToDictionary(const CefString& word) {
 #if defined(OS_MACOSX)
   spellcheck_platform::AddWord(word);
 #endif
+}
+
+void CefBrowserHostImpl::Recheck() {
+	if (!CEF_CURRENTLY_ON_UIT()) {
+		CEF_POST_TASK(CEF_UIT,
+			base::Bind(&CefBrowserHostImpl::Recheck, this));
+		return;
+	}
+
+	if (web_contents())
+		web_contents()->Recheck();
 }
 
 void CefBrowserHostImpl::WasResized() {

@@ -27,6 +27,7 @@
 #include "libcef_dll/ctocpp/load_handler_ctocpp.h"
 #include "libcef_dll/ctocpp/render_handler_ctocpp.h"
 #include "libcef_dll/ctocpp/request_handler_ctocpp.h"
+#include "libcef_dll/ctocpp/spell_check_handler_ctocpp.h"
 
 
 // VIRTUAL METHODS - Body may be edited by hand.
@@ -227,6 +228,21 @@ CefRefPtr<CefRequestHandler> CefClientCToCpp::GetRequestHandler() {
 
   // Return type: refptr_same
   return CefRequestHandlerCToCpp::Wrap(_retval);
+}
+
+CefRefPtr<CefSpellCheckHandler> CefClientCToCpp::GetSpellCheckHandler() {
+  cef_client_t* _struct = GetStruct();
+  if (CEF_MEMBER_MISSING(_struct, get_spell_check_handler))
+    return NULL;
+
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  // Execute
+  cef_spell_check_handler_t* _retval = _struct->get_spell_check_handler(
+      _struct);
+
+  // Return type: refptr_same
+  return CefSpellCheckHandlerCToCpp::Wrap(_retval);
 }
 
 bool CefClientCToCpp::OnProcessMessageReceived(CefRefPtr<CefBrowser> browser,

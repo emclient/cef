@@ -447,6 +447,11 @@ typedef struct _cef_browser_host_t {
       const cef_string_t* word);
 
   ///
+  // Performs spellcheck on selection.
+  ///
+  void (CEF_CALLBACK *recheck)(struct _cef_browser_host_t* self);
+
+  ///
   // Returns true (1) if window rendering is disabled.
   ///
   int (CEF_CALLBACK *is_window_rendering_disabled)(

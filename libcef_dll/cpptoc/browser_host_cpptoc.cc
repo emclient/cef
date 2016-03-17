@@ -509,6 +509,17 @@ void CEF_CALLBACK browser_host_add_word_to_dictionary(
       CefString(word));
 }
 
+void CEF_CALLBACK browser_host_recheck(struct _cef_browser_host_t* self) {
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  DCHECK(self);
+  if (!self)
+    return;
+
+  // Execute
+  CefBrowserHostCppToC::Get(self)->Recheck();
+}
+
 int CEF_CALLBACK browser_host_is_window_rendering_disabled(
     struct _cef_browser_host_t* self) {
   // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
@@ -924,6 +935,7 @@ CefBrowserHostCppToC::CefBrowserHostCppToC() {
       browser_host_is_mouse_cursor_change_disabled;
   GetStruct()->replace_misspelling = browser_host_replace_misspelling;
   GetStruct()->add_word_to_dictionary = browser_host_add_word_to_dictionary;
+  GetStruct()->recheck = browser_host_recheck;
   GetStruct()->is_window_rendering_disabled =
       browser_host_is_window_rendering_disabled;
   GetStruct()->was_resized = browser_host_was_resized;

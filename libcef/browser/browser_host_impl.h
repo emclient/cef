@@ -154,6 +154,7 @@ class CefBrowserHostImpl : public CefBrowserHost,
   bool IsWindowRenderingDisabled() override;
   void ReplaceMisspelling(const CefString& word) override;
   void AddWordToDictionary(const CefString& word) override;
+  void Recheck() override;
   void WasResized() override;
   void WasHidden(bool hidden) override;
   void NotifyScreenInfoChanged() override;

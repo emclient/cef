@@ -67,6 +67,7 @@
 #include "libcef_dll/cpptoc/run_file_dialog_callback_cpptoc.h"
 #include "libcef_dll/cpptoc/scheme_handler_factory_cpptoc.h"
 #include "libcef_dll/cpptoc/set_cookie_callback_cpptoc.h"
+#include "libcef_dll/cpptoc/spell_check_handler_cpptoc.h"
 #include "libcef_dll/cpptoc/string_visitor_cpptoc.h"
 #include "libcef_dll/cpptoc/task_cpptoc.h"
 #include "libcef_dll/cpptoc/urlrequest_client_cpptoc.h"
@@ -255,6 +256,7 @@ CEF_GLOBAL void CefShutdown() {
       &CefSchemeHandlerFactoryCppToC::DebugObjCt));
   DCHECK(base::AtomicRefCountIsZero(&CefSchemeRegistrarCToCpp::DebugObjCt));
   DCHECK(base::AtomicRefCountIsZero(&CefSetCookieCallbackCppToC::DebugObjCt));
+  DCHECK(base::AtomicRefCountIsZero(&CefSpellCheckHandlerCppToC::DebugObjCt));
   DCHECK(base::AtomicRefCountIsZero(&CefStreamReaderCToCpp::DebugObjCt));
   DCHECK(base::AtomicRefCountIsZero(&CefStreamWriterCToCpp::DebugObjCt));
   DCHECK(base::AtomicRefCountIsZero(&CefStringVisitorCppToC::DebugObjCt));

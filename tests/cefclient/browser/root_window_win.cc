@@ -700,16 +700,23 @@ bool RootWindowWin::OnCommand(UINT id) {
       OnFind();
       return true;
     case IDC_NAV_BACK:   // Back button
-      if (CefRefPtr<CefBrowser> browser = GetBrowser())
-        browser->GoBack();
+		if (CefRefPtr<CefBrowser> browser = GetBrowser())
+			browser->GetHost()->Recheck();
+      //  browser->GoBack();
       return true;
     case IDC_NAV_FORWARD:  // Forward button
       if (CefRefPtr<CefBrowser> browser = GetBrowser())
         browser->GoForward();
       return true;
     case IDC_NAV_RELOAD:  // Reload button
-      if (CefRefPtr<CefBrowser> browser = GetBrowser())
-        browser->Reload();
+		if (CefRefPtr<CefBrowser> browser = GetBrowser())
+		{
+
+			std::stringstream ss;
+			ss << "<html><body contentEditable='true'>lorem ipsum dolor sit amet</body></html>";
+
+			browser->GetMainFrame()->LoadString(ss.str(), "http://tests/getsource");
+		}
       return true;
     case IDC_NAV_STOP:  // Stop button
       if (CefRefPtr<CefBrowser> browser = GetBrowser())
