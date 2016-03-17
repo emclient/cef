@@ -1,0 +1,16 @@
+ third_party/WebKit/Source/platform/RuntimeEnabledFeatures.in | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git third_party/WebKit/Source/platform/RuntimeEnabledFeatures.in third_party/WebKit/Source/platform/RuntimeEnabledFeatures.in
+index 9f30a3a..a873349 100644
+--- third_party/WebKit/Source/platform/RuntimeEnabledFeatures.in
++++ third_party/WebKit/Source/platform/RuntimeEnabledFeatures.in
+@@ -99,7 +99,7 @@ GetUserMedia depends_on=MediaDevices, status=experimental
+ GlobalCacheStorage status=stable
+ HiResEventTimeStamp status=stable
+ ImageColorProfiles
+-ImageOrientation status=test
++ImageOrientation status=stable
+ ImageRenderingPixelated status=stable
+ IndexedDBExperimental status=experimental
+ InputDeviceCapabilities status=stable

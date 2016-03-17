@@ -1,0 +1,13 @@
+diff --git ui/gfx/win/dpi.cc ui/gfx/win/dpi.cc
+index a958de4..45677a1 100644
+--- ui/gfx/win/dpi.cc
++++ ui/gfx/win/dpi.cc
+@@ -53,7 +53,7 @@ float GetDPIScale() {
+   if (gfx::Display::HasForceDeviceScaleFactor())
+     return gfx::Display::GetForcedDeviceScaleFactor();
+   float dpi_scale = GetUnforcedDeviceScaleFactor();
+-  return (dpi_scale <= 1.25f) ? 1.f : dpi_scale;
++  return dpi_scale;
+ }
+ 
+ namespace win {

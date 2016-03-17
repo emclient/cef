@@ -1,0 +1,15 @@
+diff --git Source/core/editing/commands/IndentOutdentCommand.cpp Source/core/editing/commands/IndentOutdentCommand.cpp
+index 2289b269..af8c391 100644
+--- Source/core/editing/commands/IndentOutdentCommand.cpp
++++ Source/core/editing/commands/IndentOutdentCommand.cpp
+@@ -240,6 +240,10 @@ void IndentOutdentCommand::outdentRegion(const VisiblePosition& startOfSelection
+             endOfCurrentParagraph = createVisiblePosition(endingSelection().end());
+             endOfNextParagraph = endOfParagraph(nextPositionOf(endOfCurrentParagraph));
+         }
++
++		if (endOfNextParagraph.isNull() && endOfNextParagraph.isNull())
++			break;
++
+         endOfCurrentParagraph = endOfNextParagraph;
+     }
+ }

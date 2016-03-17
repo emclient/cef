@@ -1,0 +1,20 @@
+ ui/views/widget/widget.cc | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git ui/views/widget/widget.cc ui/views/widget/widget.cc
+index 2225c88..bb82c14 100644
+--- ui/views/widget/widget.cc
++++ ui/views/widget/widget.cc
+@@ -655,9 +655,10 @@ void Widget::Show() {
+     // it is subsequently shown after being hidden.
+     saved_show_state_ = ui::SHOW_STATE_NORMAL;
+   } else {
+-    CanActivate()
++    /*CanActivate()
+         ? native_widget_->Show()
+-        : native_widget_->ShowWithWindowState(ui::SHOW_STATE_INACTIVE);
++        : native_widget_->ShowWithWindowState(ui::SHOW_STATE_INACTIVE);*/
++	native_widget_->ShowWithWindowState(ui::SHOW_STATE_INACTIVE);
+   }
+ }
+ 
