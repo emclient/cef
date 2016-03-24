@@ -1,0 +1,17 @@
+edb22d6d4f77bdf0bf1cf3899716ad96c8ff6ca7
+ net/url_request/url_request_job.cc | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git net/url_request/url_request_job.cc net/url_request/url_request_job.cc
+index 937f163..eff9b97 100644
+--- net/url_request/url_request_job.cc
++++ net/url_request/url_request_job.cc
+@@ -788,7 +788,7 @@ void URLRequestJob::SetStatus(const URLRequestStatus &status) {
+   // itself, if needed.
+   // TODO(mmenke): Change this to a DCHECK once https://crbug.com/508900 is
+   // resolved.
+-  CHECK(request_->status().is_io_pending() || request_->status().is_success() ||
++  DCHECK(request_->status().is_io_pending() || request_->status().is_success() ||
+         (!status.is_success() && !status.is_io_pending()));
+   request_->set_status(status);
+ }
