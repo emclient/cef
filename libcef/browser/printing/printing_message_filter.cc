@@ -164,7 +164,7 @@ void PrintingMessageFilter::OnScriptedPrintReply(
   } else {
     RenderParamsFromPrintSettings(printer_query->settings(), &params.params);
     params.params.document_cookie = printer_query->cookie();
-    params.pages = PageRange::GetPages(printer_query->settings().ranges());
+    //params.pages = PageRange::GetPages(printer_query->settings().ranges());
   }
   PrintHostMsg_ScriptedPrint::WriteReplyParams(reply_msg, params);
   Send(reply_msg);
