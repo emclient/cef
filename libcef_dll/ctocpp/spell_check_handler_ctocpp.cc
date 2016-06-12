@@ -15,6 +15,18 @@
 
 // VIRTUAL METHODS - Body may be edited by hand.
 
+void CefSpellCheckHandlerCToCpp::GetLanguageCode(CefString& lang) {
+  cef_spell_check_handler_t* _struct = GetStruct();
+  if (CEF_MEMBER_MISSING(_struct, get_language_code))
+    return;
+
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  // Execute
+  _struct->get_language_code(_struct,
+      lang.GetWritableStruct());
+}
+
 bool CefSpellCheckHandlerCToCpp::IsWordMisspelled(const CefString& word) {
   cef_spell_check_handler_t* _struct = GetStruct();
   if (CEF_MEMBER_MISSING(_struct, is_word_misspelled))

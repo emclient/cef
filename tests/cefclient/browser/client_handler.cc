@@ -1,4 +1,4 @@
-// Copyright (c) 2013 The Chromium Embedded Framework Authors. All rights
+﻿// Copyright (c) 2013 The Chromium Embedded Framework Authors. All rights
 // reserved. Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
 
@@ -651,7 +651,19 @@ void ClientHandler::OnRenderProcessTerminated(CefRefPtr<CefBrowser> browser,
 
 bool ClientHandler::IsWordMisspelled(const CefString& word)
 {
+	if (word.ToString() == "ahoj")
+		langBool_ = true;
+	/*else if (word.ToString() == "шын")
+		langBool_ = false;*/
 	return word.length() < 5;
+}
+
+void ClientHandler::GetLanguageCode(CefString& lang)
+{
+	if (langBool_)
+		lang = CefString("ru");
+	else
+		lang = CefString("en");
 }
 
 int ClientHandler::GetBrowserCount() const {

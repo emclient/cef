@@ -56,6 +56,13 @@ typedef struct _cef_spell_check_handler_t {
   cef_base_t base;
 
   ///
+  // Returns the ISO language code used for spellcheck. This is useful for
+  // correct word-breaking
+  ///
+  void (CEF_CALLBACK *get_language_code)(
+      struct _cef_spell_check_handler_t* self, cef_string_t* lang);
+
+  ///
   // Called when a word needs to be checked. Return true (1) if the word is
   // misspelled, otherwise false (0)
   ///

@@ -31,6 +31,7 @@ class CefSpellCheckHandlerCToCpp
   CefSpellCheckHandlerCToCpp();
 
   // CefSpellCheckHandler methods.
+  void GetLanguageCode(CefString& lang) override;
   bool IsWordMisspelled(const CefString& word) override;
 };
 

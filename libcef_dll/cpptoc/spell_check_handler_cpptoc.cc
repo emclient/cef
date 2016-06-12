@@ -17,6 +17,26 @@ namespace {
 
 // MEMBER FUNCTIONS - Body may be edited by hand.
 
+void CEF_CALLBACK spell_check_handler_get_language_code(
+    struct _cef_spell_check_handler_t* self, cef_string_t* lang) {
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  DCHECK(self);
+  if (!self)
+    return;
+  // Verify param: lang; type: string_byref
+  DCHECK(lang);
+  if (!lang)
+    return;
+
+  // Translate param: lang; type: string_byref
+  CefString langStr(lang);
+
+  // Execute
+  CefSpellCheckHandlerCppToC::Get(self)->GetLanguageCode(
+      langStr);
+}
+
 int CEF_CALLBACK spell_check_handler_is_word_misspelled(
     struct _cef_spell_check_handler_t* self, const cef_string_t* word) {
   // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
@@ -43,6 +63,7 @@ int CEF_CALLBACK spell_check_handler_is_word_misspelled(
 // CONSTRUCTOR - Do not edit by hand.
 
 CefSpellCheckHandlerCppToC::CefSpellCheckHandlerCppToC() {
+  GetStruct()->get_language_code = spell_check_handler_get_language_code;
   GetStruct()->is_word_misspelled = spell_check_handler_is_word_misspelled;
 }
 

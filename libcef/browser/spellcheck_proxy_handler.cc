@@ -29,16 +29,24 @@ void CefSpellCheckProxyHandler::OnTextCheck(
 
 		if (handler.get())
 		{
-			if (!iterator_.get())
+			CefString lang;
+			handler->GetLanguageCode(lang);
+			std::string strLang = lang.ToString();
+
+			if (!iterator_.get() || (strLang.compare(0, 2, lastLanguageCode_) != 0))
 			{
+				strLang.copy(lastLanguageCode_, 2, 0);
+				lastLanguageCode_[2] = '\0';
+
 				attribute_.reset(new SpellcheckCharAttribute());
-				attribute_->SetDefaultLanguage("en-US");
+				attribute_->SetDefaultLanguage(lang.ToString());
 
 				// Set up a SpellcheckWordIterator object which extracts English words,
 				// and retrieve them.
 				iterator_.reset(new SpellcheckWordIterator());
 				iterator_->Initialize(attribute_.get(), true);
 			}
+			lang.ClearAndFree();
 
 			iterator_->SetText(text.c_str(), text.length());
 

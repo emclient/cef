@@ -39,6 +39,7 @@ private:
 	content::RenderProcessHost* host_;
 	scoped_ptr<SpellcheckWordIterator> iterator_;
 	scoped_ptr<SpellcheckCharAttribute> attribute_;
+	char lastLanguageCode_[3];
 
 	DISALLOW_COPY_AND_ASSIGN(CefSpellCheckProxyHandler);
 };

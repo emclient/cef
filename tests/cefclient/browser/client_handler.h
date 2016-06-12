@@ -253,7 +253,7 @@ class ClientHandler : public CefClient,
                                  TerminationStatus status) OVERRIDE;
 
   bool IsWordMisspelled(const CefString& word) OVERRIDE;
-
+  void GetLanguageCode(CefString& lang) OVERRIDE;
 
   // Returns the number of browsers currently using this handler. Can only be
   // called on the CEF UI thread.
@@ -355,6 +355,8 @@ class ClientHandler : public CefClient,
 
   // Set of Handlers registered with the message router.
   MessageHandlerSet message_handler_set_;
+
+  bool langBool_ = false;
 
   DISALLOW_COPY_AND_ASSIGN(ClientHandler);
 };
