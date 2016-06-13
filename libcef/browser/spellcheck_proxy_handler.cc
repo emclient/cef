@@ -53,7 +53,7 @@ void CefSpellCheckProxyHandler::OnTextCheck(
 			base::string16 word;
 			int offset;
 			int length;
-			base::string16 split_characters = L".’':\0";
+			base::string16 split_characters = L".:\0";
 			SpellcheckWordIterator::WordIteratorStatus status;
 			while ((status = iterator_->GetNextWord(&word, &offset, &length)) != SpellcheckWordIterator::WordIteratorStatus::IS_END_OF_TEXT) {
 				
