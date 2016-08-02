@@ -1,0 +1,47 @@
+From cce19c821ce0a76886078c6df24fba57fd2f12de Mon Sep 17 00:00:00 2001
+From: brucedawson <brucedawson@chromium.org>
+Date: Thu, 31 Mar 2016 05:53:44 -0700
+Subject: [PATCH] Fix C4334 warning about 32-bit shift assigned to 64-bits
+
+VS 2015 has a new or louder warning about 32-bit shifts that are then
+assigned to a 64-bit target. This type of code triggers it:
+
+int64_t size = 1 << shift_amount;
+
+Because the '1' being shifted is a 32-bit int the result of the shift
+will be a 32-bit result, so assigning it to a 64-bit variable is just
+misleading.
+
+In this case the code that triggers it is this:
+
+  size_t alloc = 1<<fLgSize++;
+
+The destination is a size_t so the warning only shows up on 64-bit
+builds and doesn't indicate a real bug. But, casting the '1' constant
+to size_t makes the behavior/intent more obvious and consistent and
+allows enabling C4334 in Chromium.
+
+BUG=593448
+GOLD_TRYBOT_URL= https://gold.skia.org/search2?unt=true&query=source_type%3Dgm&master=false&issue=1845123002
+
+Review URL: https://codereview.chromium.org/1845123002
+---
+ src/core/SkVarAlloc.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/core/SkVarAlloc.cpp b/src/core/SkVarAlloc.cpp
+index 1fbd382..ea0524b 100644
+--- src/core/SkVarAlloc.cpp
++++ src/core/SkVarAlloc.cpp
+@@ -45,7 +45,7 @@ SkVarAlloc::~SkVarAlloc() {
+ void SkVarAlloc::makeSpace(size_t bytes) {
+     SkASSERT(SkIsAlignPtr(bytes));
+ 
+-    size_t alloc = 1<<fLgSize++;
++    size_t alloc = static_cast<size_t>(1)<<fLgSize++;
+     while (alloc < bytes + sizeof(Block)) {
+         alloc *= 2;
+     }
+-- 
+2.9.2.windows.1
+

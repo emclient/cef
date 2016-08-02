@@ -1,0 +1,48 @@
+From 20d74768dcd9886f90fe14719d3513b356b11053 Mon Sep 17 00:00:00 2001
+From: Bruce Dawson <brucedawson@chromium.org>
+Date: Mon, 09 May 2016 08:01:37 -0700
+Subject: [PATCH] Add missing w64.c to fix VS 2015 Update 3 link errors
+
+This is just a temporary fix that will get wiped out by the next ffmpeg
+roll but it allows testing of the preview version of Update 3 on the try
+bots. A permanent fix can be made if needed depending on whether the
+final version of Update 3 resolves the link issue or not.
+
+The ultimate problem is that ffmpeg conditionally references a symbol
+that is not linked in - essentially going:
+
+     if (CONFIG_W64_DEMUXER && wav->w64)
+         left = find_guid(s->pb, ff_w64_guid_data) - 24;
+
+where CONFIG_W64_DEMUXER is #defined to zero, and ff_w64_guid_data is
+defined in w64.c.
+
+BUG=264459
+
+Change-Id: I05a9281afd43ca121cb8f7409d31b91c83df343c
+---
+
+diff --git a/ffmpeg_generated.gni b/ffmpeg_generated.gni
+index 38b25ab..e952679 100644
+--- ffmpeg_generated.gni
++++ ffmpeg_generated.gni
+@@ -94,6 +94,7 @@
+     "libavformat/rmsipr.c",
+     "libavformat/url.c",
+     "libavformat/vorbiscomment.c",
++    "libavformat/w64.c",
+     "libavformat/wavdec.c",
+     "libavutil/aes.c",
+     "libavutil/aes_ctr.c",
+diff --git a/ffmpeg_generated.gypi b/ffmpeg_generated.gypi
+index 0818cfb..2bdfc31 100644
+--- ffmpeg_generated.gypi
++++ ffmpeg_generated.gypi
+@@ -583,6 +583,7 @@
+           'libavformat/rmsipr.c',
+           'libavformat/url.c',
+           'libavformat/vorbiscomment.c',
++          'libavformat/w64.c',
+           'libavformat/wavdec.c',
+           'libavutil/aes.c',
+           'libavutil/aes_ctr.c',

@@ -1,0 +1,95 @@
+From a4f7adc756e673c3380bf65b23b8b6b57f48a8b8 Mon Sep 17 00:00:00 2001
+From: brucedawson <brucedawson@chromium.org>
+Date: Tue, 8 Mar 2016 15:58:22 -0800
+Subject: [PATCH] Fix shift warnings from VC++ 2015 Update 2
+
+Update 2 gives warnings when you shift an int and then assign to a
+64-bit value. This behavior can lead to unintended truncation if you
+shift too far. These warnings existed in VC++ 2013 as well, but VC++
+2015 Update 2 issues the warnings more aggressively.
+
+Sample code that is warned about:
+
+  int64_t val = 1 << retry_num;
+
+Sample fix:
+
+  int64_t val = static_cast<int64_t>(1) << retry_num;
+
+or (if retry_num is guaranteed to be small enough):
+
+  int val = 1 << retry_num;
+
+We could suppress the warnings, but I think they are good-ish warnings
+so I'd rather not do that.
+
+TBR=jam@chromium.org
+BUG=440500
+
+Review URL: https://codereview.chromium.org/1774003002
+
+Cr-Commit-Position: refs/heads/master@{#379984}
+---
+ chrome/browser/permissions/permission_uma_util.cc | 3 +--
+ components/drive/job_scheduler.cc                 | 3 ++-
+ google_apis/gaia/oauth2_token_service.cc          | 2 +-
+ media/cast/net/rtcp/rtcp_unittest.cc              | 2 +-
+ 4 files changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/chrome/browser/permissions/permission_uma_util.cc b/chrome/browser/permissions/permission_uma_util.cc
+index 77b5f09..f424e9e 100644
+--- chrome/browser/permissions/permission_uma_util.cc
++++ chrome/browser/permissions/permission_uma_util.cc
+@@ -178,8 +178,7 @@ void RecordPermissionAction(PermissionType permission,
+   sample->SetStringField("Port", requesting_origin.port());
+   sample->SetStringField("Domain",
+       rappor::GetDomainAndRegistrySampleFromGURL(requesting_origin));
+-  sample->SetFlagsField("Actions",
+-                        1 << action,
++  sample->SetFlagsField("Actions", static_cast<uint64_t>(1) << action,
+                         PermissionAction::PERMISSION_ACTION_NUM);
+   rappor_service->RecordSampleObj("Permissions.Action." + permission_str,
+                                   std::move(sample));
+diff --git a/components/drive/job_scheduler.cc b/components/drive/job_scheduler.cc
+index a422e1d..254a189 100644
+--- components/drive/job_scheduler.cc
++++ components/drive/job_scheduler.cc
+@@ -861,7 +861,8 @@ void JobScheduler::UpdateWait() {
+ 
+   // Exponential backoff: https://developers.google.com/drive/handle-errors.
+   base::TimeDelta delay =
+-      base::TimeDelta::FromSeconds(1 << (throttle_count_ - 1)) +
++      base::TimeDelta::FromSeconds(static_cast<int64_t>(1)
++                                   << (throttle_count_ - 1)) +
+       base::TimeDelta::FromMilliseconds(base::RandInt(0, 1000));
+   VLOG(1) << "Throttling for " << delay.InMillisecondsF();
+ 
+diff --git a/google_apis/gaia/oauth2_token_service.cc b/google_apis/gaia/oauth2_token_service.cc
+index e146ca9..def534a 100644
+--- google_apis/gaia/oauth2_token_service.cc
++++ google_apis/gaia/oauth2_token_service.cc
+@@ -310,7 +310,7 @@ void OAuth2TokenService::Fetcher::OnGetTokenFailure(
+ int64_t OAuth2TokenService::Fetcher::ComputeExponentialBackOffMilliseconds(
+     int retry_num) {
+   DCHECK(retry_num < max_fetch_retry_num_);
+-  int64_t exponential_backoff_in_seconds = 1 << retry_num;
++  int exponential_backoff_in_seconds = 1 << retry_num;
+   // Returns a backoff with randomness < 1000ms
+   return (exponential_backoff_in_seconds + base::RandDouble()) * 1000;
+ }
+diff --git a/media/cast/net/rtcp/rtcp_unittest.cc b/media/cast/net/rtcp/rtcp_unittest.cc
+index f26f935..cf98208 100644
+--- media/cast/net/rtcp/rtcp_unittest.cc
++++ media/cast/net/rtcp/rtcp_unittest.cc
+@@ -189,7 +189,7 @@ TEST_F(RtcpTest, RoundTripTimesDeterminedFromReportPingPong) {
+   base::TimeDelta expected_rtt_according_to_sender;
+   for (int i = 0; i < iterations; ++i) {
+     const base::TimeDelta one_way_trip_time =
+-        base::TimeDelta::FromMilliseconds(1 << i);
++        base::TimeDelta::FromMilliseconds(static_cast<int64_t>(1) << i);
+     sender_to_receiver_.set_packet_delay(one_way_trip_time);
+     receiver_to_sender_.set_packet_delay(one_way_trip_time);
+ 
+-- 
+2.9.2.windows.1
+
