@@ -1,0 +1,16 @@
+7905898babc9c66a32940cbf61b2c0117e753763
+ printing/printing_context_system_dialog_win.cc | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git printing/printing_context_system_dialog_win.cc printing/printing_context_system_dialog_win.cc
+index de5d3c4..2e22641 100644
+--- printing/printing_context_system_dialog_win.cc
++++ printing/printing_context_system_dialog_win.cc
+@@ -52,7 +52,6 @@ void PrintingContextSytemDialogWin::AskUserForSettings(
+ 
+   PRINTPAGERANGE ranges[32];
+   dialog_options.nStartPage = START_PAGE_GENERAL;
+-  max_pages = 0;
+   if (max_pages) {
+     // Default initialize to print all the pages.
+     memset(ranges, 0, sizeof(ranges));
