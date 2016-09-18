@@ -2260,6 +2260,11 @@ typedef struct _cef_pdf_print_settings_t {
   cef_string_t header_footer_url;
 
   ///
+  // Localized date string used in header
+  ///
+  cef_string_t localized_date;
+
+  ///
   // Output page size in microns. If either of these values is less than or
   // equal to zero then the default paper size (A4) will be used.
   ///

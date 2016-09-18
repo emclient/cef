@@ -871,7 +871,8 @@ struct CefPdfPrintSettingsTraits {
 
   static inline void clear(struct_type* s) {
     cef_string_clear(&s->header_footer_title);
-    cef_string_clear(&s->header_footer_url);
+	cef_string_clear(&s->header_footer_url);
+	cef_string_clear(&s->localized_date);
   }
 
   static inline void set(const struct_type* src, struct_type* target,
@@ -881,6 +882,8 @@ struct CefPdfPrintSettingsTraits {
         src->header_footer_title.length, &target->header_footer_title, copy);
     cef_string_set(src->header_footer_url.str, src->header_footer_url.length,
         &target->header_footer_url, copy);
+	cef_string_set(src->localized_date.str, src->localized_date.length,
+		&target->localized_date, copy);
 
     target->page_width = src->page_width;
     target->page_height = src->page_height;

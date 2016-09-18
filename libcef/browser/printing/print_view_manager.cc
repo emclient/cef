@@ -64,6 +64,8 @@ void FillInDictionaryFromPdfPrintSettings(
         CefString(&pdf_settings.header_footer_title).ToString16());
     print_settings.SetString(kSettingHeaderFooterURL,
         CefString(&pdf_settings.header_footer_url).ToString16());
+    print_settings.SetString(kSettingHeaderFooterLocalizedDate,
+        CefString(&pdf_settings.localized_date).ToString16());
   }
 
   if (pdf_settings.page_width > 0 && pdf_settings.page_height > 0) {
