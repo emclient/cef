@@ -649,10 +649,8 @@ void ClientHandler::OnRenderProcessTerminated(CefRefPtr<CefBrowser> browser,
   frame->LoadURL(startup_url_);
 }
 
-bool ClientHandler::IsWordMisspelled(const CefString& word)
+bool ClientHandler::IsWordMisspelled(const CefString& word, bool isMisspelled)
 {
-	if (word.ToString() == "ahoj")
-		langBool_ = true;
 	/*else if (word.ToString() == "шын")
 		langBool_ = false;*/
 	return word.length() < 5;

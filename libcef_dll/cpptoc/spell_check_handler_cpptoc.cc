@@ -38,7 +38,8 @@ void CEF_CALLBACK spell_check_handler_get_language_code(
 }
 
 int CEF_CALLBACK spell_check_handler_is_word_misspelled(
-    struct _cef_spell_check_handler_t* self, const cef_string_t* word) {
+    struct _cef_spell_check_handler_t* self, const cef_string_t* word,
+    int isMisspelled) {
   // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
 
   DCHECK(self);
@@ -51,7 +52,8 @@ int CEF_CALLBACK spell_check_handler_is_word_misspelled(
 
   // Execute
   bool _retval = CefSpellCheckHandlerCppToC::Get(self)->IsWordMisspelled(
-      CefString(word));
+      CefString(word),
+      isMisspelled?true:false);
 
   // Return type: bool
   return _retval;

@@ -32,7 +32,7 @@ class CefSpellCheckHandlerCToCpp
 
   // CefSpellCheckHandler methods.
   void GetLanguageCode(CefString& lang) override;
-  bool IsWordMisspelled(const CefString& word) override;
+  bool IsWordMisspelled(const CefString& word, bool isMisspelled) override;
 };
 
 #endif  // BUILDING_CEF_SHARED

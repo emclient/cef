@@ -24,7 +24,7 @@ public:
 	// Called when a word needs to be checked. Return true if the word is misspelled, otherwise false
 	///
 	/*--cef()--*/
-	virtual bool IsWordMisspelled(const CefString& word) {
+	virtual bool IsWordMisspelled(const CefString& word, bool isMisspelled) {
 		return false;
 	}
 

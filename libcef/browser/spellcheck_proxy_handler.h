@@ -33,6 +33,7 @@ public:
 	void OnTextCheck(
 		int route_id,
 		const base::string16& text,
+		const std::vector<SpellCheckMarker>&, 
 		std::vector<SpellCheckResult>& results) override;
 private:
 

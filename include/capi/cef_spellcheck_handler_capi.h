@@ -67,7 +67,8 @@ typedef struct _cef_spell_check_handler_t {
   // misspelled, otherwise false (0)
   ///
   int (CEF_CALLBACK *is_word_misspelled)(
-      struct _cef_spell_check_handler_t* self, const cef_string_t* word);
+      struct _cef_spell_check_handler_t* self, const cef_string_t* word,
+      int isMisspelled);
 } cef_spell_check_handler_t;
 
 

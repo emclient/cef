@@ -1,0 +1,339 @@
+ chrome/browser/spellchecker/spellcheck_handler.h          |  2 ++
+ chrome/browser/spellchecker/spellcheck_message_filter.cc  |  2 +-
+ chrome/common/spellcheck_messages.h                       |  3 +++
+ chrome/renderer/spellchecker/spellcheck_provider.cc       | 12 ++++++++++++
+ chrome/renderer/spellchecker/spellcheck_provider.h        |  4 +++-
+ content/browser/web_contents/web_contents_impl.cc         | 11 +++++++++++
+ content/browser/web_contents/web_contents_impl.h          |  5 +++++
+ content/public/browser/web_contents.h                     |  3 +++
+ .../core/editing/markers/DocumentMarkerController.cpp     | 15 +++++++++++++++
+ .../core/editing/markers/DocumentMarkerController.h       |  3 ++-
+ .../Source/core/editing/spellcheck/SpellChecker.cpp       |  5 +++++
+ .../WebKit/Source/core/editing/spellcheck/SpellChecker.h  |  1 +
+ third_party/WebKit/Source/web/WebLocalFrameImpl.cpp       |  7 +++++++
+ third_party/WebKit/Source/web/WebLocalFrameImpl.h         |  1 +
+ third_party/WebKit/Source/web/WebRemoteFrameImpl.cpp      |  6 ++++++
+ third_party/WebKit/Source/web/WebRemoteFrameImpl.h        |  1 +
+ third_party/WebKit/public/web/WebFrame.h                  |  3 +++
+ 17 files changed, 81 insertions(+), 3 deletions(-)
+
+diff --git chrome/browser/spellchecker/spellcheck_handler.h chrome/browser/spellchecker/spellcheck_handler.h
+index abc67ec..a03d089 100644
+--- chrome/browser/spellchecker/spellcheck_handler.h
++++ chrome/browser/spellchecker/spellcheck_handler.h
+@@ -9,6 +9,7 @@
+ 
+ #include "base/strings/string16.h"
+ #include "chrome/common/spellcheck_result.h"
++#include "chrome/common/spellcheck_marker.h"
+ 
+ struct SpellCheckResult;
+ 
+@@ -18,6 +19,7 @@ class SpellCheckHandler {
+   virtual void OnTextCheck(
+ 	  int route_id,
+ 	  const base::string16& text,
++	  const std::vector<SpellCheckMarker>&, 
+ 	  std::vector<SpellCheckResult>& results) =0;
+ 
+ };
+diff --git chrome/browser/spellchecker/spellcheck_message_filter.cc chrome/browser/spellchecker/spellcheck_message_filter.cc
+index be1fdc4..29d879b 100644
+--- chrome/browser/spellchecker/spellcheck_message_filter.cc
++++ chrome/browser/spellchecker/spellcheck_message_filter.cc
+@@ -166,7 +166,7 @@ void SpellCheckMessageFilter::OnTextCheckComplete(
+ 		spellcheck->GetFeedbackSender()->OnSpellcheckResults(
+ 			render_process_id_, text, markers, &results_copy);
+ 
+-		handler_->OnTextCheck(route_id, text, results_copy);
++		handler_->OnTextCheck(route_id, text, markers, results_copy);
+ 		
+ 		Send(new SpellCheckMsg_RespondSpellingService(
+ 			route_id, identifier, true, text, results_copy));
+diff --git chrome/common/spellcheck_messages.h chrome/common/spellcheck_messages.h
+index 5071515..d160b1b 100644
+--- chrome/common/spellcheck_messages.h
++++ chrome/common/spellcheck_messages.h
+@@ -118,6 +118,9 @@ IPC_MESSAGE_ROUTED2(SpellCheckHostMsg_NotifyChecked,
+                     base::string16 /* word */,
+                     bool /* true if checked word is misspelled */)
+ 
++IPC_MESSAGE_ROUTED1(SpellCheckHostMsg_MisspelledCountChanged,
++					int)
++
+ #if !defined(USE_BROWSER_SPELLCHECKER)
+ // Asks the Spelling service to check text. When the service finishes checking
+ // the input text, it sends a SpellingCheckMsg_RespondSpellingService with
+diff --git chrome/renderer/spellchecker/spellcheck_provider.cc chrome/renderer/spellchecker/spellcheck_provider.cc
+index 1ec0da0..613351d 100644
+--- chrome/renderer/spellchecker/spellcheck_provider.cc
++++ chrome/renderer/spellchecker/spellcheck_provider.cc
+@@ -22,6 +22,8 @@
+ #include "third_party/WebKit/public/web/WebTextDecorationType.h"
+ #include "third_party/WebKit/public/web/WebView.h"
+ 
++#include "third_party/WebKit/public/web/WebLocalFrame.h"
++
+ using blink::WebElement;
+ using blink::WebFrame;
+ using blink::WebString;
+@@ -48,6 +50,9 @@ SpellCheckProvider::SpellCheckProvider(
+   if (render_view) {  // NULL in unit tests.
+     render_view->GetWebView()->setSpellCheckClient(this);
+     EnableSpellcheck(spellcheck_->IsSpellcheckEnabled());
++
++	WebFrame* frame = render_view->GetWebView()->focusedFrame();
++	localFrame_ = frame->toWebLocalFrame();
+   }
+ }
+ 
+@@ -225,6 +230,13 @@ void SpellCheckProvider::OnRespondSpellingService(
+   // Cache the request and the converted results.
+   last_request_ = line;
+   last_results_.swap(textcheck_results);
++
++  int misspelled = localFrame_->getMisspelledCount();
++  if (lastMisspelledCount != misspelled)
++  {
++	 Send(new SpellCheckHostMsg_MisspelledCountChanged(routing_id(), misspelled));
++  }
++  lastMisspelledCount = misspelled;
+ }
+ #endif
+ 
+diff --git chrome/renderer/spellchecker/spellcheck_provider.h chrome/renderer/spellchecker/spellcheck_provider.h
+index 13d8a2b..0506b60 100644
+--- chrome/renderer/spellchecker/spellcheck_provider.h
++++ chrome/renderer/spellchecker/spellcheck_provider.h
+@@ -127,7 +127,9 @@ class SpellCheckProvider
+ 
+   // Weak pointer to shared (per RenderView) spellcheck data.
+   SpellCheck* spellcheck_;
+-
++  blink::WebLocalFrame* localFrame_;
++  int lastMisspelledCount = 0;
++	  
+   DISALLOW_COPY_AND_ASSIGN(SpellCheckProvider);
+ };
+ 
+diff --git content/browser/web_contents/web_contents_impl.cc content/browser/web_contents/web_contents_impl.cc
+index b1fdea6..c8923b9 100644
+--- content/browser/web_contents/web_contents_impl.cc
++++ content/browser/web_contents/web_contents_impl.cc
+@@ -119,6 +119,7 @@
+ #include "ui/gfx/display.h"
+ #include "ui/gfx/screen.h"
+ #include "ui/gl/gl_switches.h"
++#include "chrome/common/spellcheck_messages.h"
+ 
+ #if defined(OS_ANDROID)
+ #include "content/browser/android/content_video_view.h"
+@@ -676,6 +677,8 @@ bool WebContentsImpl::OnMessageReceived(RenderViewHost* render_view_host,
+     IPC_MESSAGE_HANDLER(ViewHostMsg_OpenDateTimeDialog,
+                         OnOpenDateTimeDialog)
+ #endif
++    IPC_MESSAGE_HANDLER(SpellCheckHostMsg_MisspelledCountChanged,
++						OnMisspelledCountChanged)
+     IPC_MESSAGE_UNHANDLED(handled = false)
+   IPC_END_MESSAGE_MAP()
+   render_view_message_source_ = NULL;
+@@ -2457,6 +2460,14 @@ void WebContentsImpl::Recheck() {
+ 	
+ }
+ 
++int WebContentsImpl::GetMisspelledCount() {
++	return misspelledCount_;
++}
++
++void WebContentsImpl::OnMisspelledCountChanged(int count) {
++	misspelledCount_ = count;
++}
++
+ void WebContentsImpl::NotifyContextMenuClosed(
+     const CustomContextMenuContext& context) {
+   RenderFrameHost* focused_frame = GetFocusedFrame();
+diff --git content/browser/web_contents/web_contents_impl.h content/browser/web_contents/web_contents_impl.h
+index c91c3375..5111412 100644
+--- content/browser/web_contents/web_contents_impl.h
++++ content/browser/web_contents/web_contents_impl.h
+@@ -314,6 +314,7 @@ class CONTENT_EXPORT WebContentsImpl
+   void Replace(const base::string16& word) override;
+   void ReplaceMisspelling(const base::string16& word) override;
+   void Recheck() override;
++  int GetMisspelledCount() override;
+   void NotifyContextMenuClosed(
+       const CustomContextMenuContext& context) override;
+   void ExecuteCustomContextMenuCommand(
+@@ -926,6 +927,8 @@ class CONTENT_EXPORT WebContentsImpl
+   void OnHideValidationMessage();
+   void OnMoveValidationMessage(const gfx::Rect& anchor_in_root_view);
+ 
++  void OnMisspelledCountChanged(int count);
++
+   // Called by derived classes to indicate that we're no longer waiting for a
+   // response. This won't actually update the throbber, but it will get picked
+   // up at the next animation step if the throbber is going.
+@@ -1065,6 +1068,8 @@ class CONTENT_EXPORT WebContentsImpl
+   // is closed.
+   bool created_with_opener_;
+ 
++  int misspelledCount_ = 0;
++
+ #if defined(OS_WIN)
+   gfx::NativeViewAccessible accessible_parent_;
+ #endif
+diff --git content/public/browser/web_contents.h content/public/browser/web_contents.h
+index 8f895a0..ef0f2b0 100644
+--- content/public/browser/web_contents.h
++++ content/public/browser/web_contents.h
+@@ -450,6 +450,9 @@ class WebContents : public PageNavigator,
+ 
+   // Rechecks the current selection.
+   virtual void Recheck() = 0;
++  
++  // Gets the number of misspelled words.
++  virtual int GetMisspelledCount() = 0;
+ 
+   // Let the renderer know that the menu has been closed.
+   virtual void NotifyContextMenuClosed(
+diff --git third_party/WebKit/Source/core/editing/markers/DocumentMarkerController.cpp third_party/WebKit/Source/core/editing/markers/DocumentMarkerController.cpp
+index 74c20b4..543f27a 100644
+--- third_party/WebKit/Source/core/editing/markers/DocumentMarkerController.cpp
++++ third_party/WebKit/Source/core/editing/markers/DocumentMarkerController.cpp
+@@ -428,6 +428,21 @@ DocumentMarkerVector DocumentMarkerController::markers()
+     return result;
+ }
+ 
++int DocumentMarkerController::getMarkersCount(DocumentMarker::MarkerType type)
++{
++	int result = 0;
++	DocumentMarker::MarkerTypeIndex markerListIndex = MarkerTypeToMarkerIndex(type);
++
++	for (MarkerMap::iterator i = m_markers.begin(); i != m_markers.end(); ++i) {
++		MarkerLists* markers = i->value.get();
++		OwnPtrWillBeMember<MarkerList>& list = markers->at(markerListIndex);
++		if (list.get())
++			result += list->size();
++	}
++
++	return result;
++}
++
+ DocumentMarkerVector DocumentMarkerController::markersInRange(const EphemeralRange& range, DocumentMarker::MarkerTypes markerTypes)
+ {
+     if (!possiblyHasMarkers(markerTypes))
+diff --git third_party/WebKit/Source/core/editing/markers/DocumentMarkerController.h third_party/WebKit/Source/core/editing/markers/DocumentMarkerController.h
+index 7cdfc11..163231d 100644
+--- third_party/WebKit/Source/core/editing/markers/DocumentMarkerController.h
++++ third_party/WebKit/Source/core/editing/markers/DocumentMarkerController.h
+@@ -87,7 +87,8 @@ public:
+     DocumentMarker* markerContainingPoint(const LayoutPoint&, DocumentMarker::MarkerType);
+     DocumentMarkerVector markersFor(Node*, DocumentMarker::MarkerTypes = DocumentMarker::AllMarkers());
+     DocumentMarkerVector markersInRange(const EphemeralRange&, DocumentMarker::MarkerTypes);
+-    DocumentMarkerVector markers();
++	DocumentMarkerVector markers();
++	int getMarkersCount(DocumentMarker::MarkerType);
+     Vector<IntRect> renderedRectsForMarkers(DocumentMarker::MarkerType);
+     void updateRenderedRectsForMarkers();
+ 
+diff --git third_party/WebKit/Source/core/editing/spellcheck/SpellChecker.cpp third_party/WebKit/Source/core/editing/spellcheck/SpellChecker.cpp
+index 2e7d354..6f4a406 100644
+--- third_party/WebKit/Source/core/editing/spellcheck/SpellChecker.cpp
++++ third_party/WebKit/Source/core/editing/spellcheck/SpellChecker.cpp
+@@ -916,6 +916,11 @@ void SpellChecker::requestTextChecking(const Element& element)
+     m_spellCheckRequester->requestCheckingFor(SpellCheckRequest::create(TextCheckingTypeSpelling | TextCheckingTypeGrammar, TextCheckingProcessBatch, rangeToCheck, rangeToCheck));
+ }
+ 
++int SpellChecker::getMisspelledCount()
++{
++	return frame().document()->markers().getMarkersCount(DocumentMarker::MarkerType::Spelling);
++}
++
+ DEFINE_TRACE(SpellChecker)
+ {
+     visitor->trace(m_frame);
+diff --git third_party/WebKit/Source/core/editing/spellcheck/SpellChecker.h third_party/WebKit/Source/core/editing/spellcheck/SpellChecker.h
+index 57ae728..5c236c1 100644
+--- third_party/WebKit/Source/core/editing/spellcheck/SpellChecker.h
++++ third_party/WebKit/Source/core/editing/spellcheck/SpellChecker.h
+@@ -86,6 +86,7 @@ public:
+     void cancelCheck();
+     void chunkAndMarkAllMisspellingsAndBadGrammar(Node*);
+     void requestTextChecking(const Element&);
++	int getMisspelledCount();
+ 
+     // Exposed for testing only
+     SpellCheckRequester& spellCheckRequester() const { return *m_spellCheckRequester; }
+diff --git third_party/WebKit/Source/web/WebLocalFrameImpl.cpp third_party/WebKit/Source/web/WebLocalFrameImpl.cpp
+index 03b8be8..8ede9ff 100644
+--- third_party/WebKit/Source/web/WebLocalFrameImpl.cpp
++++ third_party/WebKit/Source/web/WebLocalFrameImpl.cpp
+@@ -1636,6 +1636,13 @@ bool WebLocalFrameImpl::selectionStartHasSpellingMarkerFor(int from, int length)
+     return frame()->spellChecker().selectionStartHasSpellingMarkerFor(from, length);
+ }
+ 
++int WebLocalFrameImpl::getMisspelledCount() const
++{
++    if (!frame())
++        return 0;
++    return frame()->spellChecker().getMisspelledCount();
++}
++
+ WebString WebLocalFrameImpl::layerTreeAsText(bool showDebugInfo) const
+ {
+     if (!frame())
+diff --git third_party/WebKit/Source/web/WebLocalFrameImpl.h third_party/WebKit/Source/web/WebLocalFrameImpl.h
+index d2fd675..370f751 100644
+--- third_party/WebKit/Source/web/WebLocalFrameImpl.h
++++ third_party/WebKit/Source/web/WebLocalFrameImpl.h
+@@ -225,6 +225,7 @@ public:
+     WebRect selectionBoundsRect() const override;
+ 
+     bool selectionStartHasSpellingMarkerFor(int from, int length) const override;
++	int getMisspelledCount() const override;
+     WebString layerTreeAsText(bool showDebugInfo = false) const override;
+ 
+     void registerTestInterface(const WebString& name, WebTestInterfaceFactory*) override;
+diff --git third_party/WebKit/Source/web/WebRemoteFrameImpl.cpp third_party/WebKit/Source/web/WebRemoteFrameImpl.cpp
+index 21637e0..cd5f743d 100644
+--- third_party/WebKit/Source/web/WebRemoteFrameImpl.cpp
++++ third_party/WebKit/Source/web/WebRemoteFrameImpl.cpp
+@@ -698,6 +698,12 @@ bool WebRemoteFrameImpl::selectionStartHasSpellingMarkerFor(int from, int length
+     return false;
+ }
+ 
++int WebRemoteFrameImpl::getMisspelledCount() const
++{
++    ASSERT_NOT_REACHED();
++    return 0;
++}
++
+ WebString WebRemoteFrameImpl::layerTreeAsText(bool showDebugInfo) const
+ {
+     ASSERT_NOT_REACHED();
+diff --git third_party/WebKit/Source/web/WebRemoteFrameImpl.h third_party/WebKit/Source/web/WebRemoteFrameImpl.h
+index 3addd2c..94d441c 100644
+--- third_party/WebKit/Source/web/WebRemoteFrameImpl.h
++++ third_party/WebKit/Source/web/WebRemoteFrameImpl.h
+@@ -165,6 +165,7 @@ public:
+     WebRect selectionBoundsRect() const override;
+ 
+     bool selectionStartHasSpellingMarkerFor(int from, int length) const override;
++    int getMisspelledCount() const override;
+     WebString layerTreeAsText(bool showDebugInfo = false) const override;
+ 
+     WebFrameImplBase* toImplBase() { return this; }
+diff --git third_party/WebKit/public/web/WebFrame.h third_party/WebKit/public/web/WebFrame.h
+index b75211e..8e61ea6 100644
+--- third_party/WebKit/public/web/WebFrame.h
++++ third_party/WebKit/public/web/WebFrame.h
+@@ -680,6 +680,9 @@ public:
+     // Returns true if selection.anchorNode has a marker on range from |from| with |length|.
+     virtual bool selectionStartHasSpellingMarkerFor(int from, int length) const = 0;
+ 
++    // Returns the number of misspelled words
++    virtual int getMisspelledCount() const = 0;
++
+     // Dumps the layer tree, used by the accelerated compositor, in
+     // text form. This is used only by layout tests.
+     virtual WebString layerTreeAsText(bool showDebugInfo = false) const = 0;

@@ -520,6 +520,21 @@ void CEF_CALLBACK browser_host_recheck(struct _cef_browser_host_t* self) {
   CefBrowserHostCppToC::Get(self)->Recheck();
 }
 
+int CEF_CALLBACK browser_host_get_misspelled_count(
+    struct _cef_browser_host_t* self) {
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  DCHECK(self);
+  if (!self)
+    return 0;
+
+  // Execute
+  int _retval = CefBrowserHostCppToC::Get(self)->GetMisspelledCount();
+
+  // Return type: simple
+  return _retval;
+}
+
 int CEF_CALLBACK browser_host_is_window_rendering_disabled(
     struct _cef_browser_host_t* self) {
   // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
@@ -936,6 +951,7 @@ CefBrowserHostCppToC::CefBrowserHostCppToC() {
   GetStruct()->replace_misspelling = browser_host_replace_misspelling;
   GetStruct()->add_word_to_dictionary = browser_host_add_word_to_dictionary;
   GetStruct()->recheck = browser_host_recheck;
+  GetStruct()->get_misspelled_count = browser_host_get_misspelled_count;
   GetStruct()->is_window_rendering_disabled =
       browser_host_is_window_rendering_disabled;
   GetStruct()->was_resized = browser_host_was_resized;

@@ -701,7 +701,11 @@ bool RootWindowWin::OnCommand(UINT id) {
       return true;
     case IDC_NAV_BACK:   // Back button
 		if (CefRefPtr<CefBrowser> browser = GetBrowser())
+		{
 			browser->GetHost()->Recheck();
+			int res = browser->GetHost()->GetMisspelledCount();
+			LOG(INFO) << res;
+		}
       //  browser->GoBack();
       return true;
     case IDC_NAV_FORWARD:  // Forward button

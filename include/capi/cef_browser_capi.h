@@ -452,6 +452,11 @@ typedef struct _cef_browser_host_t {
   void (CEF_CALLBACK *recheck)(struct _cef_browser_host_t* self);
 
   ///
+  // Gets the number of misspelled words.
+  ///
+  int (CEF_CALLBACK *get_misspelled_count)(struct _cef_browser_host_t* self);
+
+  ///
   // Returns true (1) if window rendering is disabled.
   ///
   int (CEF_CALLBACK *is_window_rendering_disabled)(

@@ -446,6 +446,20 @@ void CefBrowserHostCToCpp::Recheck() {
   _struct->recheck(_struct);
 }
 
+int CefBrowserHostCToCpp::GetMisspelledCount() {
+  cef_browser_host_t* _struct = GetStruct();
+  if (CEF_MEMBER_MISSING(_struct, get_misspelled_count))
+    return 0;
+
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  // Execute
+  int _retval = _struct->get_misspelled_count(_struct);
+
+  // Return type: simple
+  return _retval;
+}
+
 bool CefBrowserHostCToCpp::IsWindowRenderingDisabled() {
   cef_browser_host_t* _struct = GetStruct();
   if (CEF_MEMBER_MISSING(_struct, is_window_rendering_disabled))

@@ -862,6 +862,18 @@ void CefBrowserHostImpl::Recheck() {
 		web_contents()->Recheck();
 }
 
+int CefBrowserHostImpl::GetMisspelledCount() {
+	/*if (!CEF_CURRENTLY_ON_UIT()) {
+		CEF_POST_TASK(CEF_UIT,
+			base::Bind(&CefBrowserHostImpl::GetMisspelledCount, this));
+		return 0;
+	}
+*/
+	if (web_contents())
+		return web_contents()->GetMisspelledCount();
+	return 0;
+}
+
 void CefBrowserHostImpl::WasResized() {
   if (!CEF_CURRENTLY_ON_UIT()) {
     CEF_POST_TASK(CEF_UIT, base::Bind(&CefBrowserHostImpl::WasResized, this));

@@ -6,6 +6,7 @@
 
 #include "libcef/browser/browser_host_impl.h"
 #include "chrome/renderer/spellchecker/spellcheck_worditerator.h"
+#include "chrome/common/spellcheck_marker.h"
 
 
 CefSpellCheckProxyHandler::CefSpellCheckProxyHandler(content::RenderProcessHost* host) {
@@ -19,6 +20,7 @@ CefSpellCheckProxyHandler::~CefSpellCheckProxyHandler() {
 void CefSpellCheckProxyHandler::OnTextCheck(
 	int route_id,
 	const base::string16& text,
+	const std::vector<SpellCheckMarker>& markers,
 	std::vector<SpellCheckResult>& results) {
 
 	CefRefPtr<CefBrowserHostImpl> browser = CefBrowserHostImpl::GetBrowserForFrame(host_->GetID(), route_id + 1);	// FIXME. This is not correct, although it works in most cases
@@ -56,7 +58,7 @@ void CefSpellCheckProxyHandler::OnTextCheck(
 			base::string16 split_characters = L".:\0";
 			SpellcheckWordIterator::WordIteratorStatus status;
 			while ((status = iterator_->GetNextWord(&word, &offset, &length)) != SpellcheckWordIterator::WordIteratorStatus::IS_END_OF_TEXT) {
-				
+
 				//LOG(WARNING) << word;
 
 				if (status == SpellcheckWordIterator::WordIteratorStatus::IS_SKIPPABLE)
@@ -73,7 +75,21 @@ void CefSpellCheckProxyHandler::OnTextCheck(
 					{
 						base::string16 w = word.substr(last, counter - last);
 
-						if (handler->IsWordMisspelled(CefString(w.c_str())))
+						bool misspelled = false;
+						for (size_t i = 0; i < markers.size(); i++)
+						{
+							SpellCheckMarker marker = markers.at(i);
+							int markerOffset = (int)marker.offset;
+							if (markerOffset == offset + last)
+							{
+								misspelled = true;
+								break;
+							}
+							if (markerOffset >= offset + counter)
+								break;
+						}
+
+						if (handler->IsWordMisspelled(CefString(w.c_str()), misspelled))
 						{
 							base::string16 replacement;
 							SpellCheckResult result(SpellCheckResult::SPELLING, offset + last, counter - last, replacement);
@@ -85,12 +101,26 @@ void CefSpellCheckProxyHandler::OnTextCheck(
 					wordChar++;
 				}
 
-				
+
 				if (last != counter)
 				{
 					base::string16 w = word.substr(last);
 
-					if (handler->IsWordMisspelled(CefString(w.c_str())))
+					bool misspelled = false;
+					for (size_t i = 0; i < markers.size(); i++)
+					{
+						SpellCheckMarker marker = markers.at(i);
+						int markerOffset = (int)marker.offset;
+						if (markerOffset == offset + last)
+						{
+							misspelled = true;
+							break;
+						}
+						if (markerOffset >= offset + counter)
+							break;
+					}
+
+					if (handler->IsWordMisspelled(CefString(w.c_str()), misspelled))
 					{
 						base::string16 replacement;
 						SpellCheckResult result(SpellCheckResult::SPELLING, offset + last, length - last, replacement);

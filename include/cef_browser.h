@@ -494,6 +494,12 @@ class CefBrowserHost : public virtual CefBase {
   virtual void Recheck() = 0;
 
   ///
+  // Gets the number of misspelled words.
+  ///
+  /*--cef()--*/
+  virtual int GetMisspelledCount() = 0;
+
+  ///
   // Returns true if window rendering is disabled.
   ///
   /*--cef()--*/

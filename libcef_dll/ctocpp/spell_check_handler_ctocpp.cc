@@ -27,7 +27,8 @@ void CefSpellCheckHandlerCToCpp::GetLanguageCode(CefString& lang) {
       lang.GetWritableStruct());
 }
 
-bool CefSpellCheckHandlerCToCpp::IsWordMisspelled(const CefString& word) {
+bool CefSpellCheckHandlerCToCpp::IsWordMisspelled(const CefString& word,
+    bool isMisspelled) {
   cef_spell_check_handler_t* _struct = GetStruct();
   if (CEF_MEMBER_MISSING(_struct, is_word_misspelled))
     return false;
@@ -41,7 +42,8 @@ bool CefSpellCheckHandlerCToCpp::IsWordMisspelled(const CefString& word) {
 
   // Execute
   int _retval = _struct->is_word_misspelled(_struct,
-      word.GetStruct());
+      word.GetStruct(),
+      isMisspelled);
 
   // Return type: bool
   return _retval?true:false;

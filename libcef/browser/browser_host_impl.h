@@ -155,6 +155,7 @@ class CefBrowserHostImpl : public CefBrowserHost,
   void ReplaceMisspelling(const CefString& word) override;
   void AddWordToDictionary(const CefString& word) override;
   void Recheck() override;
+  int GetMisspelledCount() override;
   void WasResized() override;
   void WasHidden(bool hidden) override;
   void NotifyScreenInfoChanged() override;

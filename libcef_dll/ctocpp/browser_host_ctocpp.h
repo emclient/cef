@@ -66,6 +66,7 @@ class CefBrowserHostCToCpp
   void ReplaceMisspelling(const CefString& word) OVERRIDE;
   void AddWordToDictionary(const CefString& word) OVERRIDE;
   void Recheck() OVERRIDE;
+  int GetMisspelledCount() OVERRIDE;
   bool IsWindowRenderingDisabled() OVERRIDE;
   void WasResized() OVERRIDE;
   void WasHidden(bool hidden) OVERRIDE;

@@ -252,7 +252,7 @@ class ClientHandler : public CefClient,
   void OnRenderProcessTerminated(CefRefPtr<CefBrowser> browser,
                                  TerminationStatus status) OVERRIDE;
 
-  bool IsWordMisspelled(const CefString& word) OVERRIDE;
+  bool IsWordMisspelled(const CefString& word, bool isMisspelled) OVERRIDE;
   void GetLanguageCode(CefString& lang) OVERRIDE;
 
   // Returns the number of browsers currently using this handler. Can only be
