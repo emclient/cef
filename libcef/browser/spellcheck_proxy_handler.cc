@@ -17,6 +17,45 @@ CefSpellCheckProxyHandler::CefSpellCheckProxyHandler(content::RenderProcessHost*
 CefSpellCheckProxyHandler::~CefSpellCheckProxyHandler() {
 }
 
+bool CefSpellCheckProxyHandler::isMisspelled(const std::vector<SpellCheckMarker>& markers, const std::vector<int>& wordEndIndexes, int wordStart, int wordEnd)
+{
+	bool misspelled = false;
+	int lastMarkerOffset = 0;
+	int lastFormatBoundary = 0;
+	for (std::size_t i = 0; i < markers.size(); i++)
+	{
+		SpellCheckMarker marker = markers.at(i);
+		int markerOffset = (int)marker.offset;
+		if (markerOffset < lastMarkerOffset)
+		{
+			// there is a format boundary. It can either be a new line or a different font format (font family, bold, italic etc)
+			lastFormatBoundary = lastMarkerOffset;
+			for (std::size_t j = 0; j < wordEndIndexes.size(); j++)
+			{
+				int wordEndIndex = wordEndIndexes.at(j);
+				if (wordEndIndex > lastMarkerOffset)
+				{
+					lastFormatBoundary = wordEndIndex;
+					break;
+				}
+			}
+		}
+
+		lastMarkerOffset = markerOffset;
+		markerOffset += lastFormatBoundary;
+
+		if (markerOffset >= wordStart && markerOffset <= wordEnd)
+		{
+			misspelled = true;
+			break;
+		}
+		if (markerOffset > wordEnd)
+			break;
+	}
+
+	return misspelled;
+}
+
 void CefSpellCheckProxyHandler::OnTextCheck(
 	int route_id,
 	const base::string16& text,
@@ -52,6 +91,9 @@ void CefSpellCheckProxyHandler::OnTextCheck(
 
 			iterator_->SetText(text.c_str(), text.length());
 
+			std::vector<int> wordEndIndexes;
+			wordEndIndexes.push_back(0);	//the first line
+
 			base::string16 word;
 			int offset;
 			int length;
@@ -62,7 +104,10 @@ void CefSpellCheckProxyHandler::OnTextCheck(
 				//LOG(WARNING) << word;
 
 				if (status == SpellcheckWordIterator::WordIteratorStatus::IS_SKIPPABLE)
+				{
+					wordEndIndexes.push_back(offset + length);
 					continue;
+				}
 
 				const wchar_t *wordChar = word.c_str();
 				int counter = 0;
@@ -75,19 +120,7 @@ void CefSpellCheckProxyHandler::OnTextCheck(
 					{
 						base::string16 w = word.substr(last, counter - last);
 
-						bool misspelled = false;
-						for (size_t i = 0; i < markers.size(); i++)
-						{
-							SpellCheckMarker marker = markers.at(i);
-							int markerOffset = (int)marker.offset;
-							if (markerOffset == offset + last)
-							{
-								misspelled = true;
-								break;
-							}
-							if (markerOffset >= offset + counter)
-								break;
-						}
+						bool misspelled = isMisspelled(markers, wordEndIndexes, offset + last, offset + counter);
 
 						if (handler->IsWordMisspelled(CefString(w.c_str()), misspelled))
 						{
@@ -106,19 +139,7 @@ void CefSpellCheckProxyHandler::OnTextCheck(
 				{
 					base::string16 w = word.substr(last);
 
-					bool misspelled = false;
-					for (size_t i = 0; i < markers.size(); i++)
-					{
-						SpellCheckMarker marker = markers.at(i);
-						int markerOffset = (int)marker.offset;
-						if (markerOffset == offset + last)
-						{
-							misspelled = true;
-							break;
-						}
-						if (markerOffset >= offset + counter)
-							break;
-					}
+					bool misspelled = isMisspelled(markers, wordEndIndexes, offset + last, offset + counter);
 
 					if (handler->IsWordMisspelled(CefString(w.c_str()), misspelled))
 					{

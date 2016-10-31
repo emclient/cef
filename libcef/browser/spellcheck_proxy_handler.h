@@ -37,6 +37,8 @@ public:
 		std::vector<SpellCheckResult>& results) override;
 private:
 
+	bool isMisspelled(const std::vector<SpellCheckMarker>& markers, const std::vector<int>& wordEndIndexes, int wordStart, int wordEnd);
+
 	content::RenderProcessHost* host_;
 	scoped_ptr<SpellcheckWordIterator> iterator_;
 	scoped_ptr<SpellcheckCharAttribute> attribute_;

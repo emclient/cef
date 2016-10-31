@@ -704,6 +704,7 @@ bool RootWindowWin::OnCommand(UINT id) {
 		{
 			browser->GetHost()->Recheck();
 			int res = browser->GetHost()->GetMisspelledCount();
+			browser->GetMainFrame()->ExecuteJavaScript(CefString(L"document.body.innerHTML = 'dolor sit amet dolor sit amet dolor sit amet dolor sit amet'"), CefString(L""), 0);
 			LOG(INFO) << res;
 		}
       //  browser->GoBack();
