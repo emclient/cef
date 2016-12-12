@@ -671,6 +671,20 @@ void CefBrowserHostImpl::Print() {
   }
 }
 
+void CefBrowserHostImpl::PrintWithSettings(const CefString& printerName, const std::vector<CefPageRange>& pages) {
+	if (CEF_CURRENTLY_ON_UIT()) {
+		content::WebContents* actionable_contents = GetActionableWebContents();
+		if (!actionable_contents)
+			return;
+		printing::PrintViewManager::FromWebContents(
+			actionable_contents)->PrintNowWithSettings(printerName, pages);
+	}
+	else {
+		CEF_POST_TASK(CEF_UIT,
+			base::Bind(&CefBrowserHostImpl::Print, this));
+	}
+}
+
 void CefBrowserHostImpl::PrintToPDF(const CefString& path,
                                     const CefPdfPrintSettings& settings,
                                     CefRefPtr<CefPdfPrintCallback> callback) {

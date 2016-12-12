@@ -368,6 +368,13 @@ typedef struct _cef_browser_host_t {
   void (CEF_CALLBACK *print)(struct _cef_browser_host_t* self);
 
   ///
+  // Print the current browser contents on a specified printer
+  ///
+  void (CEF_CALLBACK *print_with_settings)(struct _cef_browser_host_t* self,
+      const cef_string_t* printerName, size_t pagesCount,
+      cef_page_range_t const* pages);
+
+  ///
   // Print the current browser contents to the PDF file specified by |path| and
   // execute |callback| on completion. The caller is responsible for deleting
   // |path| when done. For PDF printing to work on Linux you must implement the

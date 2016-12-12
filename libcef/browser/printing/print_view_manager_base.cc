@@ -68,6 +68,19 @@ PrintViewManagerBase::~PrintViewManagerBase() {
 bool PrintViewManagerBase::PrintNow() {
   return PrintNowInternal(new PrintMsg_PrintPages(routing_id()));
 }
+
+bool PrintViewManagerBase::PrintNowWithSettings(const CefString& printerName, const std::vector<CefPageRange>& pages) {
+	printing::PageRanges ranges = printing::PageRanges();
+	for each (CefPageRange range in pages)
+	{
+		printing::PageRange newRange = printing::PageRange();
+		newRange.from = range.from;
+		newRange.to = range.to;
+		ranges.push_back(newRange);
+	}
+
+	return PrintNowInternal(new PrintMsg_PrintPagesWithSettings(routing_id(), printerName.ToString16(), ranges));
+}
 #endif
 
 void PrintViewManagerBase::UpdateScriptedPrintingBlocked() {

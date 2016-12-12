@@ -5,6 +5,9 @@
 #ifndef CEF_LIBCEF_BROWSER_PRINTING_PRINT_VIEW_MANAGER_BASE_H_
 #define CEF_LIBCEF_BROWSER_PRINTING_PRINT_VIEW_MANAGER_BASE_H_
 
+#include <vector>
+
+#include "include/cef_base.h"
 #include "base/macros.h"
 #include "base/memory/ref_counted.h"
 #include "base/prefs/pref_member.h"
@@ -41,6 +44,11 @@ class PrintViewManagerBase : public content::NotificationObserver,
   // asynchronous, the actual printing will not be completed on the return of
   // this function. Returns false if printing is impossible at the moment.
   virtual bool PrintNow();
+
+  // Prints the current document immediately on a specified printer. Since the rendering is
+  // asynchronous, the actual printing will not be completed on the return of
+  // this function. Returns false if printing is impossible at the moment.
+  virtual bool PrintNowWithSettings(const CefString& printerName, const std::vector<CefPageRange>& pages);
 #endif  // ENABLE_BASIC_PRINTING
 
   // Whether to block scripted printing for our tab or not.

@@ -266,6 +266,43 @@ void CefBrowserHostCToCpp::Print() {
   _struct->print(_struct);
 }
 
+void CefBrowserHostCToCpp::PrintWithSettings(const CefString& printerName,
+    const std::vector<CefPageRange>& pages) {
+  cef_browser_host_t* _struct = GetStruct();
+  if (CEF_MEMBER_MISSING(_struct, print_with_settings))
+    return;
+
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  // Verify param: printerName; type: string_byref_const
+  DCHECK(!printerName.empty());
+  if (printerName.empty())
+    return;
+
+  // Translate param: pages; type: simple_vec_byref_const
+  const size_t pagesCount = pages.size();
+  cef_page_range_t* pagesList = NULL;
+  if (pagesCount > 0) {
+    pagesList = new cef_page_range_t[pagesCount];
+    DCHECK(pagesList);
+    if (pagesList) {
+      for (size_t i = 0; i < pagesCount; ++i) {
+        pagesList[i] = pages[i];
+      }
+    }
+  }
+
+  // Execute
+  _struct->print_with_settings(_struct,
+      printerName.GetStruct(),
+      pagesCount,
+      pagesList);
+
+  // Restore param:pages; type: simple_vec_byref_const
+  if (pagesList)
+    delete [] pagesList;
+}
+
 void CefBrowserHostCToCpp::PrintToPDF(const CefString& path,
     const CefPdfPrintSettings& settings,
     CefRefPtr<CefPdfPrintCallback> callback) {

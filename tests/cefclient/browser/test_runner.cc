@@ -498,48 +498,54 @@ void RunTest(CefRefPtr<CefBrowser> browser, int id) {
     return;
 
   switch (id) {
-    case ID_TESTS_GETSOURCE:
-       RunGetSourceTest(browser);
-      break;
-    case ID_TESTS_GETTEXT:
-      RunGetTextTest(browser);
-      break;
-    case ID_TESTS_WINDOW_NEW:
-      RunNewWindowTest(browser);
-      break;
-    case ID_TESTS_WINDOW_POPUP:
-      RunPopupWindowTest(browser);
-      break;
-    case ID_TESTS_REQUEST:
-      RunRequestTest(browser);
-      break;
-    case ID_TESTS_PLUGIN_INFO:
-      RunPluginInfoTest(browser);
-      break;
-    case ID_TESTS_ZOOM_IN:
-      ModifyZoom(browser, 0.5);
-      break;
-    case ID_TESTS_ZOOM_OUT:
-      ModifyZoom(browser, -0.5);
-      break;
-    case ID_TESTS_ZOOM_RESET:
-      browser->GetHost()->SetZoomLevel(0.0);
-      break;
-    case ID_TESTS_OSR_FPS:
-      PromptFPS(browser);
-      break;
-    case ID_TESTS_OSR_DSF:
-      PromptDSF(browser);
-      break;
-    case ID_TESTS_TRACING_BEGIN:
-      BeginTracing();
-      break;
-    case ID_TESTS_TRACING_END:
-      EndTracing(browser);
-      break;
-    case ID_TESTS_PRINT:
-      browser->GetHost()->Print();
-      break;
+  case ID_TESTS_GETSOURCE:
+	  RunGetSourceTest(browser);
+	  break;
+  case ID_TESTS_GETTEXT:
+	  RunGetTextTest(browser);
+	  break;
+  case ID_TESTS_WINDOW_NEW:
+	  RunNewWindowTest(browser);
+	  break;
+  case ID_TESTS_WINDOW_POPUP:
+	  RunPopupWindowTest(browser);
+	  break;
+  case ID_TESTS_REQUEST:
+	  RunRequestTest(browser);
+	  break;
+  case ID_TESTS_PLUGIN_INFO:
+	  RunPluginInfoTest(browser);
+	  break;
+  case ID_TESTS_ZOOM_IN:
+	  ModifyZoom(browser, 0.5);
+	  break;
+  case ID_TESTS_ZOOM_OUT:
+	  ModifyZoom(browser, -0.5);
+	  break;
+  case ID_TESTS_ZOOM_RESET:
+	  browser->GetHost()->SetZoomLevel(0.0);
+	  break;
+  case ID_TESTS_OSR_FPS:
+	  PromptFPS(browser);
+	  break;
+  case ID_TESTS_OSR_DSF:
+	  PromptDSF(browser);
+	  break;
+  case ID_TESTS_TRACING_BEGIN:
+	  BeginTracing();
+	  break;
+  case ID_TESTS_TRACING_END:
+	  EndTracing(browser);
+	  break;
+  case ID_TESTS_PRINT:
+      {
+		CefPageRange range = CefPageRange();
+		range.from = range.to = 2;
+		std::vector<CefPageRange> ranges = std::vector<CefPageRange>();
+		ranges.push_back(range);
+		browser->GetHost()->PrintWithSettings(L"Microsoft Print to PDF", ranges);
+	  }
+	  break;
     case ID_TESTS_PRINT_TO_PDF:
       PrintToPDF(browser);
       break;

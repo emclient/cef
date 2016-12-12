@@ -407,6 +407,12 @@ class CefBrowserHost : public virtual CefBase {
   virtual void Print() =0;
 
   ///
+  // Print the specifed pages (1-based) of the current browser contents on a specified printer
+  ///
+  /*--cef()--*/
+  virtual void PrintWithSettings(const CefString& printerName, const std::vector<CefPageRange>& pages) = 0;
+
+  ///
   // Print the current browser contents to the PDF file specified by |path| and
   // execute |callback| on completion. The caller is responsible for deleting
   // |path| when done. For PDF printing to work on Linux you must implement the
