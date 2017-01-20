@@ -1,0 +1,16 @@
+ ui/gfx/geometry/dip_util.cc | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git ui/gfx/geometry/dip_util.cc ui/gfx/geometry/dip_util.cc
+index c1efdf5e..d103b79 100644
+--- ui/gfx/geometry/dip_util.cc
++++ ui/gfx/geometry/dip_util.cc
+@@ -27,7 +27,7 @@ Size ConvertSizeToDIP(float scale_factor, const Size& size_in_pixel) {
+ }
+ 
+ Rect ConvertRectToDIP(float scale_factor, const Rect& rect_in_pixel) {
+-  return ToFlooredRectDeprecated(
++  return ToEnclosingRect(
+       ScaleRect(RectF(rect_in_pixel), 1.0f / scale_factor));
+ }
+ 
