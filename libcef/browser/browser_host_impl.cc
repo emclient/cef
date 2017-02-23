@@ -1369,6 +1369,17 @@ void CefBrowserHostImpl::CancelContextMenu() {
     menu_manager_->CancelContextMenu();
 }
 
+void CefBrowserHostImpl::AddVisitedURL(const CefString& url) {
+	scoped_refptr<CefBrowserContext> context =
+		static_cast<CefBrowserContext*>(web_contents()->GetBrowserContext());
+	if (!context.get())
+		return;
+
+	std::vector<GURL> vector;
+	vector.push_back(GURL(url.ToWString()));
+	context->AddVisitedURLs(vector);
+}
+
 CefRefPtr<CefFrame> CefBrowserHostImpl::GetFrameForRequest(
     net::URLRequest* request) {
   CEF_REQUIRE_IOT();

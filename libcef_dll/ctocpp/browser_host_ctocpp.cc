@@ -1,4 +1,4 @@
-// Copyright (c) 2016 The Chromium Embedded Framework Authors. All rights
+// Copyright (c) 2017 The Chromium Embedded Framework Authors. All rights
 // reserved. Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
 //
@@ -795,6 +795,23 @@ void CefBrowserHostCToCpp::DragSourceSystemDragEnded() {
 
   // Execute
   _struct->drag_source_system_drag_ended(_struct);
+}
+
+void CefBrowserHostCToCpp::AddVisitedURL(const CefString& url) {
+  cef_browser_host_t* _struct = GetStruct();
+  if (CEF_MEMBER_MISSING(_struct, add_visited_url))
+    return;
+
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  // Verify param: url; type: string_byref_const
+  DCHECK(!url.empty());
+  if (url.empty())
+    return;
+
+  // Execute
+  _struct->add_visited_url(_struct,
+      url.GetStruct());
 }
 
 

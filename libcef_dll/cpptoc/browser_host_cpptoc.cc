@@ -1,4 +1,4 @@
-// Copyright (c) 2016 The Chromium Embedded Framework Authors. All rights
+// Copyright (c) 2017 The Chromium Embedded Framework Authors. All rights
 // reserved. Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
 //
@@ -951,6 +951,23 @@ void CEF_CALLBACK browser_host_drag_source_system_drag_ended(
   CefBrowserHostCppToC::Get(self)->DragSourceSystemDragEnded();
 }
 
+void CEF_CALLBACK browser_host_add_visited_url(struct _cef_browser_host_t* self,
+    const cef_string_t* url) {
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  DCHECK(self);
+  if (!self)
+    return;
+  // Verify param: url; type: string_byref_const
+  DCHECK(url);
+  if (!url)
+    return;
+
+  // Execute
+  CefBrowserHostCppToC::Get(self)->AddVisitedURL(
+      CefString(url));
+}
+
 }  // namespace
 
 
@@ -1016,6 +1033,7 @@ CefBrowserHostCppToC::CefBrowserHostCppToC() {
   GetStruct()->drag_source_ended_at = browser_host_drag_source_ended_at;
   GetStruct()->drag_source_system_drag_ended =
       browser_host_drag_source_system_drag_ended;
+  GetStruct()->add_visited_url = browser_host_add_visited_url;
 }
 
 template<> CefRefPtr<CefBrowserHost> CefCppToC<CefBrowserHostCppToC,

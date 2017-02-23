@@ -212,6 +212,8 @@ class CefBrowserHostImpl : public CefBrowserHost,
       CefProcessId target_process,
       CefRefPtr<CefProcessMessage> message) override;
 
+  void AddVisitedURL(const CefString& url) override;
+
   // Returns true if windowless rendering is enabled.
   bool IsWindowless() const;
 
@@ -224,6 +226,7 @@ class CefBrowserHostImpl : public CefBrowserHost,
 
   // Cancel display of the context menu, if any.
   void CancelContextMenu();
+	  
 
 #if defined(USE_AURA)
   // Returns the Widget owner for the browser window. Only used with windowed

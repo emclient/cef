@@ -1,4 +1,4 @@
-// Copyright (c) 2016 The Chromium Embedded Framework Authors. All rights
+// Copyright (c) 2017 The Chromium Embedded Framework Authors. All rights
 // reserved. Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
 //
@@ -96,6 +96,7 @@ class CefBrowserHostCToCpp
   void DragTargetDrop(const CefMouseEvent& event) OVERRIDE;
   void DragSourceEndedAt(int x, int y, DragOperationsMask op) OVERRIDE;
   void DragSourceSystemDragEnded() OVERRIDE;
+  void AddVisitedURL(const CefString& url) OVERRIDE;
 };
 
 #endif  // USING_CEF_SHARED

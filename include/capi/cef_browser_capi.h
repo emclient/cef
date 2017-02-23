@@ -1,4 +1,4 @@
-// Copyright (c) 2016 Marshall A. Greenblatt. All rights reserved.
+// Copyright (c) 2017 Marshall A. Greenblatt. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -368,7 +368,8 @@ typedef struct _cef_browser_host_t {
   void (CEF_CALLBACK *print)(struct _cef_browser_host_t* self);
 
   ///
-  // Print the current browser contents on a specified printer
+  // Print the specifed pages (1-based) of the current browser contents on a
+  // specified printer
   ///
   void (CEF_CALLBACK *print_with_settings)(struct _cef_browser_host_t* self,
       const cef_string_t* printerName, size_t pagesCount,
@@ -656,6 +657,12 @@ typedef struct _cef_browser_host_t {
   ///
   void (CEF_CALLBACK *drag_source_system_drag_ended)(
       struct _cef_browser_host_t* self);
+
+  ///
+  // Inserts an url into the list of visited urls
+  ///
+  void (CEF_CALLBACK *add_visited_url)(struct _cef_browser_host_t* self,
+      const cef_string_t* url);
 } cef_browser_host_t;
 
 

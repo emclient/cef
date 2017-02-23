@@ -705,6 +705,12 @@ class CefBrowserHost : public virtual CefBase {
   ///
   /*--cef()--*/
   virtual void DragSourceSystemDragEnded() =0;
+
+  ///
+  // Inserts an url into the list of visited urls
+  ///
+  /*--cef()--*/
+  virtual void AddVisitedURL(const CefString& url) = 0;
 };
 
 #endif  // CEF_INCLUDE_CEF_BROWSER_H_
