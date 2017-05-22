@@ -135,7 +135,9 @@ class CefBrowserHostImpl : public CefBrowserHost,
       CefRefPtr<CefRunFileDialogCallback> callback) override;
   void StartDownload(const CefString& url) override;
   void Print() override;
+  void PrintWithCallback(CefRefPtr<CefPrintCallback> callback) override;
   void PrintWithSettings(const CefString& printerName, const std::vector<CefPageRange>& pages) override;
+  void PrintWithSettingsAndCallback(const CefString& printerName, const std::vector<CefPageRange>& pages, CefRefPtr<CefPrintCallback> callback) override;
   void PrintToPDF(const CefString& path,
                   const CefPdfPrintSettings& settings,
                   CefRefPtr<CefPdfPrintCallback> callback) override;

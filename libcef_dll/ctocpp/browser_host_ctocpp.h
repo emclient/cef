@@ -50,8 +50,12 @@ class CefBrowserHostCToCpp
       CefRefPtr<CefRunFileDialogCallback> callback) OVERRIDE;
   void StartDownload(const CefString& url) OVERRIDE;
   void Print() OVERRIDE;
+  void PrintWithCallback(CefRefPtr<CefPrintCallback> callback) OVERRIDE;
   void PrintWithSettings(const CefString& printerName,
       const std::vector<CefPageRange>& pages) OVERRIDE;
+  void PrintWithSettingsAndCallback(const CefString& printerName,
+      const std::vector<CefPageRange>& pages,
+      CefRefPtr<CefPrintCallback> callback) OVERRIDE;
   void PrintToPDF(const CefString& path, const CefPdfPrintSettings& settings,
       CefRefPtr<CefPdfPrintCallback> callback) OVERRIDE;
   void Find(int identifier, const CefString& searchText, bool forward,

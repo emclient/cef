@@ -659,29 +659,50 @@ void CefBrowserHostImpl::StartDownload(const CefString& url) {
 }
 
 void CefBrowserHostImpl::Print() {
+	PrintWithCallback(NULL);
+}
+
+void CefBrowserHostImpl::PrintWithCallback(CefRefPtr<CefPrintCallback> callback) {
   if (CEF_CURRENTLY_ON_UIT()) {
     content::WebContents* actionable_contents = GetActionableWebContents();
     if (!actionable_contents)
       return;
-    printing::PrintViewManager::FromWebContents(
-        actionable_contents)->PrintNow();
+
+	printing::PrintViewManager::PrintCallback print_callback;
+	if (callback.get()) {
+		print_callback = base::Bind(&CefPrintCallback::OnPrintFinished,
+			callback.get());
+	}
+
+    printing::PrintViewManager::FromWebContents(actionable_contents)->
+		PrintNow(print_callback);
   } else {
     CEF_POST_TASK(CEF_UIT,
-        base::Bind(&CefBrowserHostImpl::Print, this));
+        base::Bind(&CefBrowserHostImpl::PrintWithCallback, this, callback));
   }
 }
 
 void CefBrowserHostImpl::PrintWithSettings(const CefString& printerName, const std::vector<CefPageRange>& pages) {
+	PrintWithSettingsAndCallback(printerName, pages, NULL);
+}
+
+void CefBrowserHostImpl::PrintWithSettingsAndCallback(const CefString& printerName, const std::vector<CefPageRange>& pages, CefRefPtr<CefPrintCallback> callback) {
 	if (CEF_CURRENTLY_ON_UIT()) {
 		content::WebContents* actionable_contents = GetActionableWebContents();
 		if (!actionable_contents)
-			return;
-		printing::PrintViewManager::FromWebContents(
-			actionable_contents)->PrintNowWithSettings(printerName, pages);
+			return; 
+
+		printing::PrintViewManager::PrintCallback print_callback;
+		if (callback.get()) {
+			print_callback = base::Bind(&CefPrintCallback::OnPrintFinished,
+				callback.get());
+		}
+		printing::PrintViewManager::FromWebContents(actionable_contents)->
+			PrintNowWithSettings(printerName, pages, print_callback);
 	}
 	else {
 		CEF_POST_TASK(CEF_UIT,
-			base::Bind(&CefBrowserHostImpl::Print, this));
+			base::Bind(&CefBrowserHostImpl::PrintWithSettingsAndCallback, this, printerName, pages, callback));
 	}
 }
 

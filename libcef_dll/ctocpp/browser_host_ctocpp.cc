@@ -13,6 +13,7 @@
 #include "libcef_dll/cpptoc/client_cpptoc.h"
 #include "libcef_dll/cpptoc/navigation_entry_visitor_cpptoc.h"
 #include "libcef_dll/cpptoc/pdf_print_callback_cpptoc.h"
+#include "libcef_dll/cpptoc/print_callback_cpptoc.h"
 #include "libcef_dll/cpptoc/run_file_dialog_callback_cpptoc.h"
 #include "libcef_dll/ctocpp/browser_ctocpp.h"
 #include "libcef_dll/ctocpp/browser_host_ctocpp.h"
@@ -266,6 +267,24 @@ void CefBrowserHostCToCpp::Print() {
   _struct->print(_struct);
 }
 
+void CefBrowserHostCToCpp::PrintWithCallback(
+    CefRefPtr<CefPrintCallback> callback) {
+  cef_browser_host_t* _struct = GetStruct();
+  if (CEF_MEMBER_MISSING(_struct, print_with_callback))
+    return;
+
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  // Verify param: callback; type: refptr_diff
+  DCHECK(callback.get());
+  if (!callback.get())
+    return;
+
+  // Execute
+  _struct->print_with_callback(_struct,
+      CefPrintCallbackCppToC::Wrap(callback));
+}
+
 void CefBrowserHostCToCpp::PrintWithSettings(const CefString& printerName,
     const std::vector<CefPageRange>& pages) {
   cef_browser_host_t* _struct = GetStruct();
@@ -297,6 +316,49 @@ void CefBrowserHostCToCpp::PrintWithSettings(const CefString& printerName,
       printerName.GetStruct(),
       pagesCount,
       pagesList);
+
+  // Restore param:pages; type: simple_vec_byref_const
+  if (pagesList)
+    delete [] pagesList;
+}
+
+void CefBrowserHostCToCpp::PrintWithSettingsAndCallback(
+    const CefString& printerName, const std::vector<CefPageRange>& pages,
+    CefRefPtr<CefPrintCallback> callback) {
+  cef_browser_host_t* _struct = GetStruct();
+  if (CEF_MEMBER_MISSING(_struct, print_with_settings_and_callback))
+    return;
+
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  // Verify param: printerName; type: string_byref_const
+  DCHECK(!printerName.empty());
+  if (printerName.empty())
+    return;
+  // Verify param: callback; type: refptr_diff
+  DCHECK(callback.get());
+  if (!callback.get())
+    return;
+
+  // Translate param: pages; type: simple_vec_byref_const
+  const size_t pagesCount = pages.size();
+  cef_page_range_t* pagesList = NULL;
+  if (pagesCount > 0) {
+    pagesList = new cef_page_range_t[pagesCount];
+    DCHECK(pagesList);
+    if (pagesList) {
+      for (size_t i = 0; i < pagesCount; ++i) {
+        pagesList[i] = pages[i];
+      }
+    }
+  }
+
+  // Execute
+  _struct->print_with_settings_and_callback(_struct,
+      printerName.GetStruct(),
+      pagesCount,
+      pagesList,
+      CefPrintCallbackCppToC::Wrap(callback));
 
   // Restore param:pages; type: simple_vec_byref_const
   if (pagesList)

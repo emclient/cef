@@ -252,6 +252,25 @@ typedef struct _cef_pdf_print_callback_t {
 
 
 ///
+// Callback structure for cef_browser_host_t::Print. The functions of this
+// structure will be called on the browser process UI thread.
+///
+typedef struct _cef_print_callback_t {
+  ///
+  // Base structure.
+  ///
+  cef_base_t base;
+
+  ///
+  // Method that will be executed when the printing has completed. |ok| will be
+  // true (1) if the printing completed successfully or false (0) otherwise.
+  ///
+  void (CEF_CALLBACK *on_print_finished)(struct _cef_print_callback_t* self,
+      int ok);
+} cef_print_callback_t;
+
+
+///
 // Structure used to represent the browser process aspects of a browser window.
 // The functions of this structure can only be called in the browser process.
 // They may be called on any thread in that process unless otherwise indicated
@@ -368,12 +387,27 @@ typedef struct _cef_browser_host_t {
   void (CEF_CALLBACK *print)(struct _cef_browser_host_t* self);
 
   ///
+  // Print the current browser contents.
+  ///
+  void (CEF_CALLBACK *print_with_callback)(struct _cef_browser_host_t* self,
+      struct _cef_print_callback_t* callback);
+
+  ///
   // Print the specifed pages (1-based) of the current browser contents on a
   // specified printer
   ///
   void (CEF_CALLBACK *print_with_settings)(struct _cef_browser_host_t* self,
       const cef_string_t* printerName, size_t pagesCount,
       cef_page_range_t const* pages);
+
+  ///
+  // Print the specifed pages (1-based) of the current browser contents on a
+  // specified printer
+  ///
+  void (CEF_CALLBACK *print_with_settings_and_callback)(
+      struct _cef_browser_host_t* self, const cef_string_t* printerName,
+      size_t pagesCount, cef_page_range_t const* pages,
+      struct _cef_print_callback_t* callback);
 
   ///
   // Print the current browser contents to the PDF file specified by |path| and

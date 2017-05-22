@@ -252,6 +252,22 @@ class CefPdfPrintCallback : public virtual CefBase {
 
 
 ///
+// Callback interface for CefBrowserHost::Print. The methods of this class
+// will be called on the browser process UI thread.
+///
+/*--cef(source=client)--*/
+class CefPrintCallback : public virtual CefBase {
+public:
+	///
+	// Method that will be executed when the printing has completed. |ok| will be true if the printing completed
+	// successfully or false otherwise.
+	///
+	/*--cef()--*/
+	virtual void OnPrintFinished(bool ok) = 0;
+};
+
+
+///
 // Class used to represent the browser process aspects of a browser window. The
 // methods of this class can only be called in the browser process. They may be
 // called on any thread in that process unless otherwise indicated in the
@@ -405,12 +421,24 @@ class CefBrowserHost : public virtual CefBase {
   ///
   /*--cef()--*/
   virtual void Print() =0;
+  
+  ///
+  // Print the current browser contents.
+  ///
+  /*--cef()--*/
+  virtual void PrintWithCallback(CefRefPtr<CefPrintCallback> callback) = 0;
 
   ///
   // Print the specifed pages (1-based) of the current browser contents on a specified printer
   ///
   /*--cef()--*/
   virtual void PrintWithSettings(const CefString& printerName, const std::vector<CefPageRange>& pages) = 0;
+
+  ///
+  // Print the specifed pages (1-based) of the current browser contents on a specified printer
+  ///
+  /*--cef()--*/
+  virtual void PrintWithSettingsAndCallback(const CefString& printerName, const std::vector<CefPageRange>& pages, CefRefPtr<CefPrintCallback> callback) = 0;
 
   ///
   // Print the current browser contents to the PDF file specified by |path| and

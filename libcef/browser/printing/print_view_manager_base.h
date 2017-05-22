@@ -39,16 +39,23 @@ class PrintViewManagerBase : public content::NotificationObserver,
  public:
   ~PrintViewManagerBase() override;
 
+  // Callback executed on printing completion.
+  typedef base::Callback<void(bool /*ok*/)> PrintCallback;
+
 #if defined(ENABLE_BASIC_PRINTING)
   // Prints the current document immediately. Since the rendering is
   // asynchronous, the actual printing will not be completed on the return of
   // this function. Returns false if printing is impossible at the moment.
-  virtual bool PrintNow();
+  virtual bool PrintNow(); 
+  
+  virtual bool PrintNow(const PrintCallback& callback);
 
   // Prints the current document immediately on a specified printer. Since the rendering is
   // asynchronous, the actual printing will not be completed on the return of
   // this function. Returns false if printing is impossible at the moment.
   virtual bool PrintNowWithSettings(const CefString& printerName, const std::vector<CefPageRange>& pages);
+
+  virtual bool PrintNowWithSettings(const CefString& printerName, const std::vector<CefPageRange>& pages, const PrintCallback& callback);
 #endif  // ENABLE_BASIC_PRINTING
 
   // Whether to block scripted printing for our tab or not.
@@ -62,6 +69,9 @@ class PrintViewManagerBase : public content::NotificationObserver,
 
   // Helper method for Print*Now().
   bool PrintNowInternal(IPC::Message* message);
+
+  // Helper method for Print*Now().
+  bool PrintNowInternal(IPC::Message* message, const PrintCallback& callback);
 
   // Cancels the print job.
   void NavigationStopped() override;
@@ -158,6 +168,7 @@ class PrintViewManagerBase : public content::NotificationObserver,
 
   // Whether printing is enabled.
   BooleanPrefMember printing_enabled_;
+  PrintCallback print_callback_;
 
   scoped_refptr<printing::PrintQueriesQueue> queue_;
 

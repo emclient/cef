@@ -66,10 +66,16 @@ PrintViewManagerBase::~PrintViewManagerBase() {
 
 #if defined(ENABLE_BASIC_PRINTING)
 bool PrintViewManagerBase::PrintNow() {
-  return PrintNowInternal(new PrintMsg_PrintPages(routing_id()));
+  return PrintNowInternal(new PrintMsg_PrintPages(routing_id()), PrintCallback());
+}
+bool PrintViewManagerBase::PrintNow(const PrintCallback& callback) {
+  return PrintNowInternal(new PrintMsg_PrintPages(routing_id()), callback);
 }
 
 bool PrintViewManagerBase::PrintNowWithSettings(const CefString& printerName, const std::vector<CefPageRange>& pages) {
+	return PrintNowWithSettings(printerName, pages, PrintCallback());
+}
+bool PrintViewManagerBase::PrintNowWithSettings(const CefString& printerName, const std::vector<CefPageRange>& pages, const PrintCallback& callback) {
 	printing::PageRanges ranges = printing::PageRanges();
 	for each (CefPageRange range in pages)
 	{
@@ -79,7 +85,7 @@ bool PrintViewManagerBase::PrintNowWithSettings(const CefString& printerName, co
 		ranges.push_back(newRange);
 	}
 
-	return PrintNowInternal(new PrintMsg_PrintPagesWithSettings(routing_id(), printerName.ToString16(), ranges));
+	return PrintNowInternal(new PrintMsg_PrintPagesWithSettings(routing_id(), printerName.ToString16(), ranges), callback);
 }
 #endif
 
@@ -250,6 +256,13 @@ void PrintViewManagerBase::OnNotifyPrintJobEvent(
           chrome::NOTIFICATION_PRINT_JOB_RELEASED,
           content::Source<content::WebContents>(web_contents()),
           content::NotificationService::NoDetails());
+
+	  if (!print_callback_.is_null())
+	  {
+		  BrowserThread::PostTask(BrowserThread::UI,
+			  FROM_HERE,
+			  base::Bind(print_callback_, false));
+	  }
       break;
     }
     case JobEventDetails::USER_INIT_DONE:
@@ -264,9 +277,17 @@ void PrintViewManagerBase::OnNotifyPrintJobEvent(
     }
     case JobEventDetails::NEW_DOC:
     case JobEventDetails::NEW_PAGE:
-    case JobEventDetails::PAGE_DONE:
-    case JobEventDetails::DOC_DONE: {
+    case JobEventDetails::PAGE_DONE:{
       // Don't care about the actual printing process.
+      break;
+    }
+    case JobEventDetails::DOC_DONE: {
+		if (!print_callback_.is_null())
+		{
+			BrowserThread::PostTask(BrowserThread::UI,
+				FROM_HERE,
+				base::Bind(print_callback_, true));
+		}
       break;
     }
     case JobEventDetails::JOB_DONE: {
@@ -492,12 +513,19 @@ bool PrintViewManagerBase::OpportunisticallyCreatePrintJob(int cookie) {
 }
 
 bool PrintViewManagerBase::PrintNowInternal(IPC::Message* message) {
+	return PrintNowInternal(message, PrintCallback());
+}
+
+bool PrintViewManagerBase::PrintNowInternal(IPC::Message* message, const PrintCallback& callback) {
   // Don't print / print preview interstitials or crashed tabs.
   if (web_contents()->ShowingInterstitialPage() ||
       web_contents()->IsCrashed()) {
     delete message;
     return false;
   }
+
+  print_callback_ = callback;
+
   return Send(message);
 }
 
