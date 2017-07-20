@@ -28,6 +28,7 @@
 #include "libcef_dll/ctocpp/render_handler_ctocpp.h"
 #include "libcef_dll/ctocpp/request_handler_ctocpp.h"
 #include "libcef_dll/ctocpp/spell_check_handler_ctocpp.h"
+#include "libcef_dll/ctocpp/touch_action_handler_ctocpp.h"
 
 
 // VIRTUAL METHODS - Body may be edited by hand.
@@ -243,6 +244,21 @@ CefRefPtr<CefSpellCheckHandler> CefClientCToCpp::GetSpellCheckHandler() {
 
   // Return type: refptr_same
   return CefSpellCheckHandlerCToCpp::Wrap(_retval);
+}
+
+CefRefPtr<CefTouchActionHandler> CefClientCToCpp::GetTouchActionHandler() {
+  cef_client_t* _struct = GetStruct();
+  if (CEF_MEMBER_MISSING(_struct, get_touch_action_handler))
+    return NULL;
+
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  // Execute
+  cef_touch_action_handler_t* _retval = _struct->get_touch_action_handler(
+      _struct);
+
+  // Return type: refptr_same
+  return CefTouchActionHandlerCToCpp::Wrap(_retval);
 }
 
 bool CefClientCToCpp::OnProcessMessageReceived(CefRefPtr<CefBrowser> browser,

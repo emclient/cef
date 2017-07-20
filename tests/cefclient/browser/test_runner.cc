@@ -539,11 +539,13 @@ void RunTest(CefRefPtr<CefBrowser> browser, int id) {
 	  break;
   case ID_TESTS_PRINT:
       {
-		CefPageRange range = CefPageRange();
+		browser->GetHost()->Print();
+
+		/*CefPageRange range = CefPageRange();
 		range.from = range.to = 2;
 		std::vector<CefPageRange> ranges = std::vector<CefPageRange>();
 		ranges.push_back(range);
-		browser->GetHost()->PrintWithSettings(L"Microsoft Print to PDF", ranges);
+		browser->GetHost()->PrintWithSettings(L"Microsoft Print to PDF", ranges);*/
 	  }
 	  break;
     case ID_TESTS_PRINT_TO_PDF:

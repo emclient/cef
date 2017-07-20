@@ -1,0 +1,373 @@
+ chrome/browser/renderer_preferences_util.cc        |  2 +
+ chrome/common/pref_names.cc                        |  5 ++
+ chrome/common/pref_names.h                         |  2 +
+ .../frame_host/render_frame_host_delegate.h        |  3 ++
+ .../browser/frame_host/render_frame_host_impl.cc   |  6 +++
+ .../browser/frame_host/render_frame_host_impl.h    |  1 +
+ .../touch_selection_controller_client_aura.cc      | 54 ++++++++++++++++------
+ .../renderer_host/render_widget_host_delegate.cc   |  5 ++
+ .../renderer_host/render_widget_host_delegate.h    |  3 ++
+ content/browser/web_contents/web_contents_impl.cc  |  4 ++
+ content/browser/web_contents/web_contents_impl.h   |  2 +
+ content/common/utility_messages.h                  |  4 ++
+ content/public/browser/web_contents_delegate.cc    |  5 ++
+ content/public/browser/web_contents_delegate.h     |  3 ++
+ content/public/common/renderer_preferences.h       |  3 ++
+ content/renderer/render_view_impl.cc               | 19 ++++++++
+ content/renderer/render_view_impl.h                |  1 +
+ 17 files changed, 107 insertions(+), 15 deletions(-)
+
+diff --git chrome/browser/renderer_preferences_util.cc chrome/browser/renderer_preferences_util.cc
+index 4bf2cf91..909409b 100644
+--- chrome/browser/renderer_preferences_util.cc
++++ chrome/browser/renderer_preferences_util.cc
+@@ -61,6 +61,8 @@ void UpdateFromSystemSettings(content::RendererPreferences* prefs,
+     prefs->webrtc_ip_handling_policy =
+         pref_service->GetString(prefs::kWebRTCIPHandlingPolicy);
+   }
++  prefs->use_touch_actions_callback =
++	  pref_service->GetBoolean(prefs::kTouchUseHandler);
+ #endif
+ 
+   double default_zoom_level = 0;
+diff --git chrome/common/pref_names.cc chrome/common/pref_names.cc
+index 15c1cc4..870066d 100644
+--- chrome/common/pref_names.cc
++++ chrome/common/pref_names.cc
+@@ -1399,6 +1399,11 @@ const char kSpellCheckUseSpellingService[] = "spellcheck.use_spelling_service";
+ // String which represents whether we use the spelling service.
+ const char kSpellCheckUseSpellingCallback[] = "spellcheck.use_spelling_callback";
+ 
++
++// Use handler for touch actions instead of handling them
++const char kTouchUseHandler[] = "touch.use.handler";
++
++
+ // Dictionary of schemes used by the external protocol handler.
+ // The value is true if the scheme must be ignored.
+ const char kExcludedSchemes[] = "protocol_handler.excluded_schemes";
+diff --git chrome/common/pref_names.h chrome/common/pref_names.h
+index 552a0a4..f6da11d 100644
+--- chrome/common/pref_names.h
++++ chrome/common/pref_names.h
+@@ -485,6 +485,8 @@ extern const char kSpellCheckDictionary[];
+ extern const char kSpellCheckUseSpellingService[];
+ extern const char kSpellCheckUseSpellingCallback[];
+ 
++extern const char kTouchUseHandler[];
++
+ extern const char kExcludedSchemes[];
+ 
+ extern const char kOptionsWindowLastTabIndex[];
+diff --git content/browser/frame_host/render_frame_host_delegate.h content/browser/frame_host/render_frame_host_delegate.h
+index a2a4c59..29f73be 100644
+--- content/browser/frame_host/render_frame_host_delegate.h
++++ content/browser/frame_host/render_frame_host_delegate.h
+@@ -72,6 +72,9 @@ class CONTENT_EXPORT RenderFrameHostDelegate {
+   virtual void ShowContextMenu(RenderFrameHost* render_frame_host,
+                                const ContextMenuParams& params) {}
+ 
++  virtual void HandleTouchAction(RenderFrameHost* render_frame_host,
++	                           const std::string& action) {}
++
+   // A JavaScript message, confirmation or prompt should be shown.
+   virtual void RunJavaScriptMessage(RenderFrameHost* render_frame_host,
+                                     const base::string16& message,
+diff --git content/browser/frame_host/render_frame_host_impl.cc content/browser/frame_host/render_frame_host_impl.cc
+index f0de4ccf..66ac535 100644
+--- content/browser/frame_host/render_frame_host_impl.cc
++++ content/browser/frame_host/render_frame_host_impl.cc
+@@ -50,6 +50,7 @@
+ #include "content/browser/webui/web_ui_controller_factory_registry.h"
+ #include "content/common/accessibility_messages.h"
+ #include "content/common/frame_messages.h"
++#include "content/common/utility_messages.h"
+ #include "content/common/input_messages.h"
+ #include "content/common/inter_process_time_ticks_converter.h"
+ #include "content/common/navigation_params.h"
+@@ -521,6 +522,7 @@ bool RenderFrameHostImpl::OnMessageReceived(const IPC::Message &msg) {
+     IPC_MESSAGE_HANDLER(FrameHostMsg_BeforeUnload_ACK, OnBeforeUnloadACK)
+     IPC_MESSAGE_HANDLER(FrameHostMsg_SwapOut_ACK, OnSwapOutACK)
+     IPC_MESSAGE_HANDLER(FrameHostMsg_ContextMenu, OnContextMenu)
++    IPC_MESSAGE_HANDLER(TouchMsg_Action, OnTouchAction)
+     IPC_MESSAGE_HANDLER(FrameHostMsg_JavaScriptExecuteResponse,
+                         OnJavaScriptExecuteResponse)
+     IPC_MESSAGE_HANDLER(FrameHostMsg_VisualStateResponse,
+@@ -1326,6 +1328,10 @@ void RenderFrameHostImpl::OnContextMenu(const ContextMenuParams& params) {
+   delegate_->ShowContextMenu(this, validated_params);
+ }
+ 
++void RenderFrameHostImpl::OnTouchAction(const std::string& action) {
++  delegate_->HandleTouchAction(this, action);
++}
++
+ void RenderFrameHostImpl::OnJavaScriptExecuteResponse(
+     int id, const base::ListValue& result) {
+   const base::Value* result_value;
+diff --git content/browser/frame_host/render_frame_host_impl.h content/browser/frame_host/render_frame_host_impl.h
+index b457a07..1ddee86 100644
+--- content/browser/frame_host/render_frame_host_impl.h
++++ content/browser/frame_host/render_frame_host_impl.h
+@@ -577,6 +577,7 @@ class CONTENT_EXPORT RenderFrameHostImpl
+   void OnSwapOutACK();
+   void OnRenderProcessGone(int status, int error_code);
+   void OnContextMenu(const ContextMenuParams& params);
++  void OnTouchAction(const std::string& action);
+   void OnJavaScriptExecuteResponse(int id, const base::ListValue& result);
+   void OnVisualStateResponse(uint64_t id);
+   void OnRunJavaScriptMessage(const base::string16& message,
+diff --git content/browser/renderer_host/input/touch_selection_controller_client_aura.cc content/browser/renderer_host/input/touch_selection_controller_client_aura.cc
+index 88e9663..b5fe1f8 100644
+--- content/browser/renderer_host/input/touch_selection_controller_client_aura.cc
++++ content/browser/renderer_host/input/touch_selection_controller_client_aura.cc
+@@ -9,6 +9,7 @@
+ #include "content/browser/renderer_host/render_widget_host_impl.h"
+ #include "content/browser/renderer_host/render_widget_host_view_aura.h"
+ #include "content/common/view_messages.h"
++#include "content/common/utility_messages.h"
+ #include "content/public/browser/render_view_host.h"
+ #include "content/public/common/context_menu_params.h"
+ #include "ui/aura/client/cursor_client.h"
+@@ -335,24 +336,47 @@ bool TouchSelectionControllerClientAura::IsCommandIdEnabled(
+ void TouchSelectionControllerClientAura::ExecuteCommand(int command_id,
+                                                         int event_flags) {
+   rwhva_->selection_controller()->HideAndDisallowShowingAutomatically();
+-  RenderWidgetHostDelegate* host_delegate =
+-      RenderWidgetHostImpl::From(rwhva_->GetRenderWidgetHost())->delegate();
++
++  RenderWidgetHostImpl* host = RenderWidgetHostImpl::From(rwhva_->GetRenderWidgetHost());
++  RenderWidgetHostDelegate* host_delegate = host->delegate();
+   if (!host_delegate)
+     return;
+ 
+-  switch (command_id) {
+-    case IDS_APP_CUT:
+-      host_delegate->Cut();
+-      break;
+-    case IDS_APP_COPY:
+-      host_delegate->Copy();
+-      break;
+-    case IDS_APP_PASTE:
+-      host_delegate->Paste();
+-      break;
+-    default:
+-      NOTREACHED();
+-      break;
++  RendererPreferences* renderer_prefs = host_delegate->GetMutableRendererPrefs();
++
++  if (renderer_prefs->use_touch_actions_callback)
++  {
++	  switch (command_id) {
++	  case IDS_APP_CUT:
++		  host->Send(new TouchMsg_Action(host->GetRoutingID(), "cut"));
++		  break;
++	  case IDS_APP_COPY:
++		  host->Send(new TouchMsg_Action(host->GetRoutingID(), "copy"));
++		  break;
++	  case IDS_APP_PASTE:
++		  host->Send(new TouchMsg_Action(host->GetRoutingID(), "paste"));
++		  break;
++	  default:
++		  NOTREACHED();
++		  break;
++	  }
++  }
++  else
++  { 
++    switch (command_id) {
++      case IDS_APP_CUT:
++        host_delegate->Cut();
++        break;
++      case IDS_APP_COPY:
++        host_delegate->Copy();
++        break;
++      case IDS_APP_PASTE:
++        host_delegate->Paste();
++        break;
++      default:
++        NOTREACHED();
++        break;
++    }
+   }
+ }
+ 
+diff --git content/browser/renderer_host/render_widget_host_delegate.cc content/browser/renderer_host/render_widget_host_delegate.cc
+index c158a41..5d00725 100644
+--- content/browser/renderer_host/render_widget_host_delegate.cc
++++ content/browser/renderer_host/render_widget_host_delegate.cc
+@@ -29,6 +29,11 @@ BrowserAccessibilityManager*
+   return NULL;
+ }
+ 
++RendererPreferences*
++    RenderWidgetHostDelegate::GetMutableRendererPrefs() {
++  return NULL;
++}
++
+ BrowserAccessibilityManager*
+     RenderWidgetHostDelegate::GetOrCreateRootBrowserAccessibilityManager() {
+   return NULL;
+diff --git content/browser/renderer_host/render_widget_host_delegate.h content/browser/renderer_host/render_widget_host_delegate.h
+index f7fbb0e..37b50ab 100644
+--- content/browser/renderer_host/render_widget_host_delegate.h
++++ content/browser/renderer_host/render_widget_host_delegate.h
+@@ -31,6 +31,7 @@ namespace content {
+ class BrowserAccessibilityManager;
+ class RenderWidgetHostImpl;
+ class RenderWidgetHostInputEventRouter;
++struct RendererPreferences;
+ struct NativeWebKeyboardEvent;
+ 
+ //
+@@ -111,6 +112,8 @@ class CONTENT_EXPORT RenderWidgetHostDelegate {
+   virtual void Paste() = 0;
+   virtual void SelectAll() = 0;
+ 
++  virtual RendererPreferences* GetMutableRendererPrefs();
++
+   // Requests the renderer to move the selection extent to a new position.
+   virtual void MoveRangeSelectionExtent(const gfx::Point& extent) {}
+ 
+diff --git content/browser/web_contents/web_contents_impl.cc content/browser/web_contents/web_contents_impl.cc
+index c8923b9..71727c4 100644
+--- content/browser/web_contents/web_contents_impl.cc
++++ content/browser/web_contents/web_contents_impl.cc
+@@ -3796,6 +3796,10 @@ void WebContentsImpl::ShowContextMenu(RenderFrameHost* render_frame_host,
+   render_view_host_delegate_view_->ShowContextMenu(render_frame_host,
+                                                    context_menu_params);
+ }
++void WebContentsImpl::HandleTouchAction(RenderFrameHost* render_frame_host, const std::string& action) {
++  if (delegate_)
++    delegate_->HandleTouchAction(action);
++}
+ 
+ void WebContentsImpl::RunJavaScriptMessage(
+     RenderFrameHost* render_frame_host,
+diff --git content/browser/web_contents/web_contents_impl.h content/browser/web_contents/web_contents_impl.h
+index 5111412..2360d7a 100644
+--- content/browser/web_contents/web_contents_impl.h
++++ content/browser/web_contents/web_contents_impl.h
+@@ -410,6 +410,8 @@ class CONTENT_EXPORT WebContentsImpl
+   void SwappedOut(RenderFrameHost* render_frame_host) override;
+   void ShowContextMenu(RenderFrameHost* render_frame_host,
+                        const ContextMenuParams& params) override;
++  void HandleTouchAction(RenderFrameHost* render_frame_host, 
++	                     const std::string& action) override;
+   void RunJavaScriptMessage(RenderFrameHost* render_frame_host,
+                             const base::string16& message,
+                             const base::string16& default_prompt,
+diff --git content/common/utility_messages.h content/common/utility_messages.h
+index a76986e..9b5b8e2 100644
+--- content/common/utility_messages.h
++++ content/common/utility_messages.h
+@@ -29,6 +29,10 @@ IPC_MESSAGE_CONTROL0(UtilityMsg_BatchMode_Started)
+ // Tells the utility process that it can shutdown.
+ IPC_MESSAGE_CONTROL0(UtilityMsg_BatchMode_Finished)
+ 
++
++IPC_MESSAGE_ROUTED1(TouchMsg_Action,
++	std::string)
++
+ #if defined(OS_POSIX) && defined(ENABLE_PLUGINS)
+ // Tells the utility process to load each plugin in the order specified by the
+ // vector. It will respond after each load with the WebPluginInfo.
+diff --git content/public/browser/web_contents_delegate.cc content/public/browser/web_contents_delegate.cc
+index 1d03511..ff423fb 100644
+--- content/public/browser/web_contents_delegate.cc
++++ content/public/browser/web_contents_delegate.cc
+@@ -90,6 +90,11 @@ bool WebContentsDelegate::HandleContextMenu(
+   return false;
+ }
+ 
++void WebContentsDelegate::HandleTouchAction(
++	const std::string& action) {
++}
++
++
+ void WebContentsDelegate::ViewSourceForTab(WebContents* source,
+                                            const GURL& page_url) {
+   // Fall back implementation based entirely on the view-source scheme.
+diff --git content/public/browser/web_contents_delegate.h content/public/browser/web_contents_delegate.h
+index 9ffeee9..75ebf66 100644
+--- content/public/browser/web_contents_delegate.h
++++ content/public/browser/web_contents_delegate.h
+@@ -248,6 +248,9 @@ class CONTENT_EXPORT WebContentsDelegate {
+   // Returns true if the context menu operation was handled by the delegate.
+   virtual bool HandleContextMenu(const content::ContextMenuParams& params);
+ 
++  // Handles the touch action.
++  virtual void HandleTouchAction(const std::string& action);
++
+   // Opens source view for given WebContents that is navigated to the given
+   // page url.
+   virtual void ViewSourceForTab(WebContents* source, const GURL& page_url);
+diff --git content/public/common/renderer_preferences.h content/public/common/renderer_preferences.h
+index 975394a..b116e91 100644
+--- content/public/common/renderer_preferences.h
++++ content/public/common/renderer_preferences.h
+@@ -140,6 +140,9 @@ struct CONTENT_EXPORT RendererPreferences {
+   // Country iso of the mobile network for content detection purpose.
+   std::string network_contry_iso;
+ 
++  // Use callback for touch actions, do not handle them
++  bool use_touch_actions_callback;
++
+ #if defined(OS_WIN)
+   // The default system font settings for caption, small caption, menu and
+   // status messages. Used only by Windows.
+diff --git content/renderer/render_view_impl.cc content/renderer/render_view_impl.cc
+index 0a88250..feb9c36 100644
+--- content/renderer/render_view_impl.cc
++++ content/renderer/render_view_impl.cc
+@@ -51,6 +51,7 @@
+ #include "content/common/site_isolation_policy.h"
+ #include "content/common/ssl_status_serialization.h"
+ #include "content/common/view_messages.h"
++#include "content/common/utility_messages.h"
+ #include "content/public/common/bindings_policy.h"
+ #include "content/public/common/content_client.h"
+ #include "content/public/common/content_constants.h"
+@@ -1376,6 +1377,7 @@ bool RenderViewImpl::OnMessageReceived(const IPC::Message& message) {
+     IPC_MESSAGE_HANDLER(ViewMsg_PluginActionAt, OnPluginActionAt)
+     IPC_MESSAGE_HANDLER(ViewMsg_SetActive, OnSetActive)
+     IPC_MESSAGE_HANDLER(ViewMsg_ShowContextMenu, OnShowContextMenu)
++	IPC_MESSAGE_HANDLER(TouchMsg_Action, OnTouchAction)
+     // TODO(viettrungluu): Move to a separate message filter.
+     IPC_MESSAGE_HANDLER(ViewMsg_SetHistoryOffsetAndLength,
+                         OnSetHistoryOffsetAndLength)
+@@ -3524,6 +3526,23 @@ void RenderViewImpl::OnShowContextMenu(
+   has_host_context_menu_location_ = false;
+ }
+ 
++
++void RenderViewImpl::OnTouchAction(const std::string& action) {
++
++  if (!webview())
++  	return;
++  WebFrame* frame = webview()->focusedFrame();
++  if (!frame)
++  	frame = webview()->mainFrame();
++  if (!frame)
++	  return;
++  RenderFrame* frm = RenderFrame::FromWebFrame(frame);
++  frm->Send(new TouchMsg_Action(frm->GetRoutingID(), action));
++ /* if (frm)
++	  frm->*/
++  	//frame->handleTouchAction(WebString::fromUTF8(action));
++}
++
+ void RenderViewImpl::OnEnableViewSourceMode() {
+   if (!webview())
+     return;
+diff --git content/renderer/render_view_impl.h content/renderer/render_view_impl.h
+index b6e54b8c..523bebf 100644
+--- content/renderer/render_view_impl.h
++++ content/renderer/render_view_impl.h
+@@ -627,6 +627,7 @@ class CONTENT_EXPORT RenderViewImpl
+ 
+   void OnShowContextMenu(ui::MenuSourceType source_type,
+                          const gfx::Point& location);
++  void OnTouchAction(const std::string& action);
+   void OnCopyImageAt(int x, int y);
+   void OnSaveImageAt(int x, int y);
+   void OnDeterminePageLanguage();

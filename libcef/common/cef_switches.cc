@@ -132,4 +132,7 @@ const char kPluginPolicy_Block[]          = "block";
 // Expose preferences used only by unit tests.
 const char kEnablePreferenceTesting[]     = "enable-preference-testing";
 
+// USe the touch action callback instead letting the browser handle the actions by itself.
+const char kUseTouchActionHandler[] = "use-touch-action-handler";
+
 }  // namespace switches

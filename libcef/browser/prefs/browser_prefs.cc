@@ -149,6 +149,9 @@ scoped_ptr<PrefService> CreatePrefService(const base::FilePath& pref_path) {
   registry->RegisterBooleanPref(prefs::kSpellCheckUseSpellingCallback, true);
   registry->RegisterBooleanPref(prefs::kEnableContinuousSpellcheck, true);
 
+  registry->RegisterBooleanPref(prefs::kTouchUseHandler,
+	  command_line->HasSwitch(switches::kUseTouchActionHandler));
+
   // Pepper flash preferences.
   // Based on DeviceIDFetcher::RegisterProfilePrefs.
   registry->RegisterBooleanPref(prefs::kEnableDRM, false);

@@ -45,6 +45,7 @@ class CefClientCToCpp
   CefRefPtr<CefRenderHandler> GetRenderHandler() override;
   CefRefPtr<CefRequestHandler> GetRequestHandler() override;
   CefRefPtr<CefSpellCheckHandler> GetSpellCheckHandler() override;
+  CefRefPtr<CefTouchActionHandler> GetTouchActionHandler() override;
   bool OnProcessMessageReceived(CefRefPtr<CefBrowser> browser,
       CefProcessId source_process,
       CefRefPtr<CefProcessMessage> message) override;
