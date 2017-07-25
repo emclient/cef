@@ -1,0 +1,133 @@
+ ui/views/bubble/bubble_delegate.cc   |  9 +++++++--
+ ui/views/bubble/bubble_frame_view.cc | 21 ++++++++++++---------
+ ui/views/bubble/bubble_frame_view.h  |  9 ++++++---
+ 3 files changed, 25 insertions(+), 14 deletions(-)
+
+diff --git ui/views/bubble/bubble_delegate.cc ui/views/bubble/bubble_delegate.cc
+index fd922e4..95a4b7c 100644
+--- ui/views/bubble/bubble_delegate.cc
++++ ui/views/bubble/bubble_delegate.cc
+@@ -14,6 +14,7 @@
+ #include "ui/views/focus/view_storage.h"
+ #include "ui/views/widget/widget.h"
+ #include "ui/views/widget/widget_observer.h"
++#include "ui/aura/window.h"
+ 
+ #if defined(OS_WIN)
+ #include "ui/base/win/shell.h"
+@@ -93,7 +94,7 @@ Widget* BubbleDelegateView::CreateBubble(BubbleDelegateView* bubble_delegate) {
+   // If glass is enabled, the bubble is allowed to extend outside the bounds of
+   // the parent frame and let DWM handle compositing.  If not, then we don't
+   // want to allow the bubble to extend the frame because it will be clipped.
+-  bubble_delegate->set_adjust_if_offscreen(ui::win::IsAeroGlassEnabled());
++  // bubble_delegate->set_adjust_if_offscreen(ui::win::IsAeroGlassEnabled());
+ #elif (defined(OS_LINUX) && !defined(OS_CHROMEOS)) || defined(OS_MACOSX)
+   // Linux clips bubble windows that extend outside their parent window bounds.
+   // Mac never adjusts.
+@@ -281,8 +282,12 @@ gfx::Rect BubbleDelegateView::GetBubbleBounds() {
+   // The argument rect has its origin at the bubble's arrow anchor point;
+   // its size is the preferred size of the bubble's client view (this view).
+   bool anchor_minimized = anchor_widget() && anchor_widget()->IsMinimized();
++  gfx::Rect forced_rect(0,0,0,0);
++  if (parent_window())
++	  forced_rect = parent_window()->GetBoundsInScreen();
++
+   return GetBubbleFrameView()->GetUpdatedWindowBounds(GetAnchorRect(),
+-      GetPreferredSize(), adjust_if_offscreen_ && !anchor_minimized);
++	  GetPreferredSize(), adjust_if_offscreen_ && !anchor_minimized, forced_rect);
+ }
+ 
+ const gfx::FontList& BubbleDelegateView::GetTitleFontList() const {
+diff --git ui/views/bubble/bubble_frame_view.cc ui/views/bubble/bubble_frame_view.cc
+index b11ee79..bf9fd89 100644
+--- ui/views/bubble/bubble_frame_view.cc
++++ ui/views/bubble/bubble_frame_view.cc
+@@ -347,19 +347,20 @@ void BubbleFrameView::SetTitlebarExtraView(View* view) {
+ 
+ gfx::Rect BubbleFrameView::GetUpdatedWindowBounds(const gfx::Rect& anchor_rect,
+                                                   gfx::Size client_size,
+-                                                  bool adjust_if_offscreen) {
++                                                  bool adjust_if_offscreen,
++	                                              const gfx::Rect& forced_bounds) {
+   gfx::Size size(GetSizeForClientSize(client_size));
+ 
+   const BubbleBorder::Arrow arrow = bubble_border_->arrow();
+   if (adjust_if_offscreen && BubbleBorder::has_arrow(arrow)) {
+     // Try to mirror the anchoring if the bubble does not fit on the screen.
+     if (!bubble_border_->is_arrow_at_center(arrow)) {
+-      MirrorArrowIfOffScreen(true, anchor_rect, size);
+-      MirrorArrowIfOffScreen(false, anchor_rect, size);
++      MirrorArrowIfOffScreen(true, anchor_rect, size, forced_bounds);
++      MirrorArrowIfOffScreen(false, anchor_rect, size, forced_bounds);
+     } else {
+       const bool mirror_vertical = BubbleBorder::is_arrow_on_horizontal(arrow);
+-      MirrorArrowIfOffScreen(mirror_vertical, anchor_rect, size);
+-      OffsetArrowIfOffScreen(anchor_rect, size);
++      MirrorArrowIfOffScreen(mirror_vertical, anchor_rect, size, forced_bounds);
++      OffsetArrowIfOffScreen(anchor_rect, size, forced_bounds);
+     }
+   }
+ 
+@@ -386,9 +387,10 @@ gfx::Rect BubbleFrameView::GetCloseButtonMirroredBounds() const {
+ void BubbleFrameView::MirrorArrowIfOffScreen(
+     bool vertical,
+     const gfx::Rect& anchor_rect,
+-    const gfx::Size& client_size) {
++    const gfx::Size& client_size,
++	const gfx::Rect& forced_bounds) {
+   // Check if the bounds don't fit on screen.
+-  gfx::Rect available_bounds(GetAvailableScreenBounds(anchor_rect));
++  gfx::Rect available_bounds(forced_bounds.IsEmpty() ? GetAvailableScreenBounds(anchor_rect) : forced_bounds);
+   gfx::Rect window_bounds(bubble_border_->GetBounds(anchor_rect, client_size));
+   if (GetOffScreenLength(available_bounds, window_bounds, vertical) > 0) {
+     BubbleBorder::Arrow arrow = bubble_border()->arrow();
+@@ -413,7 +415,8 @@ void BubbleFrameView::MirrorArrowIfOffScreen(
+ }
+ 
+ void BubbleFrameView::OffsetArrowIfOffScreen(const gfx::Rect& anchor_rect,
+-                                             const gfx::Size& client_size) {
++                                             const gfx::Size& client_size, 
++	                                         const gfx::Rect& forced_bounds) {
+   BubbleBorder::Arrow arrow = bubble_border()->arrow();
+   DCHECK(BubbleBorder::is_arrow_at_center(arrow));
+ 
+@@ -421,7 +424,7 @@ void BubbleFrameView::OffsetArrowIfOffScreen(const gfx::Rect& anchor_rect,
+   bubble_border_->set_arrow_offset(0);
+   gfx::Rect window_bounds(bubble_border_->GetBounds(anchor_rect, client_size));
+ 
+-  gfx::Rect available_bounds(GetAvailableScreenBounds(anchor_rect));
++  gfx::Rect available_bounds(forced_bounds.IsEmpty() ? GetAvailableScreenBounds(anchor_rect) : forced_bounds);
+   if (available_bounds.IsEmpty() || available_bounds.Contains(window_bounds))
+     return;
+ 
+diff --git ui/views/bubble/bubble_frame_view.h ui/views/bubble/bubble_frame_view.h
+index 6a4a0f3..022e474 100644
+--- ui/views/bubble/bubble_frame_view.h
++++ ui/views/bubble/bubble_frame_view.h
+@@ -82,7 +82,8 @@ class VIEWS_EXPORT BubbleFrameView : public NonClientFrameView,
+   // does not fit on the monitor and |adjust_if_offscreen| is true.
+   gfx::Rect GetUpdatedWindowBounds(const gfx::Rect& anchor_rect,
+                                    gfx::Size client_size,
+-                                   bool adjust_if_offscreen);
++                                   bool adjust_if_offscreen, 
++	                               const gfx::Rect& forced_bounds);
+ 
+   bool close_button_clicked() const { return close_button_clicked_; }
+ 
+@@ -101,12 +102,14 @@ class VIEWS_EXPORT BubbleFrameView : public NonClientFrameView,
+   // if the generated window bounds don't fit in the monitor bounds.
+   void MirrorArrowIfOffScreen(bool vertical,
+                               const gfx::Rect& anchor_rect,
+-                              const gfx::Size& client_size);
++                              const gfx::Size& client_size,
++                              const gfx::Rect& forced_bounds);
+ 
+   // Adjust the bubble's arrow offsets if the generated window bounds don't fit
+   // in the monitor bounds.
+   void OffsetArrowIfOffScreen(const gfx::Rect& anchor_rect,
+-                              const gfx::Size& client_size);
++                              const gfx::Size& client_size,
++	                          const gfx::Rect& forced_bounds);
+ 
+   // Calculates the size needed to accommodate the given client area.
+   gfx::Size GetSizeForClientSize(const gfx::Size& client_size) const;
