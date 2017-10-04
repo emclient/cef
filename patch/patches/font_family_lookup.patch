@@ -1,0 +1,28 @@
+ third_party/WebKit/Source/platform/fonts/win/FontCacheSkiaWin.cpp | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git third_party/WebKit/Source/platform/fonts/win/FontCacheSkiaWin.cpp third_party/WebKit/Source/platform/fonts/win/FontCacheSkiaWin.cpp
+index 056468728280..d8ea4166c13d 100644
+--- third_party/WebKit/Source/platform/fonts/win/FontCacheSkiaWin.cpp
++++ third_party/WebKit/Source/platform/fonts/win/FontCacheSkiaWin.cpp
+@@ -269,13 +269,19 @@ static bool typefacesHasWeightSuffix(const AtomicString& family,
+         { L" extralight", 11,  FontWeight200 },
+         { L" ultralight", 11,  FontWeight200 },
+         { L" light", 6,  FontWeight300 },
++        { L" semilight", 10,  FontWeight300 },	// should be 350
++        { L" regular", 8,  FontWeight500 },
++        { L" normal", 7,  FontWeight500 },
+         { L" medium", 7,  FontWeight500 },
+         { L" demibold", 9,  FontWeight600 },
+         { L" semibold", 9,  FontWeight600 },
++        { L" bold", 5,  FontWeight700 },
+         { L" extrabold", 10,  FontWeight800 },
+         { L" ultrabold", 10,  FontWeight800 },
+         { L" black", 6,  FontWeight900 },
+-        { L" heavy", 6,  FontWeight900 }
++        { L" heavy", 6,  FontWeight900 },
++        { L" extrablack", 11,  FontWeight900 },	// should be 950
++        { L" ultrablack", 11,  FontWeight900 }  // should be 950
+     };
+     size_t numVariants = WTF_ARRAY_LENGTH(variantForSuffix);
+     for (size_t i = 0; i < numVariants; i++) {
