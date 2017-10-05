@@ -1,0 +1,46 @@
+diff --git third_party/WebKit/Source/platform/fonts/win/FontCacheSkiaWin.cpp third_party/WebKit/Source/platform/fonts/win/FontCacheSkiaWin.cpp
+index d8ea4166c13d..4e2ced175ba1 100644
+--- third_party/WebKit/Source/platform/fonts/win/FontCacheSkiaWin.cpp
++++ third_party/WebKit/Source/platform/fonts/win/FontCacheSkiaWin.cpp
+@@ -343,35 +343,9 @@ PassOwnPtr<FontPlatformData> FontCache::createFontPlatformData(const FontDescrip
+ 
+     CString name;
+     RefPtr<SkTypeface> tf = createTypeface(fontDescription, creationParams, name);
+-    // Windows will always give us a valid pointer here, even if the face name
+-    // is non-existent. We have to double-check and see if the family name was
+-    // really used.
+-    if (!tf || !typefacesMatchesFamily(tf.get(), creationParams.family())) {
+-        AtomicString adjustedName;
+-        FontWeight variantWeight;
+-        FontStretch variantStretch;
+-
+-        if (typefacesHasWeightSuffix(creationParams.family(), adjustedName,
+-            variantWeight)) {
+-            FontFaceCreationParams adjustedParams(adjustedName);
+-            FontDescription adjustedFontDescription = fontDescription;
+-            adjustedFontDescription.setWeight(variantWeight);
+-            tf = createTypeface(adjustedFontDescription, adjustedParams, name);
+-            if (!tf || !typefacesMatchesFamily(tf.get(), adjustedName))
+-                return nullptr;
+-
+-        } else if (typefacesHasStretchSuffix(creationParams.family(),
+-            adjustedName, variantStretch)) {
+-            FontFaceCreationParams adjustedParams(adjustedName);
+-            FontDescription adjustedFontDescription = fontDescription;
+-            adjustedFontDescription.setStretch(variantStretch);
+-            tf = createTypeface(adjustedFontDescription, adjustedParams, name);
+-            if (!tf || !typefacesMatchesFamily(tf.get(), adjustedName))
+-                return nullptr;
+-
+-        } else {
+-            return nullptr;
+-        }
++   
++    if (!tf){
++        return nullptr;
+     }
+ 
+     OwnPtr<FontPlatformData> result = adoptPtr(new FontPlatformData(tf,
+-- 
+2.13.3.windows.1
+
