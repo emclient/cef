@@ -1,0 +1,25 @@
+ third_party/WebKit/Source/core/html/HTMLImageElement.cpp | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/third_party/WebKit/Source/core/html/HTMLImageElement.cpp b/third_party/WebKit/Source/core/html/HTMLImageElement.cpp
+index 6568ae88ae50..a4504f6f463e 100644
+--- a/third_party/WebKit/Source/core/html/HTMLImageElement.cpp
++++ b/third_party/WebKit/Source/core/html/HTMLImageElement.cpp
+@@ -270,7 +270,7 @@ void HTMLImageElement::parseAttribute(const QualifiedName& name, const AtomicStr
+                 text->setTextContent(altText());
+         }
+     } else if (name == srcAttr || name == srcsetAttr || name == sizesAttr) {
+-        selectSourceURL(ImageLoader::UpdateIgnorePreviousError);
++        selectSourceURL(ImageLoader::UpdateForcedReload);
+     } else if (name == usemapAttr) {
+         setIsLink(!value.isNull());
+     } else if (RuntimeEnabledFeatures::referrerPolicyAttributeEnabled() && name == referrerpolicyAttr) {
+@@ -400,7 +400,7 @@ Node::InsertionNotificationRequest HTMLImageElement::insertedInto(ContainerNode*
+     // If we have been inserted from a layoutObject-less document,
+     // our loader may have not fetched the image, so do it now.
+     if ((insertionPoint->inDocument() && !imageLoader().image()) || imageWasModified)
+-        imageLoader().updateFromElement(ImageLoader::UpdateNormal, m_referrerPolicy);
++        imageLoader().updateFromElement(ImageLoader::UpdateForcedReload, m_referrerPolicy);
+ 
+     return HTMLElement::insertedInto(insertionPoint);
+ }
