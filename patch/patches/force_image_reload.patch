@@ -1,10 +1,7 @@
- third_party/WebKit/Source/core/html/HTMLImageElement.cpp | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/third_party/WebKit/Source/core/html/HTMLImageElement.cpp b/third_party/WebKit/Source/core/html/HTMLImageElement.cpp
+diff --git third_party/WebKit/Source/core/html/HTMLImageElement.cpp third_party/WebKit/Source/core/html/HTMLImageElement.cpp
 index 6568ae88ae50..a4504f6f463e 100644
---- a/third_party/WebKit/Source/core/html/HTMLImageElement.cpp
-+++ b/third_party/WebKit/Source/core/html/HTMLImageElement.cpp
+--- third_party/WebKit/Source/core/html/HTMLImageElement.cpp
++++ third_party/WebKit/Source/core/html/HTMLImageElement.cpp
 @@ -270,7 +270,7 @@ void HTMLImageElement::parseAttribute(const QualifiedName& name, const AtomicStr
                  text->setTextContent(altText());
          }
