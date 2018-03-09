@@ -1,0 +1,19 @@
+diff --git third_party/WebKit/Source/core/editing/commands/ApplyStyleCommand.cpp third_party/WebKit/Source/core/editing/commands/ApplyStyleCommand.cpp
+index a626143fe6ff..566295a4372b 100644
+--- third_party/WebKit/Source/core/editing/commands/ApplyStyleCommand.cpp
++++ third_party/WebKit/Source/core/editing/commands/ApplyStyleCommand.cpp
+@@ -916,8 +916,9 @@ bool ApplyStyleCommand::removeInlineStyleFromElement(EditingStyle* style, PassRe
+     if (isStyledInlineElementToRemove(element.get())) {
+         if (mode == RemoveNone)
+             return true;
+-        if (extractedStyle)
+-            extractedStyle->mergeInlineStyleOfElement(element.get(), EditingStyle::OverrideValues);
++		// do not apply the style to children if we want to remove it
++        //if (extractedStyle)
++        //    extractedStyle->mergeInlineStyleOfElement(element.get(), EditingStyle::OverrideValues);
+         removeNodePreservingChildren(element);
+         return true;
+     }
+-- 
+2.13.3.windows.1
+
