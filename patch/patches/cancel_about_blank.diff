@@ -1,0 +1,54 @@
+diff --git a/third_party/WebKit/Source/core/fetch/ResourceFetcher.cpp b/third_party/WebKit/Source/core/fetch/ResourceFetcher.cpp
+index 58f0257ec844..2c393faca9f9 100644
+--- third_party/WebKit/Source/core/fetch/ResourceFetcher.cpp
++++ third_party/WebKit/Source/core/fetch/ResourceFetcher.cpp
+@@ -340,7 +340,7 @@ void ResourceFetcher::moveCachedNonBlockingResourceToBlocking(Resource* resource
+ 
+ ResourcePtr<Resource> ResourceFetcher::requestResource(FetchRequest& request, const ResourceFactory& factory, const SubstituteData& substituteData)
+ {
+-    ASSERT(request.options().synchronousPolicy == RequestAsynchronously || factory.type() == Resource::Raw || factory.type() == Resource::XSLStyleSheet);
++   // ASSERT(request.options().synchronousPolicy == RequestAsynchronously || factory.type() == Resource::Raw || factory.type() == Resource::XSLStyleSheet);
+ 
+     context().upgradeInsecureRequest(request);
+     context().addClientHintsIfNecessary(request);
+diff --git a/third_party/WebKit/Source/core/loader/DocumentLoader.cpp b/third_party/WebKit/Source/core/loader/DocumentLoader.cpp
+index 6423385fc726..6c2e6cf08491 100644
+--- third_party/WebKit/Source/core/loader/DocumentLoader.cpp
++++ third_party/WebKit/Source/core/loader/DocumentLoader.cpp
+@@ -725,6 +725,36 @@ bool DocumentLoader::maybeLoadEmpty()
+ 
+     if (m_request.url().isEmpty() && !frameLoader()->stateMachine()->creatingInitialEmptyDocument())
+         m_request.setURL(blankURL());
++	
++	if (frameLoader() && !frameLoader()->stateMachine()->creatingInitialEmptyDocument())
++	{
++		WebURLRequest::FrameType originalFrameType = m_request.frameType();
++		WebURLRequest::RequestContext originalRequestContext = m_request.requestContext();
++
++		if (m_request.frameType() == WebURLRequest::FrameTypeNone)
++			m_request.setFrameType(WebURLRequest::FrameTypeTopLevel);
++		if (m_request.requestContext() == WebURLRequest::RequestContextUnspecified)
++			m_request.setRequestContext(WebURLRequest::RequestContextFrame);
++
++		ResourceRequest request(m_request);
++		DEFINE_STATIC_LOCAL(ResourceLoaderOptions, mainResourceLoadOptions,
++			(DoNotBufferData, AllowStoredCredentials, ClientRequestedCredentials, CheckContentSecurityPolicy, DocumentContext));
++		mainResourceLoadOptions.synchronousPolicy = RequestSynchronously;
++		FetchRequest cachedResourceRequest(request, FetchInitiatorTypeNames::document, mainResourceLoadOptions);
++		ResourceFetcher* ftchr = fetcher();
++		ResourcePtr<RawResource> tmpResource = RawResource::fetchMainResource(cachedResourceRequest, ftchr, m_substituteData);
++		
++		m_request.setFrameType(originalFrameType);
++		m_request.setRequestContext(originalRequestContext);
++
++		if (tmpResource && tmpResource->errorOccurred() && tmpResource->resourceError().errorCode() == -3)	// ERR_ABORTED
++		{
++			cancelMainResourceLoad(ResourceError::cancelledError(m_request.url()));
++
++			return true;
++		}
++	}
++
+     m_response = ResourceResponse(m_request.url(), "text/html", 0, nullAtom, String());
+     finishedLoading(monotonicallyIncreasingTime());
+     return true;
