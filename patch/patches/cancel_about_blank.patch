@@ -1,4 +1,4 @@
-diff --git a/third_party/WebKit/Source/core/fetch/ResourceFetcher.cpp b/third_party/WebKit/Source/core/fetch/ResourceFetcher.cpp
+diff --git third_party/WebKit/Source/core/fetch/ResourceFetcher.cpp third_party/WebKit/Source/core/fetch/ResourceFetcher.cpp
 index 58f0257ec844..2c393faca9f9 100644
 --- third_party/WebKit/Source/core/fetch/ResourceFetcher.cpp
 +++ third_party/WebKit/Source/core/fetch/ResourceFetcher.cpp
@@ -11,7 +11,7 @@ index 58f0257ec844..2c393faca9f9 100644
  
      context().upgradeInsecureRequest(request);
      context().addClientHintsIfNecessary(request);
-diff --git a/third_party/WebKit/Source/core/loader/DocumentLoader.cpp b/third_party/WebKit/Source/core/loader/DocumentLoader.cpp
+diff --git third_party/WebKit/Source/core/loader/DocumentLoader.cpp third_party/WebKit/Source/core/loader/DocumentLoader.cpp
 index 6423385fc726..6c2e6cf08491 100644
 --- third_party/WebKit/Source/core/loader/DocumentLoader.cpp
 +++ third_party/WebKit/Source/core/loader/DocumentLoader.cpp
