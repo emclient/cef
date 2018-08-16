@@ -53,6 +53,9 @@ void SetDefaultPrefs(content::WebPreferences& web) {
       !command_line->HasSwitch(switches::kDisableJavascriptAccessClipboard);
   web.caret_browsing_enabled =
       command_line->HasSwitch(switches::kEnableCaretBrowsing);
+  web.caret_width =
+	  atoi(command_line->GetSwitchValueASCII(
+      switches::kCaretWidth).c_str());
   web.allow_universal_access_from_file_urls =
       command_line->HasSwitch(switches::kAllowUniversalAccessFromFileUrls);
     web.shrinks_standalone_images_to_fit =

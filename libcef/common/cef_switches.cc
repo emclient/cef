@@ -52,6 +52,7 @@ const char kDisableJavascriptDomPaste[]   = "disable-javascript-dom-paste";
 
 // Enable caret browsing.
 const char kEnableCaretBrowsing[]         = "enable-caret-browsing";
+const char kCaretWidth[]				  = "caret-width";
 
 // Allow universal access from file URLs.
 const char kAllowUniversalAccessFromFileUrls[] =

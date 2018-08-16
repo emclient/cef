@@ -1,0 +1,141 @@
+diff --git content/public/common/common_param_traits_macros.h content/public/common/common_param_traits_macros.h
+index 765fe1cbe2b7..b5383b4e9bfa 100644
+--- content/public/common/common_param_traits_macros.h
++++ content/public/common/common_param_traits_macros.h
+@@ -139,6 +139,7 @@ IPC_STRUCT_TRAITS_BEGIN(content::WebPreferences)
+   IPC_STRUCT_TRAITS_MEMBER(databases_enabled)
+   IPC_STRUCT_TRAITS_MEMBER(application_cache_enabled)
+   IPC_STRUCT_TRAITS_MEMBER(tabs_to_links)
++  IPC_STRUCT_TRAITS_MEMBER(caret_width)
+   IPC_STRUCT_TRAITS_MEMBER(hyperlink_auditing_enabled)
+   IPC_STRUCT_TRAITS_MEMBER(allow_universal_access_from_file_urls)
+   IPC_STRUCT_TRAITS_MEMBER(allow_file_access_from_file_urls)
+diff --git content/public/common/web_preferences.cc content/public/common/web_preferences.cc
+index 8460874f0263..d26caa2960e5 100644
+--- content/public/common/web_preferences.cc
++++ content/public/common/web_preferences.cc
+@@ -96,6 +96,7 @@ WebPreferences::WebPreferences()
+       application_cache_enabled(false),
+       tabs_to_links(true),
+       caret_browsing_enabled(false),
++      caret_width(1),
+       hyperlink_auditing_enabled(true),
+       allow_universal_access_from_file_urls(false),
+       allow_file_access_from_file_urls(false),
+diff --git content/public/common/web_preferences.h content/public/common/web_preferences.h
+index b04d69fdd61a..195481fcc599 100644
+--- content/public/common/web_preferences.h
++++ content/public/common/web_preferences.h
+@@ -104,6 +104,7 @@ struct CONTENT_EXPORT WebPreferences {
+   bool application_cache_enabled;
+   bool tabs_to_links;
+   bool caret_browsing_enabled;
++  int caret_width;
+   bool hyperlink_auditing_enabled;
+   bool allow_universal_access_from_file_urls;
+   bool allow_file_access_from_file_urls;
+diff --git content/renderer/render_view_impl.cc content/renderer/render_view_impl.cc
+index feb9c36a79f3..f1429c8f00b9 100644
+--- content/renderer/render_view_impl.cc
++++ content/renderer/render_view_impl.cc
+@@ -935,6 +935,7 @@ void RenderView::ApplyWebPreferences(const WebPreferences& prefs,
+   settings->setOfflineWebApplicationCacheEnabled(
+       prefs.application_cache_enabled);
+   settings->setCaretBrowsingEnabled(prefs.caret_browsing_enabled);
++  settings->setCaretWidth(prefs.caret_width);
+   settings->setHyperlinkAuditingEnabled(prefs.hyperlink_auditing_enabled);
+   settings->setCookieEnabled(prefs.cookie_enabled);
+   settings->setNavigateOnDragDrop(prefs.navigate_on_drag_drop);
+diff --git third_party/WebKit/Source/core/layout/LayoutObject.cpp third_party/WebKit/Source/core/layout/LayoutObject.cpp
+index d2e24e4e0120..daddd4a82238 100644
+--- third_party/WebKit/Source/core/layout/LayoutObject.cpp
++++ third_party/WebKit/Source/core/layout/LayoutObject.cpp
+@@ -108,10 +108,19 @@ static bool gDisablePaintInvalidationStateAsserts = false;
+ 
+ using namespace HTMLNames;
+ 
++inline namespace blink_inline { 
++	int caret_width = 1;
++}
++
+ const LayoutUnit& caretWidth()
+ {
+-    static LayoutUnit gCaretWidth(1);
+-    return gCaretWidth;
++	static LayoutUnit gCaretWidth(caret_width);
++	return gCaretWidth;
++}
++
++const void setCaretWidth(int width)
++{
++	caret_width = width;
+ }
+ 
+ #if ENABLE(ASSERT)
+diff --git third_party/WebKit/Source/core/layout/LayoutObject.h third_party/WebKit/Source/core/layout/LayoutObject.h
+index 6b0551810cf9..a75a415f49ae 100644
+--- third_party/WebKit/Source/core/layout/LayoutObject.h
++++ third_party/WebKit/Source/core/layout/LayoutObject.h
+@@ -99,6 +99,7 @@ enum MapCoordinatesMode {
+ typedef unsigned MapCoordinatesFlags;
+ 
+ const LayoutUnit& caretWidth();
++const void setCaretWidth(int width);
+ 
+ struct AnnotatedRegionValue {
+     DISALLOW_NEW_EXCEPT_PLACEMENT_NEW();
+diff --git third_party/WebKit/Source/web/WebSettingsImpl.cpp third_party/WebKit/Source/web/WebSettingsImpl.cpp
+index d2eb8d2becd3..fb8b02504dbe 100644
+--- third_party/WebKit/Source/web/WebSettingsImpl.cpp
++++ third_party/WebKit/Source/web/WebSettingsImpl.cpp
+@@ -37,6 +37,7 @@
+ #include "public/platform/WebURL.h"
+ #include "web/DevToolsEmulator.h"
+ #include "web/WebDevToolsAgentImpl.h"
++#include "core/layout/LayoutObject.h"
+ 
+ namespace blink {
+ 
+@@ -588,6 +589,11 @@ void WebSettingsImpl::setCaretBrowsingEnabled(bool enabled)
+     m_settings->setCaretBrowsingEnabled(enabled);
+ }
+ 
++void WebSettingsImpl::setCaretWidth(int width)
++{
++	blink::setCaretWidth(width);
++}
++
+ void WebSettingsImpl::setValidationMessageTimerMagnification(int newValue)
+ {
+     m_settings->setValidationMessageTimerMagnification(newValue);
+diff --git third_party/WebKit/Source/web/WebSettingsImpl.h third_party/WebKit/Source/web/WebSettingsImpl.h
+index 9bded8602eb5..425e953be684 100644
+--- third_party/WebKit/Source/web/WebSettingsImpl.h
++++ third_party/WebKit/Source/web/WebSettingsImpl.h
+@@ -65,7 +65,8 @@ public:
+     void setAntialiasedClips2dCanvasEnabled(bool) override;
+     void setAutoplayExperimentMode(const WebString&) override;
+     void setAutoZoomFocusedNodeToLegibleScale(bool) override;
+-    void setCaretBrowsingEnabled(bool) override;
++	void setCaretBrowsingEnabled(bool) override;
++	void setCaretWidth(int) override;
+     void setClobberUserAgentInitialScaleQuirk(bool) override;
+     void setCookieEnabled(bool) override;
+     void setNavigateOnDragDrop(bool) override;
+diff --git third_party/WebKit/public/web/WebSettings.h third_party/WebKit/public/web/WebSettings.h
+index 53192018a21d..dce757aa36eb 100644
+--- third_party/WebKit/public/web/WebSettings.h
++++ third_party/WebKit/public/web/WebSettings.h
+@@ -121,7 +121,8 @@ public:
+     virtual void setAntialiasedClips2dCanvasEnabled(bool) = 0;
+     virtual void setAutoplayExperimentMode(const WebString&) = 0;
+     virtual void setAutoZoomFocusedNodeToLegibleScale(bool) = 0;
+-    virtual void setCaretBrowsingEnabled(bool) = 0;
++	virtual void setCaretBrowsingEnabled(bool) = 0;
++	virtual void setCaretWidth(int) = 0;
+     virtual void setClobberUserAgentInitialScaleQuirk(bool) = 0;
+     virtual void setCookieEnabled(bool) = 0;
+     virtual void setNavigateOnDragDrop(bool) = 0;
+-- 
+2.13.3.windows.1
+
