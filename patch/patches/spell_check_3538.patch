@@ -1,0 +1,697 @@
+diff --git chrome/browser/spellchecker/spellcheck_handler.cc chrome/browser/spellchecker/spellcheck_handler.cc
+new file mode 100644
+index 000000000000..a6b61607f45d
+--- /dev/null
++++ chrome/browser/spellchecker/spellcheck_handler.cc
+@@ -0,0 +1,11 @@
++// Copyright (c) 2012 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include "chrome/browser/spellchecker/spellcheck_handler.h"
++
++
++SpellcheckHandler::SpellcheckHandler() {}
++
++
++SpellcheckHandler::~SpellcheckHandler() {}
+diff --git chrome/browser/spellchecker/spellcheck_handler.h chrome/browser/spellchecker/spellcheck_handler.h
+new file mode 100644
+index 000000000000..0e671c3f022a
+--- /dev/null
++++ chrome/browser/spellchecker/spellcheck_handler.h
+@@ -0,0 +1,23 @@
++// Copyright (c) 2012 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#ifndef CHROME_BROWSER_SPELLCHECKER_SPELLCHECK_HANDLER_H_
++#define CHROME_BROWSER_SPELLCHECKER_SPELLCHECK_HANDLER_H_
++
++#include "content/public/browser/render_process_host.h"
++
++#include "base/strings/string16.h"
++
++struct SpellCheckResult;
++
++class SpellCheckHandler {
++ public:
++
++  virtual void OnTextCheck(
++	  const base::string16& text,
++	  std::vector<SpellCheckResult>& results) =0;
++
++};
++
++#endif  // CHROME_BROWSER_SPELLCHECKER_SPELLCHECK_HANDLER_H_
+diff --git components/spellcheck/renderer/BUILD.gn components/spellcheck/renderer/BUILD.gn
+index f5db20fe1488..1d7bfe8dfdd3 100644
+--- components/spellcheck/renderer/BUILD.gn
++++ components/spellcheck/renderer/BUILD.gn
+@@ -14,6 +14,8 @@ source_set("renderer") {
+     "spellcheck_language.h",
+     "spellcheck_provider.cc",
+     "spellcheck_provider.h",
++    "spellcheck_provider_callback.cc",
++    "spellcheck_provider_callback.h",
+     "spellcheck_worditerator.cc",
+     "spellcheck_worditerator.h",
+     "spelling_engine.h",
+diff --git components/spellcheck/renderer/spellcheck_provider_callback.cc components/spellcheck/renderer/spellcheck_provider_callback.cc
+new file mode 100644
+index 000000000000..98d2c035d6a4
+--- /dev/null
++++ components/spellcheck/renderer/spellcheck_provider_callback.cc
+@@ -0,0 +1,288 @@
++// Copyright (c) 2012 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include "components/spellcheck/renderer/spellcheck_provider_callback.h"
++
++#include "base/bind.h"
++#include "base/metrics/histogram_macros.h"
++#include "components/spellcheck/common/spellcheck.mojom.h"
++#include "components/spellcheck/common/spellcheck_result.h"
++#include "components/spellcheck/renderer/spellcheck.h"
++#include "components/spellcheck/renderer/spellcheck_language.h"
++#include "components/spellcheck/spellcheck_buildflags.h"
++#include "content/public/common/service_names.mojom.h"
++#include "content/public/renderer/render_thread.h"
++#include "services/service_manager/public/cpp/local_interface_provider.h"
++#include "third_party/blink/public/platform/web_vector.h"
++#include "third_party/blink/public/web/web_document.h"
++#include "third_party/blink/public/web/web_element.h"
++#include "third_party/blink/public/web/web_local_frame.h"
++#include "third_party/blink/public/web/web_text_checking_completion.h"
++#include "third_party/blink/public/web/web_text_checking_result.h"
++#include "third_party/blink/public/web/web_text_decoration_type.h"
++
++#include "chrome/browser/spellchecker/spellcheck_handler.h"
++
++using blink::WebElement;
++using blink::WebLocalFrame;
++using blink::WebString;
++using blink::WebTextCheckingCompletion;
++using blink::WebTextCheckingResult;
++using blink::WebTextDecorationType;
++using blink::WebVector;
++
++static_assert(int(blink::kWebTextDecorationTypeSpelling) ==
++                  int(SpellCheckResult::SPELLING),
++              "mismatching enums");
++static_assert(int(blink::kWebTextDecorationTypeGrammar) ==
++                  int(SpellCheckResult::GRAMMAR),
++              "mismatching enums");
++
++class SpellCheckProviderCallback::DictionaryUpdateObserverImpl
++    : public DictionaryUpdateObserver {
++ public:
++  explicit DictionaryUpdateObserverImpl(SpellCheckProviderCallback* owner);
++  ~DictionaryUpdateObserverImpl() override;
++
++  // DictionaryUpdateObserver:
++  void OnDictionaryUpdated(const WebVector<WebString>& words_added) override;
++
++ private:
++  SpellCheckProviderCallback* owner_;
++};
++
++SpellCheckProviderCallback::DictionaryUpdateObserverImpl::
++    DictionaryUpdateObserverImpl(SpellCheckProviderCallback* owner)
++    : owner_(owner) {
++  // owner_->spellcheck_->AddDictionaryUpdateObserver(this);
++}
++
++SpellCheckProviderCallback::DictionaryUpdateObserverImpl::
++    ~DictionaryUpdateObserverImpl() {
++  // owner_->spellcheck_->RemoveDictionaryUpdateObserver(this);
++}
++
++void SpellCheckProviderCallback::DictionaryUpdateObserverImpl::
++    OnDictionaryUpdated(const WebVector<WebString>& words_added) {
++  // Clear only cache. Current pending requests should continue as they are.
++  owner_->last_request_.clear();
++  owner_->last_results_.Assign(
++      blink::WebVector<blink::WebTextCheckingResult>());
++
++  // owner_->render_frame() is nullptr in unit tests.
++  if (auto* render_frame = owner_->render_frame()) {
++    DCHECK(render_frame->GetWebFrame());
++    render_frame->GetWebFrame()->RemoveSpellingMarkersUnderWords(words_added);
++  }
++}
++
++SpellCheckProviderCallback::SpellCheckProviderCallback(
++    content::RenderFrame* render_frame,
++    service_manager::LocalInterfaceProvider* embedder_provider,
++    SpellCheckHandler* handler)
++    : content::RenderFrameObserver(render_frame),
++      content::RenderFrameObserverTracker<SpellCheckProviderCallback>(
++          render_frame),
++      handler_(handler),
++      embedder_provider_(embedder_provider),
++      weak_factory_(this) {
++  // DCHECK(spellcheck_);
++  DCHECK(embedder_provider);
++  if (render_frame)  // NULL in unit tests.
++    render_frame->GetWebFrame()->SetTextCheckClient(this);
++
++  dictionary_update_observer_ =
++      std::make_unique<DictionaryUpdateObserverImpl>(this);
++}
++
++SpellCheckProviderCallback::~SpellCheckProviderCallback() {}
++
++void SpellCheckProviderCallback::ResetDictionaryUpdateObserverForTesting() {
++  dictionary_update_observer_.reset();
++}
++
++spellcheck::mojom::SpellCheckHost&
++SpellCheckProviderCallback::GetSpellCheckHost() {
++  if (spell_check_host_)
++    return *spell_check_host_;
++
++  embedder_provider_->GetInterface(&spell_check_host_);
++  return *spell_check_host_;
++}
++
++void SpellCheckProviderCallback::RequestTextChecking(
++    const base::string16& text,
++    WebTextCheckingCompletion* completion) {
++  // Ignore invalid requests.
++  if (text.empty() || !HasWordCharacters(text, 0)) {
++    completion->DidCancelCheckingText();
++    return;
++  }
++  
++  // Try to satisfy check from cache.
++  if (SatisfyRequestFromCache(text, completion))
++    return;
++
++  // Send this text to a browser. A browser checks the user profile and send
++  // this text to the Spelling service only if a user enables this feature.
++  last_request_.clear();
++  last_results_.Assign(blink::WebVector<blink::WebTextCheckingResult>());
++  last_identifier_ = text_check_completions_.Add(completion);
++
++  OnRespondSpellingService(last_identifier_, text, false,
++                           std::vector<SpellCheckResult>());
++}
++
++void SpellCheckProviderCallback::FocusedNodeChanged(
++    const blink::WebNode& unused) {}
++
++bool SpellCheckProviderCallback::IsSpellCheckingEnabled() const {
++  return true;
++}
++
++void SpellCheckProviderCallback::CheckSpelling(
++    const WebString& text,
++    int& offset,
++    int& length,
++    WebVector<WebString>* optional_suggestions) {}
++
++void SpellCheckProviderCallback::RequestCheckingOfText(
++    const WebString& text,
++    WebTextCheckingCompletion* completion) {
++  RequestTextChecking(text.Utf16(), completion);
++  UMA_HISTOGRAM_COUNTS("SpellCheck.api.async", text.length());
++}
++
++void SpellCheckProviderCallback::CancelAllPendingRequests() {
++  for (WebTextCheckCompletions::iterator iter(&text_check_completions_);
++       !iter.IsAtEnd(); iter.Advance()) {
++    iter.GetCurrentValue()->DidCancelCheckingText();
++  }
++
++  text_check_completions_.Clear();
++}
++
++void SpellCheckProviderCallback::OnRespondSpellingService(
++    int identifier,
++    const base::string16& line,
++    bool success,
++    const std::vector<SpellCheckResult>& results) {
++
++  WebTextCheckingCompletion* completion =
++      text_check_completions_.Lookup(identifier);
++  if (!completion)
++    return;
++  text_check_completions_.Remove(identifier);
++
++  blink::WebVector<blink::WebTextCheckingResult> textcheck_results;
++
++  int misspelled_count = render_frame()->GetWebFrame()->GetMisspelledCount();
++
++  if (misspelled_count > 500) {
++   /* completion->DidFinishCheckingText(textcheck_results);
++    return;*/
++  }
++
++  std::vector<SpellCheckResult> results_copy = results;
++  handler_->OnTextCheck(line, results_copy);
++
++  CreateTextCheckingResults(
++       0, line, results_copy, &textcheck_results);
++
++  completion->DidFinishCheckingText(textcheck_results);
++
++  // Cache the request and the converted results.
++  last_request_ = line;
++  last_results_.Swap(textcheck_results);
++}
++
++void SpellCheckProviderCallback::CreateTextCheckingResults(int line_offset,
++    const base::string16& line_text,
++    const std::vector<SpellCheckResult>& spellcheck_results,
++    blink::WebVector<blink::WebTextCheckingResult>* textcheck_results) {
++
++    //copied from spellcheck.cc
++
++  DCHECK(!line_text.empty());
++
++  std::vector<WebTextCheckingResult> results;
++  for (const SpellCheckResult& spellcheck_result : spellcheck_results) {
++    DCHECK_LE(static_cast<size_t>(spellcheck_result.location),
++              line_text.length());
++    DCHECK_LE(static_cast<size_t>(spellcheck_result.location +
++                                  spellcheck_result.length),
++              line_text.length());
++
++    SpellCheckResult::Decoration decoration = spellcheck_result.decoration;
++      
++    std::vector<WebString> replacements_filtered;
++
++    results.push_back(
++        WebTextCheckingResult(static_cast<WebTextDecorationType>(decoration),
++                              line_offset + spellcheck_result.location,
++                              spellcheck_result.length, replacements_filtered));
++  }
++
++  textcheck_results->Assign(results);
++}
++
++bool SpellCheckProviderCallback::HasWordCharacters(const base::string16& text,
++                                                   int index) const {
++  const base::char16* data = text.data();
++  int length = text.length();
++  while (index < length) {
++    uint32_t code = 0;
++    U16_NEXT(data, index, length, code);
++    UErrorCode error = U_ZERO_ERROR;
++    if (uscript_getScript(code, &error) != USCRIPT_COMMON)
++      return true;
++  }
++  return false;
++}
++
++bool SpellCheckProviderCallback::SatisfyRequestFromCache(
++    const base::string16& text,
++    WebTextCheckingCompletion* completion) {
++  size_t last_length = last_request_.length();
++  if (!last_length)
++    return false;
++
++  // Send back the |last_results_| if the |last_request_| is a substring of
++  // |text| and |text| does not have more words to check. Provider cannot cancel
++  // the spellcheck request here, because WebKit might have discarded the
++  // previous spellcheck results and erased the spelling markers in response to
++  // the user editing the text.
++  base::string16 request(text);
++  size_t text_length = request.length();
++  if (text_length >= last_length &&
++      !request.compare(0, last_length, last_request_)) {
++    if (text_length == last_length || !HasWordCharacters(text, last_length)) {
++      completion->DidFinishCheckingText(last_results_);
++      return true;
++    }
++  }
++
++  // Create a subset of the cached results and return it if the given text is a
++  // substring of the cached text.
++  if (text_length < last_length &&
++      !last_request_.compare(0, text_length, request)) {
++    size_t result_size = 0;
++    for (size_t i = 0; i < last_results_.size(); ++i) {
++      size_t start = last_results_[i].location;
++      size_t end = start + last_results_[i].length;
++      if (start <= text_length && end <= text_length)
++        ++result_size;
++    }
++    blink::WebVector<blink::WebTextCheckingResult> results(last_results_.Data(),
++                                                           result_size);
++    completion->DidFinishCheckingText(results);
++    return true;
++  }
++
++  return false;
++}
++
++void SpellCheckProviderCallback::OnDestruct() {
++  delete this;
++}
+diff --git components/spellcheck/renderer/spellcheck_provider_callback.h components/spellcheck/renderer/spellcheck_provider_callback.h
+new file mode 100644
+index 000000000000..edd388861212
+--- /dev/null
++++ components/spellcheck/renderer/spellcheck_provider_callback.h
+@@ -0,0 +1,146 @@
++// Copyright (c) 2012 The Chromium Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#ifndef COMPONENTS_SPELLCHECK_RENDERER_SPELLCHECK_PROVIDER_CALLBACK_H_
++#define COMPONENTS_SPELLCHECK_RENDERER_SPELLCHECK_PROVIDER_CALLBACK_H_
++
++#include <memory>
++#include <vector>
++
++#include "base/containers/id_map.h"
++#include "base/macros.h"
++#include "components/spellcheck/common/spellcheck.mojom.h"
++#include "components/spellcheck/spellcheck_buildflags.h"
++#include "content/public/renderer/render_frame.h"
++#include "content/public/renderer/render_frame_observer.h"
++#include "content/public/renderer/render_frame_observer_tracker.h"
++#include "third_party/blink/public/web/web_text_check_client.h"
++
++#include "chrome/browser/spellchecker/spellcheck_handler.h"
++
++class SpellCheck;
++struct SpellCheckResult;
++
++namespace blink {
++class WebTextCheckingCompletion;
++struct WebTextCheckingResult;
++}  // namespace blink
++
++namespace service_manager {
++class LocalInterfaceProvider;
++}
++
++// This class deals with asynchronously invoking text spelling and grammar
++// checking services provided by the browser process (host).
++class SpellCheckProviderCallback
++    : public content::RenderFrameObserver,
++      public content::RenderFrameObserverTracker<SpellCheckProviderCallback>,
++      public blink::WebTextCheckClient {
++ public:
++  using WebTextCheckCompletions =
++      base::IDMap<blink::WebTextCheckingCompletion*>;
++
++  SpellCheckProviderCallback(
++      content::RenderFrame* render_frame,
++      service_manager::LocalInterfaceProvider* embedder_provider,
++      SpellCheckHandler* handler);
++  ~SpellCheckProviderCallback() override;
++
++  // Requests async spell and grammar checks from the platform text checker
++  // available in the browser process. The function does not have special
++  // handling for partial words, as Blink guarantees that no request is made
++  // when typing in the middle of a word.
++  void RequestTextChecking(const base::string16& text,
++                           blink::WebTextCheckingCompletion* completion);
++
++  // The number of ongoing spell check host requests.
++  size_t pending_text_request_size() const {
++    return text_check_completions_.size();
++  }
++
++  // Replace shared spellcheck data.
++  void set_spellcheck(SpellCheck* spellcheck) {
++    //    spellcheck_ = spellcheck;
++  }
++
++  // content::RenderFrameObserver:
++  void FocusedNodeChanged(const blink::WebNode& node) override;
++
++ private:
++  friend class TestingSpellCheckProvider;
++  class DictionaryUpdateObserverImpl;
++
++  // Sets the SpellCheckHost (for unit tests).
++  void SetSpellCheckHostForTesting(spellcheck::mojom::SpellCheckHostPtr host) {
++    spell_check_host_ = std::move(host);
++  }
++
++  // Reset dictionary_update_observer_ in TestingSpellCheckProvider dtor.
++  void ResetDictionaryUpdateObserverForTesting();
++
++  // Returns the SpellCheckHost.
++  spellcheck::mojom::SpellCheckHost& GetSpellCheckHost();
++
++  // Tries to satisfy a spellcheck request from the cache in |last_request_|.
++  // Returns true (and cancels/finishes the completion) if it can, false
++  // if the provider should forward the query on.
++  bool SatisfyRequestFromCache(const base::string16& text,
++                               blink::WebTextCheckingCompletion* completion);
++
++  // content::RenderFrameObserver:
++  void OnDestruct() override;
++
++  // blink::WebTextCheckClient:
++  bool IsSpellCheckingEnabled() const override;
++  void CheckSpelling(
++      const blink::WebString& text,
++      int& offset,
++      int& length,
++      blink::WebVector<blink::WebString>* optional_suggestions) override;
++  void RequestCheckingOfText(
++      const blink::WebString& text,
++      blink::WebTextCheckingCompletion* completion) override;
++  void CancelAllPendingRequests() override;
++
++  void OnRespondSpellingService(int identifier,
++                                const base::string16& text,
++                                bool success,
++                                const std::vector<SpellCheckResult>& results);
++
++  void CreateTextCheckingResults(
++      int line_offset,
++      const base::string16& line_text,
++      const std::vector<SpellCheckResult>& spellcheck_results,
++      blink::WebVector<blink::WebTextCheckingResult>* textcheck_results);
++
++  // Returns whether |text| has word characters, i.e. whether a spellchecker
++  // needs to check this text.
++  bool HasWordCharacters(const base::string16& text, int index) const;
++
++  // Holds ongoing spellchecking operations.
++  WebTextCheckCompletions text_check_completions_;
++
++  // The last text sent to the browser process for spellchecking, and its
++  // spellcheck results and WebTextCheckCompletions identifier.
++  base::string16 last_request_;
++  blink::WebVector<blink::WebTextCheckingResult> last_results_;
++  int last_identifier_;
++
++  SpellCheckHandler* handler_;
++
++  // Not owned. |embedder_provider_| should outlive SpellCheckProvider.
++  service_manager::LocalInterfaceProvider* embedder_provider_;
++
++  // Interface to the SpellCheckHost.
++  spellcheck::mojom::SpellCheckHostPtr spell_check_host_;
++
++  // Dictionary updated observer.
++  std::unique_ptr<DictionaryUpdateObserverImpl> dictionary_update_observer_;
++
++  base::WeakPtrFactory<SpellCheckProviderCallback> weak_factory_;
++
++  DISALLOW_COPY_AND_ASSIGN(SpellCheckProviderCallback);
++};
++
++#endif  // COMPONENTS_SPELLCHECK_RENDERER_SPELLCHECK_PROVIDER_CALLBACK_H_
+diff --git content/browser/web_contents/web_contents_impl.cc content/browser/web_contents/web_contents_impl.cc
+index 27a1c1cbe0c8..8e1a12cd6285 100644
+--- content/browser/web_contents/web_contents_impl.cc
++++ content/browser/web_contents/web_contents_impl.cc
+@@ -3540,6 +3540,14 @@ void WebContentsImpl::ReplaceMisspelling(const base::string16& word) {
+ 
+   focused_frame->GetFrameInputHandler()->ReplaceMisspelling(word);
+ }
++ 
++void WebContentsImpl::Recheck() {
++  RenderFrameHostImpl* focused_frame = GetFocusedFrame();
++  if (!focused_frame)
++    return;
++
++  focused_frame->GetFrameInputHandler()->Recheck();
++}
+ 
+ void WebContentsImpl::NotifyContextMenuClosed(
+     const CustomContextMenuContext& context) {
+diff --git content/browser/web_contents/web_contents_impl.h content/browser/web_contents/web_contents_impl.h
+index 6e047068256a..90a2c69dab76 100644
+--- content/browser/web_contents/web_contents_impl.h
++++ content/browser/web_contents/web_contents_impl.h
+@@ -379,7 +379,8 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
+   void SelectAll() override;
+   void CollapseSelection() override;
+   void Replace(const base::string16& word) override;
+-  void ReplaceMisspelling(const base::string16& word) override;
++  void ReplaceMisspelling(const base::string16& word) override;  
++  void Recheck() override;
+   void NotifyContextMenuClosed(
+       const CustomContextMenuContext& context) override;
+   void ReloadLoFiImages() override;
+diff --git content/common/input/input_handler.mojom content/common/input/input_handler.mojom
+index 1dd238373a57..7d12cdb9669d 100644
+--- content/common/input/input_handler.mojom
++++ content/common/input/input_handler.mojom
+@@ -320,6 +320,9 @@ interface FrameInputHandler {
+ 
+   // Replaces the misspelling in the selected region with the specified string.
+   ReplaceMisspelling(mojo_base.mojom.String16 word);
++    
++  // Rechecks the current selection.
++  Recheck();
+ 
+   // Requests the renderer to select the region between two points.
+   // Expects a SelectRange_ACK message when finished.
+diff --git content/public/browser/web_contents.h content/public/browser/web_contents.h
+index 984326a81411..59f311c0e7c6 100644
+--- content/public/browser/web_contents.h
++++ content/public/browser/web_contents.h
+@@ -606,6 +606,9 @@ class WebContents : public PageNavigator,
+   // Replaces the misspelling in the current selection.
+   virtual void ReplaceMisspelling(const base::string16& word) = 0;
+ 
++  // Rechecks the current selection.
++  virtual void Recheck() = 0;
++
+   // Let the renderer know that the menu has been closed.
+   virtual void NotifyContextMenuClosed(
+       const CustomContextMenuContext& context) = 0;
+diff --git content/renderer/input/frame_input_handler_impl.cc content/renderer/input/frame_input_handler_impl.cc
+index 175e4aaaf349..2a44ae50ed3c 100644
+--- content/renderer/input/frame_input_handler_impl.cc
++++ content/renderer/input/frame_input_handler_impl.cc
+@@ -234,6 +234,19 @@ void FrameInputHandlerImpl::ReplaceMisspelling(const base::string16& word) {
+   frame->ReplaceMisspelledRange(blink::WebString::FromUTF16(word));
+ }
+ 
++void FrameInputHandlerImpl::Recheck() {
++  if (!main_thread_task_runner_->BelongsToCurrentThread()) {
++    RunOnMainThread(base::Bind(&FrameInputHandlerImpl::Recheck,
++                               weak_this_));
++    return;
++  }
++  if (!render_frame_)
++    return;
++  blink::WebLocalFrame* frame = render_frame_->GetWebFrame();
++  frame->Recheck();
++}
++
++
+ void FrameInputHandlerImpl::Delete() {
+   RunOnMainThread(base::Bind(&FrameInputHandlerImpl::ExecuteCommandOnMainThread,
+                              weak_this_, "Delete", UpdateState::kNone));
+diff --git content/renderer/input/frame_input_handler_impl.h content/renderer/input/frame_input_handler_impl.h
+index 794229f0f1e1..05c5580b6a0e 100644
+--- content/renderer/input/frame_input_handler_impl.h
++++ content/renderer/input/frame_input_handler_impl.h
+@@ -62,6 +62,7 @@ class CONTENT_EXPORT FrameInputHandlerImpl : public mojom::FrameInputHandler {
+   void PasteAndMatchStyle() override;
+   void Replace(const base::string16& word) override;
+   void ReplaceMisspelling(const base::string16& word) override;
++  void Recheck() override;
+   void Delete() override;
+   void SelectAll() override;
+   void CollapseSelection() override;
+diff --git third_party/blink/public/web/web_local_frame.h third_party/blink/public/web/web_local_frame.h
+index e2f071b74c17..2cdb3604860e 100644
+--- third_party/blink/public/web/web_local_frame.h
++++ third_party/blink/public/web/web_local_frame.h
+@@ -652,6 +652,8 @@ class WebLocalFrame : public WebFrame {
+   virtual void RemoveSpellingMarkers() = 0;
+   virtual void RemoveSpellingMarkersUnderWords(
+       const WebVector<WebString>& words) = 0;
++  virtual void Recheck() = 0;
++  virtual int GetMisspelledCount() = 0;
+ 
+   // Content Settings -------------------------------------------------------
+ 
+diff --git third_party/blink/renderer/core/editing/spellcheck/spell_checker.cc third_party/blink/renderer/core/editing/spellcheck/spell_checker.cc
+index 84b674e78378..06319ba40ff4 100644
+--- third_party/blink/renderer/core/editing/spellcheck/spell_checker.cc
++++ third_party/blink/renderer/core/editing/spellcheck/spell_checker.cc
+@@ -556,6 +556,19 @@ void SpellChecker::RemoveSpellingMarkersUnderWords(
+   marker_controller.RepaintMarkers();
+ }
+ 
++void SpellChecker::MarkAllMisspellingsAndBadGrammar(Element& element) {
++  Element* el = &element;
++  Position spelling_search_start, spelling_search_end;
++  Range::selectNodeContents(el, spelling_search_start,
++                            spelling_search_end);
++  EphemeralRange range =
++      EphemeralRange(spelling_search_start, spelling_search_end);
++
++  GetFrame().GetDocument()->Markers().RemoveMarkersInRange(
++      range, DocumentMarker::MarkerTypes::Misspelling());
++  spell_check_requester_->RequestCheckingFor(range);
++}
++
+ static Node* FindFirstMarkable(Node* node) {
+   while (node) {
+     if (!node->GetLayoutObject())
+diff --git third_party/blink/renderer/core/editing/spellcheck/spell_checker.h third_party/blink/renderer/core/editing/spellcheck/spell_checker.h
+index d312e93e2bea..30d145a61735 100644
+--- third_party/blink/renderer/core/editing/spellcheck/spell_checker.h
++++ third_party/blink/renderer/core/editing/spellcheck/spell_checker.h
+@@ -75,6 +75,8 @@ class CORE_EXPORT SpellChecker final : public GarbageCollected<SpellChecker> {
+   void RemoveSpellingAndGrammarMarkers(const HTMLElement&,
+                                        ElementsType = ElementsType::kAll);
+ 
++  void MarkAllMisspellingsAndBadGrammar(Element&);
++
+   void DidEndEditingOnTextField(Element*);
+   bool SelectionStartHasMarkerFor(DocumentMarker::MarkerType,
+                                   int from,
+diff --git third_party/blink/renderer/core/frame/web_local_frame_impl.cc third_party/blink/renderer/core/frame/web_local_frame_impl.cc
+index fbadba8e0f24..e655242b46dc 100644
+--- third_party/blink/renderer/core/frame/web_local_frame_impl.cc
++++ third_party/blink/renderer/core/frame/web_local_frame_impl.cc
+@@ -1203,6 +1203,27 @@ void WebLocalFrameImpl::RemoveSpellingMarkersUnderWords(
+   GetFrame()->RemoveSpellingMarkersUnderWords(converted_words);
+ }
+ 
++void WebLocalFrameImpl::Recheck() {
++  if (GetFrame()->GetWebPluginContainer())
++    return;
++
++  if (HasSelection()) {
++    blink::Element* elem =
++        GetFrame()->Selection().RootEditableElementOrDocumentElement();
++    GetFrame()->GetSpellChecker().MarkAllMisspellingsAndBadGrammar(*elem);
++  } else {
++    blink::HTMLElement* body = GetFrame()->GetDocument()->body();
++    GetFrame()->GetSpellChecker().MarkAllMisspellingsAndBadGrammar(*body);
++  }
++}
++
++int WebLocalFrameImpl::GetMisspelledCount() {
++  if (GetFrame()->GetWebPluginContainer())
++    return 0;
++
++  return GetFrame()->GetDocument()->Markers().Markers().size();
++}
++
+ bool WebLocalFrameImpl::HasSelection() const {
+   DCHECK(GetFrame());
+   WebPluginContainerImpl* plugin_container =
+diff --git third_party/blink/renderer/core/frame/web_local_frame_impl.h third_party/blink/renderer/core/frame/web_local_frame_impl.h
+index 9b07d3bc3e50..d63fd3888671 100644
+--- third_party/blink/renderer/core/frame/web_local_frame_impl.h
++++ third_party/blink/renderer/core/frame/web_local_frame_impl.h
+@@ -187,6 +187,8 @@ class CORE_EXPORT WebLocalFrameImpl final
+   void RemoveSpellingMarkers() override;
+   void RemoveSpellingMarkersUnderWords(
+       const WebVector<WebString>& words) override;
++  void Recheck() override;
++  int GetMisspelledCount() override;
+   void SetContentSettingsClient(WebContentSettingsClient*) override;
+   bool HasSelection() const override;
+   WebRange SelectionRange() const override;

@@ -33,7 +33,7 @@
 // by hand. See the translator.README.txt file in the tools directory for
 // more information.
 //
-// $hash=ff3ebc51ed5743aabac0be94caf2edeedbd413b7$
+// $hash=0befe8966d3c78a1b184a5bd0cdbdd0d505f9c19$
 //
 
 #ifndef CEF_INCLUDE_CAPI_CEF_BROWSER_CAPI_H_
@@ -530,6 +530,11 @@ typedef struct _cef_browser_host_t {
   ///
   void(CEF_CALLBACK* add_word_to_dictionary)(struct _cef_browser_host_t* self,
                                              const cef_string_t* word);
+
+  ///
+  // Performs spellcheck on selection.
+  ///
+  void(CEF_CALLBACK* recheck)(struct _cef_browser_host_t* self);
 
   ///
   // Returns true (1) if window rendering is disabled.

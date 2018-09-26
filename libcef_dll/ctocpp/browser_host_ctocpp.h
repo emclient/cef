@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=39ab8db08e667fac8e6dccffaa99935d8aa7d4b5$
+// $hash=a0bdac4ec16c799339e37f1dbc875ca2bdbe446f$
 //
 
 #ifndef CEF_LIBCEF_DLL_CTOCPP_BROWSER_HOST_CTOCPP_H_
@@ -81,6 +81,7 @@ class CefBrowserHostCToCpp : public CefCToCppRefCounted<CefBrowserHostCToCpp,
   bool IsMouseCursorChangeDisabled() OVERRIDE;
   void ReplaceMisspelling(const CefString& word) OVERRIDE;
   void AddWordToDictionary(const CefString& word) OVERRIDE;
+  void Recheck() OVERRIDE;
   bool IsWindowRenderingDisabled() OVERRIDE;
   void WasResized() OVERRIDE;
   void WasHidden(bool hidden) OVERRIDE;

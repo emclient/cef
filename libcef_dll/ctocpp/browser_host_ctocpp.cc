@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=9a1691bbc0a509032dd60b463189dd1eb0f6cc4d$
+// $hash=78a2ea947996da5223218c65b9f5b56f4dd21b78$
 //
 
 #include "libcef_dll/ctocpp/browser_host_ctocpp.h"
@@ -497,6 +497,17 @@ void CefBrowserHostCToCpp::AddWordToDictionary(const CefString& word) {
   _struct->add_word_to_dictionary(_struct, word.GetStruct());
 }
 
+NO_SANITIZE("cfi-icall") void CefBrowserHostCToCpp::Recheck() {
+  cef_browser_host_t* _struct = GetStruct();
+  if (CEF_MEMBER_MISSING(_struct, recheck))
+    return;
+
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  // Execute
+  _struct->recheck(_struct);
+}
+
 NO_SANITIZE("cfi-icall")
 bool CefBrowserHostCToCpp::IsWindowRenderingDisabled() {
   cef_browser_host_t* _struct = GetStruct();
@@ -832,8 +843,8 @@ void CefBrowserHostCToCpp::DragSourceSystemDragEnded() {
 }
 
 NO_SANITIZE("cfi-icall")
-CefRefPtr<CefNavigationEntry>
-CefBrowserHostCToCpp::GetVisibleNavigationEntry() {
+CefRefPtr<
+    CefNavigationEntry> CefBrowserHostCToCpp::GetVisibleNavigationEntry() {
   cef_browser_host_t* _struct = GetStruct();
   if (CEF_MEMBER_MISSING(_struct, get_visible_navigation_entry))
     return NULL;
