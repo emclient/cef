@@ -208,6 +208,7 @@ class CefBrowserHostImpl : public CefBrowserHost,
   bool IsWindowRenderingDisabled() override;
   void ReplaceMisspelling(const CefString& word) override;
   void AddWordToDictionary(const CefString& word) override;
+  void Recheck() override;
   void WasResized() override;
   void WasHidden(bool hidden) override;
   void NotifyScreenInfoChanged() override;
@@ -537,6 +538,12 @@ class CefBrowserHostImpl : public CefBrowserHost,
 
   // Block navigation-related events on NavigationLock life span.
   std::unique_ptr<NavigationLock> CreateNavigationLock();
+  
+  // Send a message to the RenderViewHost associated with this browser.
+  // TODO(cef): With the introduction of OOPIFs, WebContents can span multiple
+  // processes. Messages should be sent to specific RenderFrameHosts instead.
+  bool Send(IPC::Message* message);
+
 
  private:
   class DevToolsWebContentsObserver;
@@ -567,6 +574,8 @@ class CefBrowserHostImpl : public CefBrowserHost,
   void OnRequest(const Cef_Request_Params& params);
   void OnResponse(const Cef_Response_Params& params);
   void OnResponseAck(int request_id);
+  void OnSpellCheckRequest(base::string16 word, bool* misspelled);
+  void OnSpellCheckLanguage(std::string* word);
 
   // content::NotificationObserver methods.
   void Observe(int type,
@@ -653,11 +662,6 @@ class CefBrowserHostImpl : public CefBrowserHost,
   void EnsureFileDialogManager();
 
   void ConfigureAutoResize();
-
-  // Send a message to the RenderViewHost associated with this browser.
-  // TODO(cef): With the introduction of OOPIFs, WebContents can span multiple
-  // processes. Messages should be sent to specific RenderFrameHosts instead.
-  bool Send(IPC::Message* message);
 
   CefBrowserSettings settings_;
   CefRefPtr<CefClient> client_;

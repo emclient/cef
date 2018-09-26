@@ -39,6 +39,7 @@ extern const char kEnableMediaStream[];
 extern const char kEnableSpeechInput[];
 extern const char kEnableProfanityFilter[];
 extern const char kDisableSpellChecking[];
+extern const char kDisableSpellingCallback[];
 extern const char kEnableSpellingService[];
 extern const char kOverrideSpellCheckLang[];
 extern const char kEnableSystemFlash[];

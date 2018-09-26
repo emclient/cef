@@ -1,4 +1,4 @@
-// Copyright (c) 2019 The Chromium Embedded Framework Authors. All rights
+// Copyright (c) 2018 The Chromium Embedded Framework Authors. All rights
 // reserved. Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
 //
@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=f60a48364a8a829b25ac48261e8147f5974175a3$
+// $hash=78a2ea947996da5223218c65b9f5b56f4dd21b78$
 //
 
 #include "libcef_dll/ctocpp/browser_host_ctocpp.h"
@@ -495,6 +495,17 @@ void CefBrowserHostCToCpp::AddWordToDictionary(const CefString& word) {
 
   // Execute
   _struct->add_word_to_dictionary(_struct, word.GetStruct());
+}
+
+NO_SANITIZE("cfi-icall") void CefBrowserHostCToCpp::Recheck() {
+  cef_browser_host_t* _struct = GetStruct();
+  if (CEF_MEMBER_MISSING(_struct, recheck))
+    return;
+
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  // Execute
+  _struct->recheck(_struct);
 }
 
 NO_SANITIZE("cfi-icall")

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 Marshall A. Greenblatt. All rights reserved.
+// Copyright (c) 2018 Marshall A. Greenblatt. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -33,7 +33,7 @@
 // by hand. See the translator.README.txt file in the tools directory for
 // more information.
 //
-// $hash=faac9d17d7efae3a72c4cc44474071027596c843$
+// $hash=0befe8966d3c78a1b184a5bd0cdbdd0d505f9c19$
 //
 
 #ifndef CEF_INCLUDE_CAPI_CEF_BROWSER_CAPI_H_
@@ -530,6 +530,11 @@ typedef struct _cef_browser_host_t {
   ///
   void(CEF_CALLBACK* add_word_to_dictionary)(struct _cef_browser_host_t* self,
                                              const cef_string_t* word);
+
+  ///
+  // Performs spellcheck on selection.
+  ///
+  void(CEF_CALLBACK* recheck)(struct _cef_browser_host_t* self);
 
   ///
   // Returns true (1) if window rendering is disabled.
