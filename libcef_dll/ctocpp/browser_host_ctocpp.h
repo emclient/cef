@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=a0bdac4ec16c799339e37f1dbc875ca2bdbe446f$
+// $hash=dbedab20e4bb8f730bd86ba32ef479a5809beb7d$
 //
 
 #ifndef CEF_LIBCEF_DLL_CTOCPP_BROWSER_HOST_CTOCPP_H_
@@ -119,6 +119,7 @@ class CefBrowserHostCToCpp : public CefCToCppRefCounted<CefBrowserHostCToCpp,
   void DragTargetDrop(const CefMouseEvent& event) OVERRIDE;
   void DragSourceEndedAt(int x, int y, DragOperationsMask op) OVERRIDE;
   void DragSourceSystemDragEnded() OVERRIDE;
+  void AddVisitedURL(const CefString& url) OVERRIDE;
   CefRefPtr<CefNavigationEntry> GetVisibleNavigationEntry() OVERRIDE;
   void SetAccessibilityState(cef_state_t accessibility_state) OVERRIDE;
   void SetAutoResizeEnabled(bool enabled,
