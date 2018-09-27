@@ -1,0 +1,22 @@
+diff --git third_party/blink/renderer/core/html/html_image_element.cc third_party/blink/renderer/core/html/html_image_element.cc
+index 9ad16293c391..e5e3de6f2d4f 100644
+--- third_party/blink/renderer/core/html/html_image_element.cc
++++ third_party/blink/renderer/core/html/html_image_element.cc
+@@ -268,7 +268,7 @@ void HTMLImageElement::ParseAttribute(
+         text->setTextContent(alt_text_content);
+     }
+   } else if (name == srcAttr || name == srcsetAttr || name == sizesAttr) {
+-    SelectSourceURL(ImageLoader::kUpdateIgnorePreviousError);
++    SelectSourceURL(ImageLoader::kUpdateForcedReload);
+   } else if (name == usemapAttr) {
+     SetIsLink(!params.new_value.IsNull());
+   } else if (name == referrerpolicyAttr) {
+@@ -422,7 +422,7 @@ Node::InsertionNotificationRequest HTMLImageElement::InsertedInto(
+   if ((insertion_point.isConnected() && !GetImageLoader().GetContent() &&
+        !GetImageLoader().HasPendingActivity()) ||
+       image_was_modified) {
+-    GetImageLoader().UpdateFromElement(ImageLoader::kUpdateNormal,
++    GetImageLoader().UpdateFromElement(ImageLoader::kUpdateForcedReload,
+                                        referrer_policy_);
+   }
+ 
