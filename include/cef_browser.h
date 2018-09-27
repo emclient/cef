@@ -812,6 +812,12 @@ class CefBrowserHost : public virtual CefBaseRefCounted {
   virtual void DragSourceSystemDragEnded() = 0;
 
   ///
+  // Inserts an url into the list of visited urls
+  ///
+  /*--cef()--*/
+  virtual void AddVisitedURL(const CefString& url) = 0;
+
+  ///
   // Returns the current visible navigation entry for this browser. This method
   // can only be called on the UI thread.
   ///

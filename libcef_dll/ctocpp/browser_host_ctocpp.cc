@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=78a2ea947996da5223218c65b9f5b56f4dd21b78$
+// $hash=37464005b8a0c07701b685c88c354945baf33b19$
 //
 
 #include "libcef_dll/ctocpp/browser_host_ctocpp.h"
@@ -851,6 +851,23 @@ void CefBrowserHostCToCpp::DragSourceSystemDragEnded() {
 
   // Execute
   _struct->drag_source_system_drag_ended(_struct);
+}
+
+NO_SANITIZE("cfi-icall")
+void CefBrowserHostCToCpp::AddVisitedURL(const CefString& url) {
+  cef_browser_host_t* _struct = GetStruct();
+  if (CEF_MEMBER_MISSING(_struct, add_visited_url))
+    return;
+
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  // Verify param: url; type: string_byref_const
+  DCHECK(!url.empty());
+  if (url.empty())
+    return;
+
+  // Execute
+  _struct->add_visited_url(_struct, url.GetStruct());
 }
 
 NO_SANITIZE("cfi-icall")
