@@ -89,6 +89,28 @@ bool CefPrintViewManagerBase::PrintNow(content::RenderFrameHost* rfh) {
   return PrintNowInternal(rfh, std::make_unique<PrintMsg_PrintPages>(id));
 }
 
+bool CefPrintViewManagerBase::PrintNowWithSettings(
+    content::RenderFrameHost* rfh,
+    const CefString& printerName,
+    const std::vector<CefRange>& pages) {
+  DisconnectFromCurrentPrintJob();
+
+  printing::PageRanges ranges = printing::PageRanges();
+  for (std::size_t i = 0; i < pages.size(); i++) {
+    CefRange range = pages.at(i);
+    printing::PageRange newRange = printing::PageRange();
+    newRange.from = range.from;
+    newRange.to = range.to;
+    ranges.push_back(newRange);
+  }
+
+  SetPrintingRFH(rfh);
+  int32_t id = rfh->GetRoutingID();
+  return PrintNowInternal(rfh,
+                          std::make_unique<PrintMsg_PrintPagesWithSettings>(
+                              id, printerName.ToString16(), ranges));
+}
+
 void CefPrintViewManagerBase::PrintDocument(
     const scoped_refptr<base::RefCountedMemory>& print_data,
     const gfx::Size& page_size,

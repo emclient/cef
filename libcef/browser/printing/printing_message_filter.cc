@@ -187,7 +187,20 @@ void CefPrintingMessageFilter::OnScriptedPrint(
     printer_query =
         queue_->CreatePrinterQuery(render_process_id_, reply_msg->routing_id());
   }
-  printer_query->GetSettings(
+  
+  if (!params.forced_printer.empty())
+  {
+	  printer_query->GetSettings(
+		  PrinterQuery::GetSettingsAskParam::DEFAULTS_WITH_FORCED_PRINTER, params.expected_pages_count,
+		  params.has_selection, params.margin_type, params.is_scripted,
+           params.is_modifiable,
+		  base::Bind(&CefPrintingMessageFilter::OnScriptedPrintReply, this,
+			  printer_query, reply_msg),
+		  params.forced_printer,
+		  params.pages);
+  }
+  else
+	  printer_query->GetSettings(
       PrinterQuery::GetSettingsAskParam::ASK_USER, params.expected_pages_count,
       params.has_selection, params.margin_type, params.is_scripted,
       params.is_modifiable,

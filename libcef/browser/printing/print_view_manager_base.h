@@ -6,7 +6,9 @@
 #define CEF_LIBCEF_BROWSER_PRINTING_PRINT_VIEW_MANAGER_BASE_H_
 
 #include <memory>
+#include <vector>
 
+#include "include/cef_base.h"
 #include "base/macros.h"
 #include "base/memory/read_only_shared_memory_region.h"
 #include "base/memory/scoped_refptr.h"
@@ -48,6 +50,11 @@ class CefPrintViewManagerBase : public content::NotificationObserver,
   // asynchronous, the actual printing will not be completed on the return of
   // this function. Returns false if printing is impossible at the moment.
   virtual bool PrintNow(content::RenderFrameHost* rfh);
+
+  // Prints the current document immediately on a specified printer. Since the rendering is
+  // asynchronous, the actual printing will not be completed on the return of
+  // this function. Returns false if printing is impossible at the moment.
+  virtual bool PrintNowWithSettings(content::RenderFrameHost* rfh, const CefString& printerName, const std::vector<CefRange>& pages);
 
   // Whether printing is enabled or not.
   void UpdatePrintingEnabled();
