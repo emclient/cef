@@ -1,0 +1,400 @@
+diff --git chrome/browser/printing/print_job_worker.cc chrome/browser/printing/print_job_worker.cc
+index 08fa8eb809e0..4b843f322f70 100644
+--- chrome/browser/printing/print_job_worker.cc
++++ chrome/browser/printing/print_job_worker.cc
+@@ -177,7 +177,9 @@ void PrintJobWorker::GetSettings(bool ask_user_for_settings,
+                                  bool has_selection,
+                                  MarginType margin_type,
+                                  bool is_scripted,
+-                                 bool is_modifiable) {
++                                 bool is_modifiable,
++                                 const base::string16& forced_printer,
++                                 const PageRanges& forced_pages) {
+   DCHECK(task_runner_->RunsTasksInCurrentSequence());
+   DCHECK_EQ(page_number_, PageNumber::npos());
+ 
+@@ -208,7 +210,9 @@ void PrintJobWorker::GetSettings(bool ask_user_for_settings,
+         FROM_HERE, {BrowserThread::UI},
+         base::BindOnce(&WorkerHoldRefCallback, base::WrapRefCounted(query_),
+                        base::BindOnce(&PrintJobWorker::UseDefaultSettings,
+-                                      base::Unretained(this))));
++                                      base::Unretained(this),
++                                      forced_printer,
++                                      forced_pages)));
+   }
+ }
+ 
+@@ -314,8 +318,14 @@ void PrintJobWorker::GetSettingsWithUI(
+                                     weak_factory_.GetWeakPtr())));
+ }
+ 
+-void PrintJobWorker::UseDefaultSettings() {
+-  PrintingContext::Result result = printing_context_->UseDefaultSettings();
++void PrintJobWorker::UseDefaultSettings(
++    const base::string16& forced_printer,
++    const printing::PageRanges& forced_pages) {
++  PrintingContext::Result result;
++  if (forced_printer.empty())
++    result = printing_context_->UseDefaultSettings();
++  else
++    result = printing_context_->UseDefaultSettingsWithPrinterAndRanges(forced_printer, forced_pages);
+   GetSettingsDone(result);
+ }
+ 
+diff --git chrome/browser/printing/print_job_worker.h chrome/browser/printing/print_job_worker.h
+index 182f7563e0c7..67c3f207858c 100644
+--- chrome/browser/printing/print_job_worker.h
++++ chrome/browser/printing/print_job_worker.h
+@@ -54,7 +54,9 @@ class PrintJobWorker {
+                    bool has_selection,
+                    MarginType margin_type,
+                    bool is_scripted,
+-                   bool is_modifiable);
++                   bool is_modifiable,
++                   const base::string16& forced_printer,
++                   const PageRanges& forced_pages);
+ 
+   // Set the new print settings from a dictionary value.
+   void SetSettings(std::unique_ptr<base::DictionaryValue> new_settings);
+@@ -153,7 +155,8 @@ class PrintJobWorker {
+   // Use the default settings. When using GTK+ or Mac, this can still end up
+   // displaying a dialog. So this needs to happen from the UI thread on these
+   // systems.
+-  void UseDefaultSettings();
++  void UseDefaultSettings(const base::string16& forced_printer,
++	  const PageRanges& forced_pages);
+ 
+   // Printing context delegate.
+   const std::unique_ptr<PrintingContext::Delegate> printing_context_delegate_;
+diff --git chrome/browser/printing/printer_query.cc chrome/browser/printing/printer_query.cc
+index cc2368731367..95a86d59fcf7 100644
+--- chrome/browser/printing/printer_query.cc
++++ chrome/browser/printing/printer_query.cc
+@@ -74,13 +74,26 @@ void PrinterQuery::set_callback(base::OnceClosure callback) {
+   callback_ = std::move(callback);
+ }
+ 
++void PrinterQuery::GetSettings(
++	GetSettingsAskParam ask_user_for_settings,
++	int expected_page_count,
++	bool has_selection,
++	MarginType margin_type,
++	bool is_scripted,
++    bool is_modifiable,
++	base::OnceClosure callback) {
++	GetSettings(ask_user_for_settings, expected_page_count, has_selection, margin_type, is_scripted, is_modifiable, std::move(callback), L"", PageRanges());
++}
++
+ void PrinterQuery::GetSettings(GetSettingsAskParam ask_user_for_settings,
+                                int expected_page_count,
+                                bool has_selection,
+                                MarginType margin_type,
+                                bool is_scripted,
+                                bool is_modifiable,
+-                               base::OnceClosure callback) {
++                               base::OnceClosure callback,
++                               const base::string16& forced_printer,
++                               const PageRanges& forced_pages) {
+   DCHECK(RunsTasksInCurrentSequence());
+   DCHECK(!is_print_dialog_box_shown_ || !is_scripted);
+ 
+@@ -94,7 +107,7 @@ void PrinterQuery::GetSettings(GetSettingsAskParam ask_user_for_settings,
+       base::BindOnce(&PrintJobWorker::GetSettings,
+                      base::Unretained(worker_.get()),
+                      is_print_dialog_box_shown_, expected_page_count,
+-                     has_selection, margin_type, is_scripted, is_modifiable));
++                     has_selection, margin_type, is_scripted, is_modifiable, forced_printer, forced_pages));
+ }
+ 
+ void PrinterQuery::SetSettings(
+diff --git chrome/browser/printing/printer_query.h chrome/browser/printing/printer_query.h
+index 64db84f9f853..932192d9bf9b 100644
+--- chrome/browser/printing/printer_query.h
++++ chrome/browser/printing/printer_query.h
+@@ -31,6 +31,7 @@ class PrinterQuery : public base::RefCountedThreadSafe<PrinterQuery> {
+   enum class GetSettingsAskParam {
+     DEFAULTS,
+     ASK_USER,
++    DEFAULTS_WITH_FORCED_PRINTER
+   };
+ 
+   // Can only be called on the IO thread.
+@@ -59,6 +60,21 @@ class PrinterQuery : public base::RefCountedThreadSafe<PrinterQuery> {
+                    bool is_modifiable,
+                    base::OnceClosure callback);
+ 
++  // Initializes the printing context. It is fine to call this function multiple
++  // times to reinitialize the settings. |web_contents_observer| can be queried
++  // to find the owner of the print setting dialog box. It is unused when
++  // |ask_for_user_settings| is DEFAULTS.
++  void GetSettings(
++	  GetSettingsAskParam ask_user_for_settings,
++	  int expected_page_count,
++	  bool has_selection,
++	  MarginType margin_type,
++	  bool is_scripted,
++      bool is_modifiable,
++	  base::OnceClosure callback,
++	  const base::string16& forced_printer,
++	  const PageRanges& forced_pages);
++
+   // Updates the current settings with |new_settings| dictionary values.
+   virtual void SetSettings(std::unique_ptr<base::DictionaryValue> new_settings,
+                            base::OnceClosure callback);
+diff --git components/printing/common/print_messages.h components/printing/common/print_messages.h
+index d30d74071182..9c61efda9927 100644
+--- components/printing/common/print_messages.h
++++ components/printing/common/print_messages.h
+@@ -349,6 +349,8 @@ IPC_STRUCT_BEGIN(PrintHostMsg_ScriptedPrint_Params)
+   IPC_STRUCT_MEMBER(bool, is_scripted)
+   IPC_STRUCT_MEMBER(bool, is_modifiable)
+   IPC_STRUCT_MEMBER(printing::MarginType, margin_type)
++  IPC_STRUCT_MEMBER(base::string16, forced_printer)
++  IPC_STRUCT_MEMBER(printing::PageRanges, pages)
+ IPC_STRUCT_END()
+ 
+ 
+@@ -365,6 +367,10 @@ IPC_MESSAGE_ROUTED0(PrintMsg_PrintNodeUnderContextMenu)
+ // requested pages and switch back the CSS to display media type.
+ IPC_MESSAGE_ROUTED0(PrintMsg_PrintPages)
+ 
++// Tells the RenderFrame to switch the CSS to print media type, renders every
++// requested pages and switch back the CSS to display media type.
++IPC_MESSAGE_ROUTED2(PrintMsg_PrintPagesWithSettings, base::string16, printing::PageRanges)
++
+ #if BUILDFLAG(ENABLE_PRINTING)
+ // Like PrintMsg_PrintPages, but using the print preview document's frame/node.
+ IPC_MESSAGE_ROUTED0(PrintMsg_PrintForSystemDialog)
+diff --git components/printing/renderer/print_render_frame_helper.cc components/printing/renderer/print_render_frame_helper.cc
+index 7926f78c3e1f..0df0f4136935 100644
+--- components/printing/renderer/print_render_frame_helper.cc
++++ components/printing/renderer/print_render_frame_helper.cc
+@@ -1061,6 +1061,7 @@ bool PrintRenderFrameHelper::OnMessageReceived(const IPC::Message& message) {
+   bool handled = true;
+   IPC_BEGIN_MESSAGE_MAP(PrintRenderFrameHelper, message)
+     IPC_MESSAGE_HANDLER(PrintMsg_PrintPages, OnPrintPages)
++    IPC_MESSAGE_HANDLER(PrintMsg_PrintPagesWithSettings, OnPrintPagesWithSettings)
+     IPC_MESSAGE_HANDLER(PrintMsg_PrintForSystemDialog, OnPrintForSystemDialog)
+     IPC_MESSAGE_HANDLER(PrintMsg_InitiatePrintPreview, OnInitiatePrintPreview)
+     IPC_MESSAGE_HANDLER(PrintMsg_PrintPreview, OnPrintPreview)
+@@ -1108,6 +1109,26 @@ void PrintRenderFrameHelper::OnPrintPages() {
+   // just return.
+ }
+ 
++void PrintRenderFrameHelper::OnPrintPagesWithSettings(base::string16 printer, PageRanges pages) {
++  if (ipc_nesting_level_> 1)
++    return;
++ 
++  auto weak_this = weak_ptr_factory_.GetWeakPtr();
++  blink::WebLocalFrame* frame = render_frame()->GetWebFrame();
++  frame->DispatchBeforePrintEvent();
++  if (!weak_this)
++    return;
++
++  // If we are printing a PDF extension frame, find the plugin node and print
++  // that instead.
++  auto plugin = delegate_->GetPdfElement(frame);
++  Print(frame, plugin, false, printer, pages);
++  if (weak_this)
++    frame->DispatchAfterPrintEvent();
++  // WARNING: |this| may be gone at this point. Do not do any more work here and
++  // just return.
++}
++
+ void PrintRenderFrameHelper::OnPrintForSystemDialog() {
+   if (ipc_nesting_level_ > 1)
+     return;
+@@ -1545,9 +1566,17 @@ void PrintRenderFrameHelper::PrintNode(const blink::WebNode& node) {
+   print_node_in_progress_ = false;
+ }
+ 
++void PrintRenderFrameHelper::Print(blink::WebLocalFrame* frame,
++	const blink::WebNode& node,
++	bool is_scripted){
++	Print(frame, node, is_scripted, L"", printing::PageRanges());
++}
++
+ void PrintRenderFrameHelper::Print(blink::WebLocalFrame* frame,
+                                    const blink::WebNode& node,
+-                                   bool is_scripted) {
++                                   bool is_scripted,
++                                   const base::string16& printer,
++                                   const printing::PageRanges& pages) {
+   // If still not finished with earlier print request simply ignore.
+   if (prep_frame_view_)
+     return;
+@@ -1575,8 +1604,12 @@ void PrintRenderFrameHelper::Print(blink::WebLocalFrame* frame,
+ 
+     PrintMsg_PrintPages_Params print_settings;
+     auto self = weak_ptr_factory_.GetWeakPtr();
+-    GetPrintSettingsFromUser(frame_ref.GetFrame(), node, expected_page_count,
+-                             is_scripted, &print_settings);
++    if (printer.empty())
++      GetPrintSettingsFromUser(frame_ref.GetFrame(), node, expected_page_count,
++                               is_scripted, &print_settings);
++    else
++      GetPrintSettingsWithPrinterAndPages(frame_ref.GetFrame(), node, expected_page_count,
++                               is_scripted, printer, pages, &print_settings);
+     // Check if |this| is still valid.
+     if (!self)
+       return;
+@@ -1934,6 +1967,38 @@ void PrintRenderFrameHelper::GetPrintSettingsFromUser(
+   // and just return.
+ }
+ 
++void PrintRenderFrameHelper::GetPrintSettingsWithPrinterAndPages(
++    blink::WebLocalFrame* frame,
++    const blink::WebNode& node,
++    int expected_pages_count,
++    bool is_scripted,
++    const base::string16& printer_name,
++    const printing::PageRanges& pages,
++    PrintMsg_PrintPages_Params* print_settings) {
++  PrintHostMsg_ScriptedPrint_Params params;
++  params.cookie = print_pages_params_->params.document_cookie;
++  params.has_selection = frame->HasSelection();
++  params.expected_pages_count = expected_pages_count;
++  MarginType margin_type = DEFAULT_MARGINS;
++  if (PrintingNodeOrPdfFrame(frame, node))
++    margin_type = GetMarginsForPdf(frame, node, print_pages_params_->params);
++  params.margin_type = margin_type;
++  params.is_scripted = is_scripted;
++  params.is_modifiable = !PrintingNodeOrPdfFrame(frame, node);
++  params.pages = pages;
++  params.forced_printer = printer_name;
++
++  //Send(new PrintHostMsg_DidShowPrintDialog(routing_id()));
++
++  print_pages_params_.reset();
++
++  auto msg = std::make_unique<PrintHostMsg_ScriptedPrint>(routing_id(), params,
++                                                          print_settings);
++  msg->EnableMessagePumping();
++  Send(msg.release());
++  // WARNING: |this| may be gone at this point. Do not do any more work here
++  // and just return.
++}
+ bool PrintRenderFrameHelper::RenderPagesForPrint(blink::WebLocalFrame* frame,
+                                                  const blink::WebNode& node) {
+   if (!frame || prep_frame_view_)
+diff --git components/printing/renderer/print_render_frame_helper.h components/printing/renderer/print_render_frame_helper.h
+index 12d71ed042c6..c7f0d10a407d 100644
+--- components/printing/renderer/print_render_frame_helper.h
++++ components/printing/renderer/print_render_frame_helper.h
+@@ -23,6 +23,7 @@
+ #include "third_party/blink/public/web/web_node.h"
+ #include "third_party/blink/public/web/web_print_params.h"
+ #include "ui/gfx/geometry/size.h"
++#include "printing/page_range.h"
+ 
+ struct PrintMsg_Print_Params;
+ struct PrintMsg_PrintPages_Params;
+@@ -186,6 +187,7 @@ class PrintRenderFrameHelper
+ 
+   // Message handlers ---------------------------------------------------------
+   void OnPrintPages();
++  void OnPrintPagesWithSettings(base::string16 printer, printing::PageRanges pages);
+   void OnPrintForSystemDialog();
+   void OnInitiatePrintPreview(bool has_selection);
+   void OnPrintPreview(const base::DictionaryValue& settings);
+@@ -237,6 +239,12 @@ class PrintRenderFrameHelper
+              const blink::WebNode& node,
+              bool is_scripted);
+ 
++   void Print(blink::WebLocalFrame* frame,
++             const blink::WebNode& node,
++             bool is_scripted,
++             const base::string16& printer,
++             const printing::PageRanges& pages);
++
+   // Notification when printing is done - signal tear-down/free resources.
+   void DidFinishPrinting(PrintingResult result);
+ 
+@@ -269,6 +277,16 @@ class PrintRenderFrameHelper
+                                 int expected_pages_count,
+                                 bool is_scripted,
+                                 PrintMsg_PrintPages_Params* print_settings);
++ 
++  // Get final print settings with forced printer and pages to print.
++  // WARNING: |this| may be gone after this method returns.
++  void GetPrintSettingsWithPrinterAndPages(blink::WebLocalFrame* frame,
++                                const blink::WebNode& node,
++                                int expected_pages_count,
++                                bool is_scripted,
++                                const base::string16& printer_name,
++                                const printing::PageRanges& pages,
++                                PrintMsg_PrintPages_Params* print_settings);
+ 
+   // Page Printing / Rendering ------------------------------------------------
+ 
+diff --git printing/printing_context.h printing/printing_context.h
+index 03f0f0837f80..312638f77bbb 100644
+--- printing/printing_context.h
++++ printing/printing_context.h
+@@ -69,6 +69,9 @@ class PRINTING_EXPORT PrintingContext {
+   // default device settings.
+   virtual Result UseDefaultSettings() = 0;
+ 
++  // Selects the user's passed printer and default format.
++  virtual Result UseDefaultSettingsWithPrinterAndRanges(const base::string16& forced_printer, const PageRanges& ranges) = 0;
++
+   // Updates the context with PDF printer settings.
+   Result UsePdfSettings();
+ 
+diff --git printing/printing_context_win.cc printing/printing_context_win.cc
+index d0b9503c0306..88bd92c83410 100644
+--- printing/printing_context_win.cc
++++ printing/printing_context_win.cc
+@@ -112,6 +112,40 @@ PrintingContext::Result PrintingContextWin::UseDefaultSettings() {
+   return OnError();
+ }
+ 
++PrintingContext::Result PrintingContextWin::UseDefaultSettingsWithPrinterAndRanges(const base::string16& forced_printer, const PageRanges& ranges) {
++  DCHECK(!in_print_job_);
++
++  if (!forced_printer.empty()) {
++  	ScopedPrinterHandle printer;
++  	if (printer.OpenPrinter(forced_printer.c_str())) {
++  		std::unique_ptr<DEVMODE, base::FreeDeleter> dev_mode =
++  			CreateDevMode(printer.Get(), nullptr);
++  		if (InitializeSettings(forced_printer, dev_mode.get()) == OK)
++  		{
++  			if (ranges.size() > 0)
++  			{
++  				PageRanges ranges_vector;
++  				ranges_vector.reserve(ranges.size());
++  				// transform ranges from 1-based to 0-based
++  				for (size_t i = 0; i < ranges.size(); ++i) {
++  					PageRange range;
++  					// Transfer from 1-based to 0-based.
++  					range.from = ranges[i].from - 1;
++  					range.to = ranges[i].to - 1;
++  					ranges_vector.push_back(range);
++  				}
++  				settings_.set_ranges(ranges_vector);
++  			}
++  			return OK;
++  		}
++  	}
++  }
++  
++  ReleaseContext();
++
++  return OnError();
++}
++
+ gfx::Size PrintingContextWin::GetPdfPaperSizeDeviceUnits() {
+   // Default fallback to Letter size.
+   gfx::SizeF paper_size(kLetterWidthInch, kLetterHeightInch);
+diff --git printing/printing_context_win.h printing/printing_context_win.h
+index bc427a0bc713..6b86c7cbda67 100644
+--- printing/printing_context_win.h
++++ printing/printing_context_win.h
+@@ -30,6 +30,7 @@ class PRINTING_EXPORT PrintingContextWin : public PrintingContext {
+                           bool is_scripted,
+                           PrintSettingsCallback callback) override;
+   Result UseDefaultSettings() override;
++  Result UseDefaultSettingsWithPrinterAndRanges(const base::string16& forced_printer, const PageRanges& ranges) override;
+   gfx::Size GetPdfPaperSizeDeviceUnits() override;
+   Result UpdatePrinterSettings(bool external_preview,
+                                bool show_system_dialog,
