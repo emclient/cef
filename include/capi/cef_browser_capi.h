@@ -33,7 +33,7 @@
 // by hand. See the translator.README.txt file in the tools directory for
 // more information.
 //
-// $hash=c02a99b7b9d9c67207732dad38f5840c56535bd5$
+// $hash=dad3eba98fd3a553730bd7ae6b344c25ecf13616$
 //
 
 #ifndef CEF_INCLUDE_CAPI_CEF_BROWSER_CAPI_H_
@@ -259,6 +259,24 @@ typedef struct _cef_pdf_print_callback_t {
 } cef_pdf_print_callback_t;
 
 ///
+// Callback structure for cef_browser_host_t::Print. The functions of this
+// structure will be called on the browser process UI thread.
+///
+typedef struct _cef_print_callback_t {
+  ///
+  // Base structure.
+  ///
+  cef_base_ref_counted_t base;
+
+  ///
+  // Method that will be executed when the printing has completed. |ok| will be
+  // true (1) if the printing completed successfully or false (0) otherwise.
+  ///
+  void(CEF_CALLBACK* on_print_finished)(struct _cef_print_callback_t* self,
+                                        int ok);
+} cef_print_callback_t;
+
+///
 // Callback structure for cef_browser_host_t::DownloadImage. The functions of
 // this structure will be called on the browser process UI thread.
 ///
@@ -429,16 +447,19 @@ typedef struct _cef_browser_host_t {
   ///
   // Print the current browser contents.
   ///
-  void(CEF_CALLBACK* print)(struct _cef_browser_host_t* self);
+  void(CEF_CALLBACK* print)(struct _cef_browser_host_t* self,
+                            struct _cef_print_callback_t* callback);
 
   ///
   // Print the specifed pages (1-based) of the current browser contents on a
   // specified printer
   ///
-  void(CEF_CALLBACK* print_with_settings)(struct _cef_browser_host_t* self,
-                                          const cef_string_t* printerName,
-                                          size_t pagesCount,
-                                          cef_range_t const* pages);
+  void(CEF_CALLBACK* print_with_settings)(
+      struct _cef_browser_host_t* self,
+      const cef_string_t* printerName,
+      size_t pagesCount,
+      cef_range_t const* pages,
+      struct _cef_print_callback_t* callback);
 
   ///
   // Print the current browser contents to the PDF file specified by |path| and

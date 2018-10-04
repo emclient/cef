@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=3d96a6710184bb342c361c9e101238eca0989d1c$
+// $hash=e08cab4722ef74387ced31c083cab76adfff8ff2$
 //
 
 #include "include/capi/cef_app_capi.h"
@@ -65,6 +65,7 @@
 #include "libcef_dll/cpptoc/menu_model_delegate_cpptoc.h"
 #include "libcef_dll/cpptoc/navigation_entry_visitor_cpptoc.h"
 #include "libcef_dll/cpptoc/pdf_print_callback_cpptoc.h"
+#include "libcef_dll/cpptoc/print_callback_cpptoc.h"
 #include "libcef_dll/cpptoc/print_handler_cpptoc.h"
 #include "libcef_dll/cpptoc/read_handler_cpptoc.h"
 #include "libcef_dll/cpptoc/register_cdm_callback_cpptoc.h"
@@ -303,6 +304,7 @@ NO_SANITIZE("cfi-icall") CEF_GLOBAL void CefShutdown() {
   DCHECK(base::AtomicRefCountIsZero(&CefPanelCToCpp::DebugObjCt));
   DCHECK(base::AtomicRefCountIsZero(&CefPanelDelegateCppToC::DebugObjCt));
   DCHECK(base::AtomicRefCountIsZero(&CefPdfPrintCallbackCppToC::DebugObjCt));
+  DCHECK(base::AtomicRefCountIsZero(&CefPrintCallbackCppToC::DebugObjCt));
   DCHECK(base::AtomicRefCountIsZero(&CefPrintDialogCallbackCToCpp::DebugObjCt));
   DCHECK(base::AtomicRefCountIsZero(&CefPrintHandlerCppToC::DebugObjCt));
   DCHECK(base::AtomicRefCountIsZero(&CefPrintJobCallbackCToCpp::DebugObjCt));
