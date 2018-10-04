@@ -1,0 +1,116 @@
+diff --git ui/views/bubble/bubble_dialog_delegate_view.cc ui/views/bubble/bubble_dialog_delegate_view.cc
+index 434ae1ea7db6..ce4c0ea47a68 100644
+--- ui/views/bubble/bubble_dialog_delegate_view.cc
++++ ui/views/bubble/bubble_dialog_delegate_view.cc
+@@ -312,9 +312,12 @@ gfx::Rect BubbleDialogDelegateView::GetBubbleBounds() {
+   // at (0, 0), don't try and adjust arrow if off-screen.
+   gfx::Rect anchor_rect = GetAnchorRect();
+   bool has_anchor = GetAnchorView() || anchor_rect != gfx::Rect();
++  gfx::Rect forced_rect(0,0,0,0);
++  if (parent_window())
++    forced_rect = parent_window()->GetBoundsInScreen();
+   return GetBubbleFrameView()->GetUpdatedWindowBounds(
+       anchor_rect, GetWidget()->client_view()->GetPreferredSize(),
+-      adjust_if_offscreen_ && !anchor_minimized && has_anchor);
++      adjust_if_offscreen_ && !anchor_minimized && has_anchor, forced_rect);
+ }
+ 
+ ax::mojom::Role BubbleDialogDelegateView::GetAccessibleWindowRole() const {
+diff --git ui/views/bubble/bubble_frame_view.cc ui/views/bubble/bubble_frame_view.cc
+index 02aa4a05ff8d..4e50e902243a 100644
+--- ui/views/bubble/bubble_frame_view.cc
++++ ui/views/bubble/bubble_frame_view.cc
+@@ -474,19 +474,20 @@ void BubbleFrameView::SetFootnoteView(View* view) {
+ 
+ gfx::Rect BubbleFrameView::GetUpdatedWindowBounds(const gfx::Rect& anchor_rect,
+                                                   const gfx::Size& client_size,
+-                                                  bool adjust_if_offscreen) {
++                                                  bool adjust_if_offscreen,
++                                                  const gfx::Rect& forced_bounds) {
+   gfx::Size size(GetFrameSizeForClientSize(client_size));
+ 
+   const BubbleBorder::Arrow arrow = bubble_border_->arrow();
+   if (adjust_if_offscreen && BubbleBorder::has_arrow(arrow)) {
+     // Try to mirror the anchoring if the bubble does not fit on the screen.
+     if (!bubble_border_->is_arrow_at_center(arrow)) {
+-      MirrorArrowIfOffScreen(true, anchor_rect, size);
+-      MirrorArrowIfOffScreen(false, anchor_rect, size);
++      MirrorArrowIfOffScreen(true, anchor_rect, size, forced_bounds);
++      MirrorArrowIfOffScreen(false, anchor_rect, size, forced_bounds);
+     } else {
+       const bool mirror_vertical = BubbleBorder::is_arrow_on_horizontal(arrow);
+-      MirrorArrowIfOffScreen(mirror_vertical, anchor_rect, size);
+-      OffsetArrowIfOffScreen(anchor_rect, size);
++      MirrorArrowIfOffScreen(mirror_vertical, anchor_rect, size, forced_bounds);
++      OffsetArrowIfOffScreen(anchor_rect, size, forced_bounds);
+     }
+   }
+ 
+@@ -521,9 +522,10 @@ gfx::Rect BubbleFrameView::GetCloseButtonMirroredBounds() const {
+ void BubbleFrameView::MirrorArrowIfOffScreen(
+     bool vertical,
+     const gfx::Rect& anchor_rect,
+-    const gfx::Size& client_size) {
++    const gfx::Size& client_size,
++    const gfx::Rect& forced_bounds) {
+   // Check if the bounds don't fit on screen.
+-  gfx::Rect available_bounds(GetAvailableScreenBounds(anchor_rect));
++  gfx::Rect available_bounds(forced_bounds.IsEmpty() ? GetAvailableScreenBounds(anchor_rect) : forced_bounds);
+   gfx::Rect window_bounds(bubble_border_->GetBounds(anchor_rect, client_size));
+   if (GetOffScreenLength(available_bounds, window_bounds, vertical) > 0) {
+     BubbleBorder::Arrow arrow = bubble_border()->arrow();
+@@ -548,7 +550,8 @@ void BubbleFrameView::MirrorArrowIfOffScreen(
+ }
+ 
+ void BubbleFrameView::OffsetArrowIfOffScreen(const gfx::Rect& anchor_rect,
+-                                             const gfx::Size& client_size) {
++                                             const gfx::Size& client_size,
++                                             const gfx::Rect& forced_bounds) {
+   BubbleBorder::Arrow arrow = bubble_border()->arrow();
+   DCHECK(BubbleBorder::is_arrow_at_center(arrow));
+ 
+@@ -556,7 +559,7 @@ void BubbleFrameView::OffsetArrowIfOffScreen(const gfx::Rect& anchor_rect,
+   bubble_border_->set_arrow_offset(0);
+   gfx::Rect window_bounds(bubble_border_->GetBounds(anchor_rect, client_size));
+ 
+-  gfx::Rect available_bounds(GetAvailableScreenBounds(anchor_rect));
++  gfx::Rect available_bounds(forced_bounds.IsEmpty() ? GetAvailableScreenBounds(anchor_rect) : forced_bounds);
+   if (available_bounds.IsEmpty() || available_bounds.Contains(window_bounds))
+     return;
+ 
+diff --git ui/views/bubble/bubble_frame_view.h ui/views/bubble/bubble_frame_view.h
+index bfb407a231ff..9e390c85583e 100644
+--- ui/views/bubble/bubble_frame_view.h
++++ ui/views/bubble/bubble_frame_view.h
+@@ -95,7 +95,8 @@ class VIEWS_EXPORT BubbleFrameView : public NonClientFrameView,
+   // does not fit on the monitor and |adjust_if_offscreen| is true.
+   gfx::Rect GetUpdatedWindowBounds(const gfx::Rect& anchor_rect,
+                                    const gfx::Size& client_size,
+-                                   bool adjust_if_offscreen);
++                                   bool adjust_if_offscreen,
++                                   const gfx::Rect& forced_bounds);
+ 
+   bool close_button_clicked() const { return close_button_clicked_; }
+ 
+@@ -127,15 +128,17 @@ class VIEWS_EXPORT BubbleFrameView : public NonClientFrameView,
+   FRIEND_TEST_ALL_PREFIXES(BubbleDialogDelegateViewTest, CloseMethods);
+ 
+   // Mirrors the bubble's arrow location on the |vertical| or horizontal axis,
+-  // if the generated window bounds don't fit in the monitor bounds.
++  // if the generated window bounds don't fit in the bounds.
+   void MirrorArrowIfOffScreen(bool vertical,
+                               const gfx::Rect& anchor_rect,
+-                              const gfx::Size& client_size);
++                              const gfx::Size& client_size,
++                              const gfx::Rect& forced_bounds);
+ 
+   // Adjust the bubble's arrow offsets if the generated window bounds don't fit
+-  // in the monitor bounds.
++  // in the bounds.
+   void OffsetArrowIfOffScreen(const gfx::Rect& anchor_rect,
+-                              const gfx::Size& client_size);
++                              const gfx::Size& client_size,
++                              const gfx::Rect& forced_bounds);
+ 
+   // The width of the frame for the given |client_width|. The result accounts
+   // for the minimum title bar width and includes all insets and possible
