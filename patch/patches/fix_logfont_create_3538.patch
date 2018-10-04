@@ -1,0 +1,19 @@
+diff --git third_party/skia/src/ports/SkFontMgr_win_dw.cpp third_party/skia/src/ports/SkFontMgr_win_dw.cpp
+index 7314d3f61c..65a66fed97 100644
+--- third_party/skia/src/ports/SkFontMgr_win_dw.cpp
++++ third_party/skia/src/ports/SkFontMgr_win_dw.cpp
+@@ -1111,8 +1111,13 @@ SkFontStyleSet* SkFontMgr_DirectWrite::matchFamilyFromLogfont(const char familyN
+     SkTScopedComPtr<IDWriteGdiInterop> gdi_interop;
+     fFactory->GetGdiInterop(&gdi_interop);
+ 
++    wchar_t* family_name = dwFamilyName.get();
++    if (wcslen(family_name) >= 32)
++        return nullptr;
++
+     LOGFONTW* lf = new LOGFONTW();
+-    wcscpy_s(lf->lfFaceName, LF_FACESIZE, dwFamilyName.get());
++    if (family_name)
++        wcscpy_s(lf->lfFaceName, LF_FACESIZE, family_name);
+ 
+     SkTScopedComPtr<IDWriteFont> dwrite_font;
+     HRNM(gdi_interop->CreateFontFromLOGFONT(lf, &dwrite_font),
