@@ -533,7 +533,7 @@ void RunTest(CefRefPtr<CefBrowser> browser, int id) {
       EndTracing(browser);
       break;
     case ID_TESTS_PRINT:
-      browser->GetHost()->Print();
+      browser->GetHost()->Print(nullptr);
       break;
     case ID_TESTS_PRINT_TO_PDF:
       PrintToPDF(browser);

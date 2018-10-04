@@ -45,16 +45,19 @@ class CefPrintViewManagerBase : public content::NotificationObserver,
                                 public PrintManager {
  public:
   ~CefPrintViewManagerBase() override;
+    
+  // Callback executed on printing completion.
+  typedef base::Callback<void(bool /*ok*/)> PrintCallback;
 
   // Prints the current document immediately. Since the rendering is
   // asynchronous, the actual printing will not be completed on the return of
   // this function. Returns false if printing is impossible at the moment.
-  virtual bool PrintNow(content::RenderFrameHost* rfh);
+  virtual bool PrintNow(content::RenderFrameHost* rfh, const PrintCallback& callback);
 
   // Prints the current document immediately on a specified printer. Since the rendering is
   // asynchronous, the actual printing will not be completed on the return of
   // this function. Returns false if printing is impossible at the moment.
-  virtual bool PrintNowWithSettings(content::RenderFrameHost* rfh, const CefString& printerName, const std::vector<CefRange>& pages);
+  virtual bool PrintNowWithSettings(content::RenderFrameHost* rfh, const CefString& printerName, const std::vector<CefRange>& pages, const PrintCallback& callback);
 
   // Whether printing is enabled or not.
   void UpdatePrintingEnabled();
@@ -66,7 +69,8 @@ class CefPrintViewManagerBase : public content::NotificationObserver,
 
   // Helper method for Print*Now().
   bool PrintNowInternal(content::RenderFrameHost* rfh,
-                        std::unique_ptr<IPC::Message> message);
+                        std::unique_ptr<IPC::Message> message,
+                        const PrintCallback& callback);
 
   void SetPrintingRFH(content::RenderFrameHost* rfh);
 
@@ -179,6 +183,7 @@ class CefPrintViewManagerBase : public content::NotificationObserver,
 
   // Whether printing is enabled.
   BooleanPrefMember printing_enabled_;
+  PrintCallback print_callback_;
 
   scoped_refptr<PrintQueriesQueue> queue_;
 

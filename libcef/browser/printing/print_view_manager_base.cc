@@ -81,18 +81,21 @@ CefPrintViewManagerBase::~CefPrintViewManagerBase() {
   DisconnectFromCurrentPrintJob();
 }
 
-bool CefPrintViewManagerBase::PrintNow(content::RenderFrameHost* rfh) {
+bool CefPrintViewManagerBase::PrintNow(content::RenderFrameHost* rfh,
+                                       const PrintCallback& callback) {
   DisconnectFromCurrentPrintJob();
 
   SetPrintingRFH(rfh);
   int32_t id = rfh->GetRoutingID();
-  return PrintNowInternal(rfh, std::make_unique<PrintMsg_PrintPages>(id));
+  return PrintNowInternal(rfh, std::make_unique<PrintMsg_PrintPages>(id),
+                          callback);
 }
 
 bool CefPrintViewManagerBase::PrintNowWithSettings(
     content::RenderFrameHost* rfh,
     const CefString& printerName,
-    const std::vector<CefRange>& pages) {
+    const std::vector<CefRange>& pages,
+    const PrintCallback& callback) {
   DisconnectFromCurrentPrintJob();
 
   printing::PageRanges ranges = printing::PageRanges();
@@ -108,7 +111,8 @@ bool CefPrintViewManagerBase::PrintNowWithSettings(
   int32_t id = rfh->GetRoutingID();
   return PrintNowInternal(rfh,
                           std::make_unique<PrintMsg_PrintPagesWithSettings>(
-                              id, printerName.ToString16(), ranges));
+                              id, printerName.ToString16(), ranges),
+                          callback);
 }
 
 void CefPrintViewManagerBase::PrintDocument(
@@ -302,6 +306,11 @@ void CefPrintViewManagerBase::OnNotifyPrintJobEvent(
           chrome::NOTIFICATION_PRINT_JOB_RELEASED,
           content::Source<content::WebContents>(web_contents()),
           content::NotificationService::NoDetails());
+
+      if (!print_callback_.is_null()) {
+        BrowserThread::PostTask(BrowserThread::UI, FROM_HERE,
+                                base::BindOnce(print_callback_, false));
+      }
       break;
     }
     case JobEventDetails::USER_INIT_DONE:
@@ -333,6 +342,10 @@ void CefPrintViewManagerBase::OnNotifyPrintJobEvent(
           chrome::NOTIFICATION_PRINT_JOB_RELEASED,
           content::Source<content::WebContents>(web_contents()),
           content::NotificationService::NoDetails());
+      if (!print_callback_.is_null()) {
+        BrowserThread::PostTask(BrowserThread::UI, FROM_HERE,
+                                base::BindOnce(print_callback_, true));
+      }
       break;
     }
     default: {
@@ -535,10 +548,14 @@ bool CefPrintViewManagerBase::OpportunisticallyCreatePrintJob(int cookie) {
 
 bool CefPrintViewManagerBase::PrintNowInternal(
     content::RenderFrameHost* rfh,
-    std::unique_ptr<IPC::Message> message) {
+    std::unique_ptr<IPC::Message> message,
+    const PrintCallback& callback) {
   // Don't print / print preview interstitials or crashed tabs.
   if (web_contents()->ShowingInterstitialPage() || web_contents()->IsCrashed())
     return false;
+
+  print_callback_ = callback;
+
   return rfh->Send(message.release());
 }
 
