@@ -1,0 +1,24 @@
+ src/ports/SkFontMgr_win_dw.cpp | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
+
+diff --git src/ports/SkFontMgr_win_dw.cpp src/ports/SkFontMgr_win_dw.cpp
+index 582a3a0306..3ef04e87ba 100644
+--- src/ports/SkFontMgr_win_dw.cpp
++++ src/ports/SkFontMgr_win_dw.cpp
+@@ -1023,9 +1023,14 @@ SkFontStyleSet* SkFontMgr_DirectWrite::matchFamilyFromLogfont(const char familyN
+     SkTScopedComPtr<IDWriteGdiInterop> gdi_interop;
+     fFactory->GetGdiInterop(&gdi_interop);
+ 
++	wchar_t* family_name = dwFamilyName.get();
++    if (wcslen(family_name) > 32)
++        return nullptr;
++ 
+     LOGFONTW* lf = new LOGFONTW();
+-    wcscpy_s(lf->lfFaceName, LF_FACESIZE, dwFamilyName.get());
+-
++    if (family_name)
++        wcscpy_s(lf->lfFaceName, LF_FACESIZE, family_name);
++	
+     SkTScopedComPtr<IDWriteFont> dwrite_font;
+     HRNM(gdi_interop->CreateFontFromLOGFONT(lf, &dwrite_font),
+         "Failed while finding family from LOGFONT.");
