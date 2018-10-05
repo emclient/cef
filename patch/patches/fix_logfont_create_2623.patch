@@ -10,7 +10,7 @@ index 582a3a0306..3ef04e87ba 100644
      fFactory->GetGdiInterop(&gdi_interop);
  
 +	wchar_t* family_name = dwFamilyName.get();
-+    if (wcslen(family_name) > 32)
++    if (wcslen(family_name) >= 32)
 +        return nullptr;
 + 
      LOGFONTW* lf = new LOGFONTW();
