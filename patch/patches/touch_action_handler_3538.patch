@@ -1,0 +1,350 @@
+diff --git chrome/browser/renderer_preferences_util.cc chrome/browser/renderer_preferences_util.cc
+index 2a9009bac996..bcd52d0e3867 100644
+--- chrome/browser/renderer_preferences_util.cc
++++ chrome/browser/renderer_preferences_util.cc
+@@ -111,6 +111,9 @@ void UpdateFromSystemSettings(content::RendererPreferences* prefs,
+   ParsePortRange(webrtc_udp_port_range, &prefs->webrtc_udp_min_port,
+                  &prefs->webrtc_udp_max_port);
+ 
++  prefs->use_touch_actions_callback =
++	  pref_service->GetBoolean(prefs::kTouchUseHandler);
++
+ #if BUILDFLAG(USE_DEFAULT_RENDER_THEME)
+   prefs->focus_ring_color = SkColorSetRGB(0x4D, 0x90, 0xFE);
+ #if defined(OS_CHROMEOS)
+diff --git chrome/common/pref_names.cc chrome/common/pref_names.cc
+index 999327604463..7eea83c4c443 100644
+--- chrome/common/pref_names.cc
++++ chrome/common/pref_names.cc
+@@ -398,6 +398,9 @@ const char kIncognitoModeAvailability[] = "incognito.mode_availability";
+ // Boolean that is true when Suggest support is enabled.
+ const char kSearchSuggestEnabled[] = "search.suggest_enabled";
+ 
++// Use handler for touch actions instead of handling them
++const char kTouchUseHandler[] = "touch.use.handler";
++
+ #if defined(OS_ANDROID)
+ // String indicating the Contextual Search enabled state.
+ // "false" - opt-out (disabled)
+diff --git chrome/common/pref_names.h chrome/common/pref_names.h
+index c56c5a378516..1ab8caf9f558 100644
+--- chrome/common/pref_names.h
++++ chrome/common/pref_names.h
+@@ -57,6 +57,7 @@ extern const char kSupervisedUserSecondCustodianProfileURL[];
+ extern const char kSupervisedUserSharedSettings[];
+ extern const char kSupervisedUserWhitelists[];
+ extern const char kURLsToRestoreOnStartup[];
++extern const char kTouchUseHandler[];
+ 
+ #if BUILDFLAG(ENABLE_RLZ)
+ extern const char kRlzPingDelaySeconds[];
+diff --git content/browser/frame_host/render_frame_host_delegate.h content/browser/frame_host/render_frame_host_delegate.h
+index 61b1c2956180..bd817bb525ea 100644
+--- content/browser/frame_host/render_frame_host_delegate.h
++++ content/browser/frame_host/render_frame_host_delegate.h
+@@ -126,6 +126,9 @@ class CONTENT_EXPORT RenderFrameHostDelegate {
+   virtual void ShowContextMenu(RenderFrameHost* render_frame_host,
+                                const ContextMenuParams& params) {}
+ 
++  virtual void HandleTouchAction(RenderFrameHost* render_frame_host,
++                                 const std::string& action) {}
++
+   // A JavaScript alert, confirmation or prompt dialog should be shown.
+   virtual void RunJavaScriptDialog(RenderFrameHost* render_frame_host,
+                                    const base::string16& message,
+diff --git content/browser/frame_host/render_frame_host_impl.cc content/browser/frame_host/render_frame_host_impl.cc
+index c80e30494698..ad5509f84912 100644
+--- content/browser/frame_host/render_frame_host_impl.cc
++++ content/browser/frame_host/render_frame_host_impl.cc
+@@ -1229,6 +1229,7 @@ bool RenderFrameHostImpl::OnMessageReceived(const IPC::Message &msg) {
+     IPC_MESSAGE_HANDLER(FrameHostMsg_BeforeUnload_ACK, OnBeforeUnloadACK)
+     IPC_MESSAGE_HANDLER(FrameHostMsg_SwapOut_ACK, OnSwapOutACK)
+     IPC_MESSAGE_HANDLER(FrameHostMsg_ContextMenu, OnContextMenu)
++    IPC_MESSAGE_HANDLER(ViewMsg_TouchAction, OnTouchAction)
+     IPC_MESSAGE_HANDLER(FrameHostMsg_JavaScriptExecuteResponse,
+                         OnJavaScriptExecuteResponse)
+     IPC_MESSAGE_HANDLER(FrameHostMsg_VisualStateResponse,
+@@ -2422,6 +2423,10 @@ void RenderFrameHostImpl::OnContextMenu(const ContextMenuParams& params) {
+   delegate_->ShowContextMenu(this, validated_params);
+ }
+ 
++void RenderFrameHostImpl::OnTouchAction(const std::string& action) {
++  delegate_->HandleTouchAction(this, action);
++}
++
+ void RenderFrameHostImpl::OnJavaScriptExecuteResponse(
+     int id, const base::ListValue& result) {
+   const base::Value* result_value;
+diff --git content/browser/frame_host/render_frame_host_impl.h content/browser/frame_host/render_frame_host_impl.h
+index a5598daa56ce..21dfa6308ced 100644
+--- content/browser/frame_host/render_frame_host_impl.h
++++ content/browser/frame_host/render_frame_host_impl.h
+@@ -895,6 +895,7 @@ class CONTENT_EXPORT RenderFrameHostImpl
+   void OnSwapOutACK();
+   void OnRenderProcessGone(int status, int error_code);
+   void OnContextMenu(const ContextMenuParams& params);
++  void OnTouchAction(const std::string& action);
+   void OnJavaScriptExecuteResponse(int id, const base::ListValue& result);
+   void OnVisualStateResponse(uint64_t id);
+   void OnRunJavaScriptDialog(const base::string16& message,
+diff --git content/browser/renderer_host/input/touch_selection_controller_client_aura.cc content/browser/renderer_host/input/touch_selection_controller_client_aura.cc
+index 3b7ecd5a70f0..e72f8f3a75a5 100644
+--- content/browser/renderer_host/input/touch_selection_controller_client_aura.cc
++++ content/browser/renderer_host/input/touch_selection_controller_client_aura.cc
+@@ -474,39 +474,59 @@ bool TouchSelectionControllerClientAura::IsCommandIdEnabled(
+ void TouchSelectionControllerClientAura::ExecuteCommand(int command_id,
+                                                         int event_flags) {
+   rwhva_->selection_controller()->HideAndDisallowShowingAutomatically();
+-  RenderWidgetHostDelegate* host_delegate = rwhva_->host()->delegate();
++  RenderWidgetHostImpl* host = rwhva_->host();
++  RenderWidgetHostDelegate* host_delegate = host->delegate();
+   if (!host_delegate)
+     return;
+ 
+-  switch (command_id) {
+-    case IDS_APP_CUT:
+-      host_delegate->Cut();
+-      break;
+-    case IDS_APP_COPY:
+-      host_delegate->Copy();
+-      break;
+-    case IDS_APP_PASTE:
+-      host_delegate->Paste();
+-      break;
+-    default:
+-      NOTREACHED();
+-      break;
++  RendererPreferences* renderer_prefs =
++      host_delegate->GetMutableRendererPrefs();
++  if (renderer_prefs->use_touch_actions_callback) {
++    switch (command_id) {
++      case IDS_APP_CUT:
++        host->Send(new ViewMsg_TouchAction(host->GetRoutingID(), "cut"));
++        break;
++      case IDS_APP_COPY:
++        host->Send(new ViewMsg_TouchAction(host->GetRoutingID(), "copy"));
++        break;
++      case IDS_APP_PASTE:
++        host->Send(new ViewMsg_TouchAction(host->GetRoutingID(), "paste"));
++        break;
++      default:
++        NOTREACHED();
++        break;
++    }
++  } else {
++    switch (command_id) {
++      case IDS_APP_CUT:
++        host_delegate->Cut();
++        break;
++      case IDS_APP_COPY:
++        host_delegate->Copy();
++        break;
++      case IDS_APP_PASTE:
++        host_delegate->Paste();
++        break;
++      default:
++        NOTREACHED();
++        break;
++    }  
+   }
+ }
+ 
+ void TouchSelectionControllerClientAura::RunContextMenu() {
+-  gfx::RectF anchor_rect =
+-      rwhva_->selection_controller()->GetRectBetweenBounds();
+-  gfx::PointF anchor_point =
+-      gfx::PointF(anchor_rect.CenterPoint().x(), anchor_rect.y());
+-  RenderWidgetHostImpl* host = rwhva_->host();
+-  host->ShowContextMenuAtPoint(gfx::ToRoundedPoint(anchor_point),
+-                               ui::MENU_SOURCE_TOUCH_EDIT_MENU);
+-
+-  // Hide selection handles after getting rect-between-bounds from touch
+-  // selection controller; otherwise, rect would be empty and the above
+-  // calculations would be invalid.
+-  rwhva_->selection_controller()->HideAndDisallowShowingAutomatically();
+-}
++    gfx::RectF anchor_rect =
++        rwhva_->selection_controller()->GetRectBetweenBounds();
++    gfx::PointF anchor_point =
++        gfx::PointF(anchor_rect.CenterPoint().x(), anchor_rect.y());
++    RenderWidgetHostImpl* host = rwhva_->host();
++    host->ShowContextMenuAtPoint(gfx::ToRoundedPoint(anchor_point),
++                                 ui::MENU_SOURCE_TOUCH_EDIT_MENU);
++
++    // Hide selection handles after getting rect-between-bounds from touch
++    // selection controller; otherwise, rect would be empty and the above
++    // calculations would be invalid.
++    rwhva_->selection_controller()->HideAndDisallowShowingAutomatically();
++  }
+ 
+ }  // namespace content
+diff --git content/browser/renderer_host/render_widget_host_delegate.cc content/browser/renderer_host/render_widget_host_delegate.cc
+index 82ce0212717e..d7bbb8956612 100644
+--- content/browser/renderer_host/render_widget_host_delegate.cc
++++ content/browser/renderer_host/render_widget_host_delegate.cc
+@@ -58,6 +58,11 @@ BrowserAccessibilityManager*
+   return nullptr;
+ }
+ 
++RendererPreferences*
++    RenderWidgetHostDelegate::GetMutableRendererPrefs() {
++  return NULL;
++}
++
+ // If a delegate does not override this, the RenderWidgetHostView will
+ // assume it is the sole platform event consumer.
+ RenderWidgetHostInputEventRouter*
+diff --git content/browser/renderer_host/render_widget_host_delegate.h content/browser/renderer_host/render_widget_host_delegate.h
+index 883409580f8c..b04480234d7f 100644
+--- content/browser/renderer_host/render_widget_host_delegate.h
++++ content/browser/renderer_host/render_widget_host_delegate.h
+@@ -48,6 +48,7 @@ class WebContents;
+ enum class KeyboardEventProcessingResult;
+ struct ScreenInfo;
+ struct NativeWebKeyboardEvent;
++struct RendererPreferences;
+ 
+ //
+ // RenderWidgetHostDelegate
+@@ -149,6 +150,8 @@ class CONTENT_EXPORT RenderWidgetHostDelegate {
+   virtual void Paste() = 0;
+   virtual void SelectAll() = 0;
+ 
++  virtual RendererPreferences* GetMutableRendererPrefs();
++
+   // Requests the renderer to move the selection extent to a new position.
+   virtual void MoveRangeSelectionExtent(const gfx::Point& extent) {}
+ 
+diff --git content/browser/web_contents/web_contents_impl.cc content/browser/web_contents/web_contents_impl.cc
+index 84fbe41e9417..2143e1ffe46b 100644
+--- content/browser/web_contents/web_contents_impl.cc
++++ content/browser/web_contents/web_contents_impl.cc
+@@ -5168,6 +5168,12 @@ void WebContentsImpl::ShowContextMenu(RenderFrameHost* render_frame_host,
+                                                    context_menu_params);
+ }
+ 
++void WebContentsImpl::HandleTouchAction(RenderFrameHost* render_frame_host, 
++                                        const std::string& action) {
++  if (delegate_)
++    delegate_->HandleTouchAction(action);
++}
++
+ namespace {
+ // Normalizes the line endings: \r\n -> \n, lone \r -> \n.
+ base::string16 NormalizeLineBreaks(const base::string16& source) {
+diff --git content/browser/web_contents/web_contents_impl.h content/browser/web_contents/web_contents_impl.h
+index 8911cb7e6525..6e6d769c3799 100644
+--- content/browser/web_contents/web_contents_impl.h
++++ content/browser/web_contents/web_contents_impl.h
+@@ -490,6 +490,8 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
+   void RenderFrameDeleted(RenderFrameHost* render_frame_host) override;
+   void ShowContextMenu(RenderFrameHost* render_frame_host,
+                        const ContextMenuParams& params) override;
++  void HandleTouchAction(RenderFrameHost* render_frame_host, 
++	                     const std::string& action) override;
+   void RunJavaScriptDialog(RenderFrameHost* render_frame_host,
+                            const base::string16& message,
+                            const base::string16& default_prompt,
+diff --git content/common/view_messages.h content/common/view_messages.h
+index e931fc06bc3d..b2bebcf72446 100644
+--- content/common/view_messages.h
++++ content/common/view_messages.h
+@@ -144,6 +144,9 @@ IPC_MESSAGE_ROUTED1(ViewMsg_UpdateWebPreferences,
+ IPC_MESSAGE_ROUTED1(ViewMsg_SetInitialFocus,
+                     bool /* reverse */)
+ 
++IPC_MESSAGE_ROUTED1(ViewMsg_TouchAction,
++	                std::string)
++
+ // Tells the renderer to perform the given action on the plugin located at
+ // the given point.
+ IPC_MESSAGE_ROUTED2(ViewMsg_PluginActionAt,
+diff --git content/public/browser/web_contents_delegate.cc content/public/browser/web_contents_delegate.cc
+index a216418f8446..601876dda957 100644
+--- content/public/browser/web_contents_delegate.cc
++++ content/public/browser/web_contents_delegate.cc
+@@ -88,6 +88,10 @@ bool WebContentsDelegate::HandleContextMenu(
+   return false;
+ }
+ 
++void WebContentsDelegate::HandleTouchAction(
++	const std::string& action) {
++}
++
+ KeyboardEventProcessingResult WebContentsDelegate::PreHandleKeyboardEvent(
+     WebContents* source,
+     const NativeWebKeyboardEvent& event) {
+diff --git content/public/browser/web_contents_delegate.h content/public/browser/web_contents_delegate.h
+index ca0b7812eba9..63e8274affb2 100644
+--- content/public/browser/web_contents_delegate.h
++++ content/public/browser/web_contents_delegate.h
+@@ -248,6 +248,9 @@ class CONTENT_EXPORT WebContentsDelegate {
+   // Returns true if the context menu operation was handled by the delegate.
+   virtual bool HandleContextMenu(const content::ContextMenuParams& params);
+ 
++  // Handles the touch action.
++  virtual void HandleTouchAction(const std::string& action);
++
+   // Allows delegates to handle keyboard events before sending to the renderer.
+   // See enum for description of return values.
+   virtual KeyboardEventProcessingResult PreHandleKeyboardEvent(
+diff --git content/public/common/renderer_preferences.h content/public/common/renderer_preferences.h
+index 87ade6e75110..6cdfca095aca 100644
+--- content/public/common/renderer_preferences.h
++++ content/public/common/renderer_preferences.h
+@@ -120,6 +120,9 @@ struct CONTENT_EXPORT RendererPreferences {
+   // Country iso of the mobile network for content detection purpose.
+   std::string network_contry_iso;
+ 
++  // Use callback for touch actions, do not handle them
++  bool use_touch_actions_callback;
++
+ #if defined(OS_LINUX)
+   std::string system_font_family_name;
+ #endif
+diff --git content/renderer/render_widget.cc content/renderer/render_widget.cc
+index 06378122ec86..c6e691e2822b 100644
+--- content/renderer/render_widget.cc
++++ content/renderer/render_widget.cc
+@@ -600,6 +600,7 @@ bool RenderWidget::OnMessageReceived(const IPC::Message& message) {
+   bool handled = true;
+   IPC_BEGIN_MESSAGE_MAP(RenderWidget, message)
+     IPC_MESSAGE_HANDLER(WidgetMsg_ShowContextMenu, OnShowContextMenu)
++    IPC_MESSAGE_HANDLER(ViewMsg_TouchAction, OnTouchAction)
+     IPC_MESSAGE_HANDLER(WidgetMsg_Close, OnClose)
+     IPC_MESSAGE_HANDLER(WidgetMsg_SynchronizeVisualProperties,
+                         OnSynchronizeVisualProperties)
+@@ -1758,6 +1759,21 @@ void RenderWidget::OnShowContextMenu(ui::MenuSourceType source_type,
+   has_host_context_menu_location_ = false;
+ }
+ 
++void RenderWidget::OnTouchAction(const std::string& action) {
++  blink::WebFrameWidget* frame_widget = GetFrameWidget();
++  if (!frame_widget)
++    return;
++
++  blink::WebLocalFrame* current_frame =
++      frame_widget ? frame_widget->LocalRoot() : nullptr;
++
++  if (!current_frame)
++    return;
++
++  RenderFrame* frm = RenderFrame::FromWebFrame(current_frame);
++  frm->Send(new ViewMsg_TouchAction(frm->GetRoutingID(), action));
++}
++
+ void RenderWidget::OnImeSetComposition(
+     const base::string16& text,
+     const std::vector<WebImeTextSpan>& ime_text_spans,
+diff --git content/renderer/render_widget.h content/renderer/render_widget.h
+index 5a2c8e08be49..efd820118209 100644
+--- content/renderer/render_widget.h
++++ content/renderer/render_widget.h
+@@ -597,6 +597,7 @@ class CONTENT_EXPORT RenderWidget
+   void OnForceRedraw(int snapshot_id);
+   void OnShowContextMenu(ui::MenuSourceType source_type,
+                          const gfx::Point& location);
++  void OnTouchAction(const std::string& action);
+ 
+   void OnSetTextDirection(blink::WebTextDirection direction);
+   void OnGetFPS();

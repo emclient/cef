@@ -2635,6 +2635,20 @@ bool CefBrowserHostImpl::HandleContextMenu(
   return menu_manager_->CreateContextMenu(params);
 }
 
+void CefBrowserHostImpl::HandleTouchAction(const std::string& action) {
+	CEF_REQUIRE_UIT();
+	CefRefPtr<CefClient> client = GetClient();
+	if (client.get()) {
+		CefRefPtr<CefTouchActionHandler> handler =
+			client->GetTouchActionHandler();
+		if (handler.get()) {
+			CefString str;
+			str.FromString(action);
+			handler->HandleAction(str);
+		}
+	}
+}
+
 void CefBrowserHostImpl::UpdatePreferredSize(content::WebContents* source,
                                              const gfx::Size& pref_size) {
 #if defined(OS_WIN) || (defined(OS_POSIX) && !defined(OS_MACOSX))
