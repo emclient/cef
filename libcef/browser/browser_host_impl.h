@@ -384,6 +384,8 @@ class CefBrowserHostImpl : public CefBrowserHost,
   bool HandleContextMenu(content::WebContents* web_contents,
                          const content::ContextMenuParams& params);
 
+  void HandleTouchAction(const std::string& action) override;
+
   // Returns the WebContents most likely to handle an action. If extensions are
   // enabled and this browser has a full-page guest (for example, a full-page
   // PDF viewer extension) then the guest's WebContents will be returned.

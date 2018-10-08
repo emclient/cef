@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=17e33e7a9953300ba4f67e1ad114f2b8019e8a45$
+// $hash=36d08ab7cb27ddcacec4dfac8246f258d73bbd41$
 //
 
 #include "include/capi/cef_app_capi.h"
@@ -158,6 +158,7 @@
 #include "libcef_dll/ctocpp/test/translator_test_ref_ptr_client_ctocpp.h"
 #include "libcef_dll/ctocpp/test/translator_test_scoped_client_child_ctocpp.h"
 #include "libcef_dll/ctocpp/test/translator_test_scoped_client_ctocpp.h"
+#include "libcef_dll/ctocpp/touch_action_handler_ctocpp.h"
 #include "libcef_dll/ctocpp/urlrequest_client_ctocpp.h"
 #include "libcef_dll/ctocpp/v8accessor_ctocpp.h"
 #include "libcef_dll/ctocpp/v8array_buffer_release_callback_ctocpp.h"
@@ -353,6 +354,7 @@ CEF_EXPORT void cef_shutdown() {
   DCHECK(base::AtomicRefCountIsZero(&CefTextfieldCppToC::DebugObjCt));
   DCHECK(base::AtomicRefCountIsZero(&CefTextfieldDelegateCToCpp::DebugObjCt));
   DCHECK(base::AtomicRefCountIsZero(&CefThreadCppToC::DebugObjCt));
+  DCHECK(base::AtomicRefCountIsZero(&CefTouchActionHandlerCToCpp::DebugObjCt));
   DCHECK(base::AtomicRefCountIsZero(&CefTranslatorTestCppToC::DebugObjCt));
   DCHECK(base::AtomicRefCountIsZero(
       &CefTranslatorTestRefPtrClientCToCpp::DebugObjCt));

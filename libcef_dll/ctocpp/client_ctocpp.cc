@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=706a4e2c3766cc28b8931a684634cc334474380c$
+// $hash=0659ae8f669db7ffb934a658e94bdcb43883e43c$
 //
 
 #include "libcef_dll/ctocpp/client_ctocpp.h"
@@ -29,6 +29,7 @@
 #include "libcef_dll/ctocpp/render_handler_ctocpp.h"
 #include "libcef_dll/ctocpp/request_handler_ctocpp.h"
 #include "libcef_dll/ctocpp/spell_check_handler_ctocpp.h"
+#include "libcef_dll/ctocpp/touch_action_handler_ctocpp.h"
 
 // VIRTUAL METHODS - Body may be edited by hand.
 
@@ -242,6 +243,22 @@ CefRefPtr<CefSpellCheckHandler> CefClientCToCpp::GetSpellCheckHandler() {
 
   // Return type: refptr_same
   return CefSpellCheckHandlerCToCpp::Wrap(_retval);
+}
+
+NO_SANITIZE("cfi-icall")
+CefRefPtr<CefTouchActionHandler> CefClientCToCpp::GetTouchActionHandler() {
+  cef_client_t* _struct = GetStruct();
+  if (CEF_MEMBER_MISSING(_struct, get_touch_action_handler))
+    return NULL;
+
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  // Execute
+  cef_touch_action_handler_t* _retval =
+      _struct->get_touch_action_handler(_struct);
+
+  // Return type: refptr_same
+  return CefTouchActionHandlerCToCpp::Wrap(_retval);
 }
 
 NO_SANITIZE("cfi-icall")
