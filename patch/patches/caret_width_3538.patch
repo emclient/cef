@@ -1,0 +1,108 @@
+diff --git content/public/common/common_param_traits_macros.h content/public/common/common_param_traits_macros.h
+index a8c8c1d604f5..bef6a2525697 100644
+--- content/public/common/common_param_traits_macros.h
++++ content/public/common/common_param_traits_macros.h
+@@ -200,6 +200,7 @@ IPC_STRUCT_TRAITS_BEGIN(content::WebPreferences)
+   IPC_STRUCT_TRAITS_MEMBER(save_previous_document_resources)
+   IPC_STRUCT_TRAITS_MEMBER(text_autosizing_enabled)
+   IPC_STRUCT_TRAITS_MEMBER(double_tap_to_zoom_enabled)
++  IPC_STRUCT_TRAITS_MEMBER(caret_width)
+ #if defined(OS_ANDROID)
+   IPC_STRUCT_TRAITS_MEMBER(font_scale_factor)
+   IPC_STRUCT_TRAITS_MEMBER(device_scale_adjustment)
+diff --git content/public/common/web_preferences.h content/public/common/web_preferences.h
+index 34a64887af4c..2bf4b28cab60 100644
+--- content/public/common/web_preferences.h
++++ content/public/common/web_preferences.h
+@@ -232,6 +232,8 @@ struct CONTENT_EXPORT WebPreferences {
+ 
+   bool double_tap_to_zoom_enabled;
+ 
++  int caret_width;
++
+   bool text_autosizing_enabled;
+ 
+ #if defined(OS_ANDROID)
+diff --git content/renderer/render_view_impl.cc content/renderer/render_view_impl.cc
+index d115ace7d7f5..763a28d11431 100644
+--- content/renderer/render_view_impl.cc
++++ content/renderer/render_view_impl.cc
+@@ -816,6 +816,7 @@ void RenderView::ApplyWebPreferences(const WebPreferences& prefs,
+ 
+   settings->SetTextAutosizingEnabled(prefs.text_autosizing_enabled);
+   settings->SetDoubleTapToZoomEnabled(prefs.double_tap_to_zoom_enabled);
++  settings->SetCaretWidth(prefs.caret_width);
+   blink::WebNetworkStateNotifier::SetNetworkQualityWebHoldback(
+       static_cast<blink::WebEffectiveConnectionType>(
+           prefs.network_quality_estimator_web_holdback));
+diff --git third_party/blink/public/web/web_settings.h third_party/blink/public/web/web_settings.h
+index e39112b02561..86e1d6dde9fd 100644
+--- third_party/blink/public/web/web_settings.h
++++ third_party/blink/public/web/web_settings.h
+@@ -150,6 +150,7 @@ class WebSettings {
+   virtual void SetAntialiasedClips2dCanvasEnabled(bool) = 0;
+   virtual void SetAutoplayPolicy(AutoplayPolicy) = 0;
+   virtual void SetAutoZoomFocusedNodeToLegibleScale(bool) = 0;
++  virtual void SetCaretWidth(int) = 0;
+   virtual void SetClobberUserAgentInitialScaleQuirk(bool) = 0;
+   virtual void SetCookieEnabled(bool) = 0;
+   virtual void SetNavigateOnDragDrop(bool) = 0;
+diff --git third_party/blink/renderer/core/exported/web_settings_impl.cc third_party/blink/renderer/core/exported/web_settings_impl.cc
+index 95ddf7175e27..cb8b70e6d6cc 100644
+--- third_party/blink/renderer/core/exported/web_settings_impl.cc
++++ third_party/blink/renderer/core/exported/web_settings_impl.cc
+@@ -151,6 +151,10 @@ void WebSettingsImpl::SetAutoZoomFocusedNodeToLegibleScale(
+       auto_zoom_focused_node_to_legible_scale;
+ }
+ 
++void WebSettingsImpl::SetCaretWidth(int width) {
++  settings_->SetCaretWidth(width);
++}
++
+ void WebSettingsImpl::SetTextAutosizingEnabled(bool enabled) {
+   dev_tools_emulator_->SetTextAutosizingEnabled(enabled);
+ }
+diff --git third_party/blink/renderer/core/exported/web_settings_impl.h third_party/blink/renderer/core/exported/web_settings_impl.h
+index 36c9adb19935..3888ecb4c46d 100644
+--- third_party/blink/renderer/core/exported/web_settings_impl.h
++++ third_party/blink/renderer/core/exported/web_settings_impl.h
+@@ -65,6 +65,7 @@ class CORE_EXPORT WebSettingsImpl final : public WebSettings {
+   void SetAntialiased2dCanvasEnabled(bool) override;
+   void SetAntialiasedClips2dCanvasEnabled(bool) override;
+   void SetAutoZoomFocusedNodeToLegibleScale(bool) override;
++  void SetCaretWidth(int) override;
+   void SetClobberUserAgentInitialScaleQuirk(bool) override;
+   void SetCookieEnabled(bool) override;
+   void SetNavigateOnDragDrop(bool) override;
+diff --git third_party/blink/renderer/core/frame/local_frame_view.cc third_party/blink/renderer/core/frame/local_frame_view.cc
+index 6a46de482da8..a66d181a669f 100644
+--- third_party/blink/renderer/core/frame/local_frame_view.cc
++++ third_party/blink/renderer/core/frame/local_frame_view.cc
+@@ -4447,8 +4447,11 @@ void LocalFrameView::ApplyTransformForTopFrameSpace(
+ }
+ 
+ LayoutUnit LocalFrameView::CaretWidth() const {
++  int width = 1;
++  if (frame_->GetSettings())
++    width =  GetPage()->GetSettings().GetCaretWidth();
+   return LayoutUnit(
+-      std::max<float>(1.0, GetChromeClient()->WindowToViewportScalar(1)));
++      std::max<float>(1.0, GetChromeClient()->WindowToViewportScalar(width)));
+ }
+ 
+ LocalFrameUkmAggregator& LocalFrameView::EnsureUkmAggregator() {
+diff --git third_party/blink/renderer/core/frame/settings.json5 third_party/blink/renderer/core/frame/settings.json5
+index 29fe6d771bd9..b507622e4c20 100644
+--- third_party/blink/renderer/core/frame/settings.json5
++++ third_party/blink/renderer/core/frame/settings.json5
+@@ -1018,5 +1018,10 @@
+       initial: 800,
+       type: "int",
+     },
++    {
++      name: "caretWidth",
++      initial: 1,
++      type: "int",
++    },
+   ],
+ }

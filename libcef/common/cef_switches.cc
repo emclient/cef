@@ -121,6 +121,8 @@ const char kEnableNetSecurityExpiration[] = "enable-net-security-expiration";
 // Use the touch action callback instead letting the browser handle the actions by itself.
 const char kUseTouchActionHandler[] = "use-touch-action-handler";
 
+const char kCaretWidth[] = "caret-width";
+
 #if defined(OS_MACOSX)
 // Path to the framework directory.
 const char kFrameworkDirPath[] = "framework-dir-path";
