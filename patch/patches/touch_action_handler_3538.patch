@@ -1,7 +1,7 @@
 diff --git chrome/browser/renderer_preferences_util.cc chrome/browser/renderer_preferences_util.cc
 index 0128b9f0d98b..9b87fa033929 100644
---- a/chrome/browser/renderer_preferences_util.cc
-+++ b/chrome/browser/renderer_preferences_util.cc
+--- chrome/browser/renderer_preferences_util.cc
++++ chrome/browser/renderer_preferences_util.cc
 @@ -110,6 +110,9 @@ void UpdateFromSystemSettings(content::RendererPreferences* prefs,
    ParsePortRange(webrtc_udp_port_range, &prefs->webrtc_udp_min_port,
                   &prefs->webrtc_udp_max_port);
@@ -12,10 +12,10 @@ index 0128b9f0d98b..9b87fa033929 100644
  #if BUILDFLAG(USE_DEFAULT_RENDER_THEME)
    prefs->focus_ring_color = SkColorSetRGB(0x4D, 0x90, 0xFE);
  #if defined(OS_CHROMEOS)
-diff --git a/chrome/common/pref_names.cc b/chrome/common/pref_names.cc
+diff --git chrome/common/pref_names.cc chrome/common/pref_names.cc
 index a4bd8513ca24..a0760d0d7f8a 100644
---- a/chrome/common/pref_names.cc
-+++ b/chrome/common/pref_names.cc
+--- chrome/common/pref_names.cc
++++ chrome/common/pref_names.cc
 @@ -398,6 +398,9 @@ const char kIncognitoModeAvailability[] = "incognito.mode_availability";
  // Boolean that is true when Suggest support is enabled.
  const char kSearchSuggestEnabled[] = "search.suggest_enabled";
@@ -26,10 +26,10 @@ index a4bd8513ca24..a0760d0d7f8a 100644
  #if defined(OS_ANDROID)
  // String indicating the Contextual Search enabled state.
  // "false" - opt-out (disabled)
-diff --git a/chrome/common/pref_names.h b/chrome/common/pref_names.h
+diff --git chrome/common/pref_names.h chrome/common/pref_names.h
 index 763228c877c6..46afb1a508f8 100644
---- a/chrome/common/pref_names.h
-+++ b/chrome/common/pref_names.h
+--- chrome/common/pref_names.h
++++ chrome/common/pref_names.h
 @@ -57,6 +57,7 @@ extern const char kSupervisedUserSecondCustodianProfileURL[];
  extern const char kSupervisedUserSharedSettings[];
  extern const char kSupervisedUserWhitelists[];
@@ -38,10 +38,10 @@ index 763228c877c6..46afb1a508f8 100644
  
  #if BUILDFLAG(ENABLE_RLZ)
  extern const char kRlzPingDelaySeconds[];
-diff --git a/content/browser/frame_host/render_frame_host_delegate.h b/content/browser/frame_host/render_frame_host_delegate.h
+diff --git content/browser/frame_host/render_frame_host_delegate.h content/browser/frame_host/render_frame_host_delegate.h
 index 9ac81d17f614..f20bb863b811 100644
---- a/content/browser/frame_host/render_frame_host_delegate.h
-+++ b/content/browser/frame_host/render_frame_host_delegate.h
+--- content/browser/frame_host/render_frame_host_delegate.h
++++ content/browser/frame_host/render_frame_host_delegate.h
 @@ -123,6 +123,9 @@ class CONTENT_EXPORT RenderFrameHostDelegate {
    virtual void ShowContextMenu(RenderFrameHost* render_frame_host,
                                 const ContextMenuParams& params) {}
@@ -52,10 +52,10 @@ index 9ac81d17f614..f20bb863b811 100644
    // A JavaScript alert, confirmation or prompt dialog should be shown.
    virtual void RunJavaScriptDialog(RenderFrameHost* render_frame_host,
                                     const base::string16& message,
-diff --git a/content/browser/frame_host/render_frame_host_impl.cc b/content/browser/frame_host/render_frame_host_impl.cc
+diff --git content/browser/frame_host/render_frame_host_impl.cc content/browser/frame_host/render_frame_host_impl.cc
 index acfb47dd16bd..0ad25a417131 100644
---- a/content/browser/frame_host/render_frame_host_impl.cc
-+++ b/content/browser/frame_host/render_frame_host_impl.cc
+--- content/browser/frame_host/render_frame_host_impl.cc
++++ content/browser/frame_host/render_frame_host_impl.cc
 @@ -1078,6 +1078,7 @@ bool RenderFrameHostImpl::OnMessageReceived(const IPC::Message &msg) {
      IPC_MESSAGE_HANDLER(FrameHostMsg_BeforeUnload_ACK, OnBeforeUnloadACK)
      IPC_MESSAGE_HANDLER(FrameHostMsg_SwapOut_ACK, OnSwapOutACK)
@@ -75,10 +75,10 @@ index acfb47dd16bd..0ad25a417131 100644
  void RenderFrameHostImpl::OnJavaScriptExecuteResponse(
      int id, const base::ListValue& result) {
    const base::Value* result_value;
-diff --git a/content/browser/frame_host/render_frame_host_impl.h b/content/browser/frame_host/render_frame_host_impl.h
+diff --git content/browser/frame_host/render_frame_host_impl.h content/browser/frame_host/render_frame_host_impl.h
 index d71a3c050e65..1101240f1d32 100644
---- a/content/browser/frame_host/render_frame_host_impl.h
-+++ b/content/browser/frame_host/render_frame_host_impl.h
+--- content/browser/frame_host/render_frame_host_impl.h
++++ content/browser/frame_host/render_frame_host_impl.h
 @@ -886,6 +886,7 @@ class CONTENT_EXPORT RenderFrameHostImpl
    void OnSwapOutACK();
    void OnRenderProcessGone(int status, int error_code);
@@ -87,10 +87,10 @@ index d71a3c050e65..1101240f1d32 100644
    void OnJavaScriptExecuteResponse(int id, const base::ListValue& result);
    void OnVisualStateResponse(uint64_t id);
    void OnRunJavaScriptDialog(const base::string16& message,
-diff --git a/content/browser/renderer_host/input/touch_selection_controller_client_aura.cc b/content/browser/renderer_host/input/touch_selection_controller_client_aura.cc
+diff --git content/browser/renderer_host/input/touch_selection_controller_client_aura.cc content/browser/renderer_host/input/touch_selection_controller_client_aura.cc
 index 3b7ecd5a70f0..e72f8f3a75a5 100644
---- a/content/browser/renderer_host/input/touch_selection_controller_client_aura.cc
-+++ b/content/browser/renderer_host/input/touch_selection_controller_client_aura.cc
+--- content/browser/renderer_host/input/touch_selection_controller_client_aura.cc
++++ content/browser/renderer_host/input/touch_selection_controller_client_aura.cc
 @@ -474,39 +474,59 @@ bool TouchSelectionControllerClientAura::IsCommandIdEnabled(
  void TouchSelectionControllerClientAura::ExecuteCommand(int command_id,
                                                          int event_flags) {
@@ -145,7 +145,7 @@ index 3b7ecd5a70f0..e72f8f3a75a5 100644
 +      default:
 +        NOTREACHED();
 +        break;
-+    }  
++    }
    }
  }
  
@@ -178,10 +178,10 @@ index 3b7ecd5a70f0..e72f8f3a75a5 100644
 +  }
  
  }  // namespace content
-diff --git a/content/browser/renderer_host/render_widget_host_delegate.cc b/content/browser/renderer_host/render_widget_host_delegate.cc
+diff --git content/browser/renderer_host/render_widget_host_delegate.cc content/browser/renderer_host/render_widget_host_delegate.cc
 index aa01d7b22074..03072de1741d 100644
---- a/content/browser/renderer_host/render_widget_host_delegate.cc
-+++ b/content/browser/renderer_host/render_widget_host_delegate.cc
+--- content/browser/renderer_host/render_widget_host_delegate.cc
++++ content/browser/renderer_host/render_widget_host_delegate.cc
 @@ -50,6 +50,11 @@ BrowserAccessibilityManager*
    return nullptr;
  }
@@ -194,10 +194,10 @@ index aa01d7b22074..03072de1741d 100644
  // If a delegate does not override this, the RenderWidgetHostView will
  // assume it is the sole platform event consumer.
  RenderWidgetHostInputEventRouter*
-diff --git a/content/browser/renderer_host/render_widget_host_delegate.h b/content/browser/renderer_host/render_widget_host_delegate.h
+diff --git content/browser/renderer_host/render_widget_host_delegate.h content/browser/renderer_host/render_widget_host_delegate.h
 index 387c81db0e02..f012ec5d5715 100644
---- a/content/browser/renderer_host/render_widget_host_delegate.h
-+++ b/content/browser/renderer_host/render_widget_host_delegate.h
+--- content/browser/renderer_host/render_widget_host_delegate.h
++++ content/browser/renderer_host/render_widget_host_delegate.h
 @@ -48,6 +48,7 @@ class WebContents;
  enum class KeyboardEventProcessingResult;
  struct ScreenInfo;
@@ -215,15 +215,15 @@ index 387c81db0e02..f012ec5d5715 100644
    // Requests the renderer to move the selection extent to a new position.
    virtual void MoveRangeSelectionExtent(const gfx::Point& extent) {}
  
-diff --git a/content/browser/web_contents/web_contents_impl.cc b/content/browser/web_contents/web_contents_impl.cc
+diff --git content/browser/web_contents/web_contents_impl.cc content/browser/web_contents/web_contents_impl.cc
 index bad21ab25094..8c30431bb728 100644
---- a/content/browser/web_contents/web_contents_impl.cc
-+++ b/content/browser/web_contents/web_contents_impl.cc
+--- content/browser/web_contents/web_contents_impl.cc
++++ content/browser/web_contents/web_contents_impl.cc
 @@ -5072,6 +5072,12 @@ void WebContentsImpl::ShowContextMenu(RenderFrameHost* render_frame_host,
                                                     context_menu_params);
  }
  
-+void WebContentsImpl::HandleTouchAction(RenderFrameHost* render_frame_host, 
++void WebContentsImpl::HandleTouchAction(RenderFrameHost* render_frame_host,
 +                                        const std::string& action) {
 +  if (delegate_)
 +    delegate_->HandleTouchAction(action);
@@ -232,23 +232,23 @@ index bad21ab25094..8c30431bb728 100644
  void WebContentsImpl::RunJavaScriptDialog(RenderFrameHost* render_frame_host,
                                            const base::string16& message,
                                            const base::string16& default_prompt,
-diff --git a/content/browser/web_contents/web_contents_impl.h b/content/browser/web_contents/web_contents_impl.h
+diff --git content/browser/web_contents/web_contents_impl.h content/browser/web_contents/web_contents_impl.h
 index 9dc5c5a482ac..31db3311ff47 100644
---- a/content/browser/web_contents/web_contents_impl.h
-+++ b/content/browser/web_contents/web_contents_impl.h
+--- content/browser/web_contents/web_contents_impl.h
++++ content/browser/web_contents/web_contents_impl.h
 @@ -492,6 +492,8 @@ class CONTENT_EXPORT WebContentsImpl : public WebContents,
    void RenderFrameDeleted(RenderFrameHost* render_frame_host) override;
    void ShowContextMenu(RenderFrameHost* render_frame_host,
                         const ContextMenuParams& params) override;
-+  void HandleTouchAction(RenderFrameHost* render_frame_host, 
++  void HandleTouchAction(RenderFrameHost* render_frame_host,
 +	                     const std::string& action) override;
    void RunJavaScriptDialog(RenderFrameHost* render_frame_host,
                             const base::string16& message,
                             const base::string16& default_prompt,
-diff --git a/content/common/view_messages.h b/content/common/view_messages.h
+diff --git content/common/view_messages.h content/common/view_messages.h
 index cb6ce7bcfb36..6806ab39e0eb 100644
---- a/content/common/view_messages.h
-+++ b/content/common/view_messages.h
+--- content/common/view_messages.h
++++ content/common/view_messages.h
 @@ -286,6 +286,9 @@ IPC_MESSAGE_ROUTED2(ViewMsg_ShowContextMenu,
                      ui::MenuSourceType,
                      gfx::Point /* location where menu should be shown */)
@@ -259,10 +259,10 @@ index cb6ce7bcfb36..6806ab39e0eb 100644
  // Tells the renderer to perform the given action on the plugin located at
  // the given point.
  IPC_MESSAGE_ROUTED2(ViewMsg_PluginActionAt,
-diff --git a/content/public/browser/web_contents_delegate.cc b/content/public/browser/web_contents_delegate.cc
+diff --git content/public/browser/web_contents_delegate.cc content/public/browser/web_contents_delegate.cc
 index 9d5eb0035555..3e50787ae4ca 100644
---- a/content/public/browser/web_contents_delegate.cc
-+++ b/content/public/browser/web_contents_delegate.cc
+--- content/public/browser/web_contents_delegate.cc
++++ content/public/browser/web_contents_delegate.cc
 @@ -87,6 +87,10 @@ bool WebContentsDelegate::HandleContextMenu(
    return false;
  }
@@ -274,10 +274,10 @@ index 9d5eb0035555..3e50787ae4ca 100644
  KeyboardEventProcessingResult WebContentsDelegate::PreHandleKeyboardEvent(
      WebContents* source,
      const NativeWebKeyboardEvent& event) {
-diff --git a/content/public/browser/web_contents_delegate.h b/content/public/browser/web_contents_delegate.h
+diff --git content/public/browser/web_contents_delegate.h content/public/browser/web_contents_delegate.h
 index 5a0a3ad770b8..3676fe4b1987 100644
---- a/content/public/browser/web_contents_delegate.h
-+++ b/content/public/browser/web_contents_delegate.h
+--- content/public/browser/web_contents_delegate.h
++++ content/public/browser/web_contents_delegate.h
 @@ -242,6 +242,9 @@ class CONTENT_EXPORT WebContentsDelegate {
    // Returns true if the context menu operation was handled by the delegate.
    virtual bool HandleContextMenu(const content::ContextMenuParams& params);
@@ -288,10 +288,10 @@ index 5a0a3ad770b8..3676fe4b1987 100644
    // Allows delegates to handle keyboard events before sending to the renderer.
    // See enum for description of return values.
    virtual KeyboardEventProcessingResult PreHandleKeyboardEvent(
-diff --git a/content/public/common/renderer_preferences.h b/content/public/common/renderer_preferences.h
+diff --git content/public/common/renderer_preferences.h content/public/common/renderer_preferences.h
 index fa8c2cd5869c..748f9a8421b6 100644
---- a/content/public/common/renderer_preferences.h
-+++ b/content/public/common/renderer_preferences.h
+--- content/public/common/renderer_preferences.h
++++ content/public/common/renderer_preferences.h
 @@ -126,6 +126,9 @@ struct CONTENT_EXPORT RendererPreferences {
    // Country iso of the mobile network for content detection purpose.
    std::string network_contry_iso;
@@ -302,10 +302,10 @@ index fa8c2cd5869c..748f9a8421b6 100644
  #if defined(OS_LINUX)
    std::string system_font_family_name;
  #endif
-diff --git a/content/renderer/render_widget.cc b/content/renderer/render_widget.cc
+diff --git content/renderer/render_widget.cc content/renderer/render_widget.cc
 index 6d0580d5b0b7..9b25b0bfd53a 100644
---- a/content/renderer/render_widget.cc
-+++ b/content/renderer/render_widget.cc
+--- content/renderer/render_widget.cc
++++ content/renderer/render_widget.cc
 @@ -141,14 +141,14 @@
  #include "content/renderer/text_input_client_observer.h"
  #endif
@@ -437,10 +437,10 @@ index 6d0580d5b0b7..9b25b0bfd53a 100644
      rect->x = window_rect.x();
      rect->y = window_rect.y();
      rect->width = window_rect.width();
-diff --git a/content/renderer/render_widget.h b/content/renderer/render_widget.h
+diff --git content/renderer/render_widget.h content/renderer/render_widget.h
 index 15031b62b939..3aac5dd22ba0 100644
---- a/content/renderer/render_widget.h
-+++ b/content/renderer/render_widget.h
+--- content/renderer/render_widget.h
++++ content/renderer/render_widget.h
 @@ -644,6 +644,7 @@ class CONTENT_EXPORT RenderWidget
    void OnForceRedraw(int snapshot_id);
    void OnShowContextMenu(ui::MenuSourceType source_type,

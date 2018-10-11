@@ -184,7 +184,7 @@ index 000000000000..98d2c035d6a4
 +    completion->DidCancelCheckingText();
 +    return;
 +  }
-+  
++
 +  // Try to satisfy check from cache.
 +  if (SatisfyRequestFromCache(text, completion))
 +    return;
@@ -280,7 +280,7 @@ index 000000000000..98d2c035d6a4
 +              line_text.length());
 +
 +    SpellCheckResult::Decoration decoration = spellcheck_result.decoration;
-+      
++
 +    std::vector<WebString> replacements_filtered;
 +
 +    results.push_back(
@@ -511,7 +511,7 @@ index 27a1c1cbe0c8..8e1a12cd6285 100644
  
    focused_frame->GetFrameInputHandler()->ReplaceMisspelling(word);
  }
-+ 
++
 +void WebContentsImpl::Recheck() {
 +  RenderFrameHostImpl* focused_frame = GetFocusedFrame();
 +  if (!focused_frame)
@@ -531,7 +531,7 @@ index 6e047068256a..90a2c69dab76 100644
    void CollapseSelection() override;
    void Replace(const base::string16& word) override;
 -  void ReplaceMisspelling(const base::string16& word) override;
-+  void ReplaceMisspelling(const base::string16& word) override;  
++  void ReplaceMisspelling(const base::string16& word) override;
 +  void Recheck() override;
    void NotifyContextMenuClosed(
        const CustomContextMenuContext& context) override;
@@ -544,7 +544,7 @@ index 1dd238373a57..7d12cdb9669d 100644
  
    // Replaces the misspelling in the selected region with the specified string.
    ReplaceMisspelling(mojo_base.mojom.String16 word);
-+    
++
 +  // Rechecks the current selection.
 +  Recheck();
  

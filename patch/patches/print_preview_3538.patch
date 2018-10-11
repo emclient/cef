@@ -22,8 +22,8 @@ index 84ac5072c2d5..889d42d903e1 100644
  
 +  if (!toolbarButtonsEnabled)
 +  {
-+  	this.zoomToolbar_.style.display = 'none';
-+  	if (this.pageIndicator_)
++    this.zoomToolbar_.style.display = 'none';
++    if (this.pageIndicator_)
 +      this.pageIndicator_.style.display = 'none';
 +  }
 +
@@ -47,8 +47,8 @@ index 84ac5072c2d5..889d42d903e1 100644
 -        }
 +		}
 +		this.sendScriptingMessage_({
-+        	type: 'documentDimensionsChanged',
-+        	pageCount: this.documentDimensions_.pageDimensions.length
++          type: 'documentDimensionsChanged',
++          pageCount: this.documentDimensions_.pageDimensions.length
 +        });
          break;
        case 'email':
@@ -67,21 +67,21 @@ index 84ac5072c2d5..889d42d903e1 100644
        case 'selectAll':
          this.postMessage_(message.data);
          break;
-+	  case 'zoom':
-+	  	if (message.data.zoom == 'fitToPage')
-+	  		this.viewport_.fitToPage();
-+	  	if (message.data.zoom == 'fitToWidth')
-+	  		this.viewport_.fitToWidth();
-+	  	else
-+	  	{
-+	  		var val = parseFloat(message.data.zoom);
-+	  		if (!isNaN(val))
-+	  			this.viewport_.setZoom(message.data.zoom);
-+	  	}
-+	  	break;
-+	  case 'goToPage':
-+	  	this.viewport_.goToPage(message.data.page);
-+		break;
++      case 'zoom':
++        if (message.data.zoom == 'fitToPage')
++          this.viewport_.fitToPage();
++        if (message.data.zoom == 'fitToWidth')
++          this.viewport_.fitToWidth();
++        else
++        {
++          var val = parseFloat(message.data.zoom);
++          if (!isNaN(val))
++            this.viewport_.setZoom(message.data.zoom);
++        }
++        break;
++      case 'goToPage':
++        this.viewport_.goToPage(message.data.page);
++        break;
      }
    },
  

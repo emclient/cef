@@ -131,7 +131,7 @@ index a4c9f49d65e0..6878af9ec94e 100644
 +
      settings->set_title(title);
 -    settings->set_url(url);
-+    settings->set_url(url);    
++    settings->set_url(url);
 +    settings->set_localized_date(date);
    }
  
