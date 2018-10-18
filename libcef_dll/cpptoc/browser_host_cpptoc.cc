@@ -346,10 +346,7 @@ void CEF_CALLBACK browser_host_print(struct _cef_browser_host_t* self,
   DCHECK(self);
   if (!self)
     return;
-  // Verify param: callback; type: refptr_diff
-  DCHECK(callback);
-  if (!callback)
-    return;
+  // Unverified params: callback
 
   // Execute
   CefBrowserHostCppToC::Get(self)->Print(
@@ -375,10 +372,7 @@ browser_host_print_with_settings(struct _cef_browser_host_t* self,
   DCHECK(pagesCount == 0 || pages);
   if (pagesCount > 0 && !pages)
     return;
-  // Verify param: callback; type: refptr_diff
-  DCHECK(callback);
-  if (!callback)
-    return;
+  // Unverified params: callback
 
   // Translate param: pages; type: simple_vec_byref_const
   std::vector<CefRange> pagesList;

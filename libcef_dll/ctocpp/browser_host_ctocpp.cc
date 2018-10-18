@@ -316,10 +316,7 @@ void CefBrowserHostCToCpp::Print(CefRefPtr<CefPrintCallback> callback) {
 
   // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
 
-  // Verify param: callback; type: refptr_diff
-  DCHECK(callback.get());
-  if (!callback.get())
-    return;
+  // Unverified params: callback
 
   // Execute
   _struct->print(_struct, CefPrintCallbackCppToC::Wrap(callback));
@@ -340,10 +337,7 @@ void CefBrowserHostCToCpp::PrintWithSettings(
   DCHECK(!printerName.empty());
   if (printerName.empty())
     return;
-  // Verify param: callback; type: refptr_diff
-  DCHECK(callback.get());
-  if (!callback.get())
-    return;
+  // Unverified params: callback
 
   // Translate param: pages; type: simple_vec_byref_const
   const size_t pagesCount = pages.size();
