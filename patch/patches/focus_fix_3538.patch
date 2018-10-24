@@ -1,0 +1,16 @@
+ ui/views/widget/widget.cc | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/ui/views/widget/widget.cc b/ui/views/widget/widget.cc
+index 3abbf674ee23..deef2f340f79 100644
+--- a/ui/views/widget/widget.cc
++++ b/ui/views/widget/widget.cc
+@@ -638,7 +638,7 @@ void Widget::Show() {
+     saved_show_state_ = ui::SHOW_STATE_NORMAL;
+   } else {
+     native_widget_->Show(
+-        CanActivate() ? ui::SHOW_STATE_NORMAL : ui::SHOW_STATE_INACTIVE,
++        ui::SHOW_STATE_INACTIVE,
+         gfx::Rect());
+   }
+ }
