@@ -1,0 +1,13 @@
+diff --git ui/views/widget/widget.cc ui/views/widget/widget.cc
+index 2b652017e35f..908e4efbb7cd 100644
+--- ui/views/widget/widget.cc
++++ ui/views/widget/widget.cc
+@@ -628,7 +628,7 @@ void Widget::Show() {
+     saved_show_state_ = ui::SHOW_STATE_NORMAL;
+   } else {
+     native_widget_->Show(
+-        CanActivate() ? ui::SHOW_STATE_NORMAL : ui::SHOW_STATE_INACTIVE,
++        ui::SHOW_STATE_INACTIVE,
+         gfx::Rect());
+   }
+ }
