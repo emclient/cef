@@ -1,0 +1,27 @@
+diff --git content/public/common/web_preferences.cc content/public/common/web_preferences.cc
+index b5f0e63d0b37..f02e81e1d9f0 100644
+--- content/public/common/web_preferences.cc
++++ content/public/common/web_preferences.cc
+@@ -131,7 +131,7 @@ WebPreferences::WebPreferences()
+       primary_hover_type(ui::HOVER_TYPE_NONE),
+       dont_send_key_events_to_javascript(false),
+       sync_xhr_in_documents_enabled(true),
+-      should_respect_image_orientation(false),
++      should_respect_image_orientation(true),
+       number_of_cpu_cores(1),
+ #if defined(OS_MACOSX)
+       editing_behavior(EDITING_BEHAVIOR_MAC),
+diff --git a/third_party/blink/renderer/core/frame/settings.json5 b/third_party/blink/renderer/core/frame/settings.json5
+index 9088fd737d9a..f1cb350c6eae 100644
+--- third_party/blink/renderer/core/frame/settings.json5
++++ third_party/blink/renderer/core/frame/settings.json5
+@@ -270,7 +270,7 @@
+ 
+     {
+       name: "shouldRespectImageOrientation",
+-      initial: false,
++      initial: true,
+     },
+ 
+     // This value indicates the number of simultaneous multi-touch points supported
+

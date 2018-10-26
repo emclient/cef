@@ -1,0 +1,15 @@
+diff --git third_party/blink/renderer/core/editing/commands/indent_outdent_command.cc third_party/blink/renderer/core/editing/commands/indent_outdent_command.cc
+index e90c3ba7b802..c04f6da20f48 100644
+--- third_party/blink/renderer/core/editing/commands/indent_outdent_command.cc
++++ third_party/blink/renderer/core/editing/commands/indent_outdent_command.cc
+@@ -418,6 +418,10 @@ void IndentOutdentCommand::OutdentRegion(
+           EndOfParagraph(NextPositionOf(end_of_current_paragraph))
+               .ToPositionWithAffinity();
+     }
++
++	if (end_of_next_paragraph.IsNull())
++      return;
++
+     end_of_current_paragraph = CreateVisiblePosition(end_of_next_paragraph);
+   }
+ }
