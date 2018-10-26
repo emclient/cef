@@ -1,0 +1,26 @@
+diff --git content/public/common/web_preferences.cc content/public/common/web_preferences.cc
+index fba8020aa90e..5604ff3a982e 100644
+--- content/public/common/web_preferences.cc
++++ content/public/common/web_preferences.cc
+@@ -138,7 +138,7 @@ WebPreferences::WebPreferences()
+       available_hover_types(0),
+       primary_hover_type(ui::HOVER_TYPE_NONE),
+       sync_xhr_in_documents_enabled(true),
+-      should_respect_image_orientation(false),
++      should_respect_image_orientation(true),
+       number_of_cpu_cores(1),
+ #if defined(OS_MACOSX)
+       editing_behavior(EDITING_BEHAVIOR_MAC),
+diff --git a/third_party/blink/renderer/core/frame/settings.json5 b/third_party/blink/renderer/core/frame/settings.json5
+index 046246f737f6..113d998ce550 100644
+--- third_party/blink/renderer/core/frame/settings.json5
++++ third_party/blink/renderer/core/frame/settings.json5
+@@ -266,7 +266,7 @@
+ 
+     {
+       name: "shouldRespectImageOrientation",
+-      initial: false,
++      initial: true,
+     },
+ 
+     // Limited use by features which behave differently depending on the input
