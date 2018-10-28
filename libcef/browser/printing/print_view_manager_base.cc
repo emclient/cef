@@ -308,8 +308,7 @@ void CefPrintViewManagerBase::OnNotifyPrintJobEvent(
           content::NotificationService::NoDetails());
 
       if (!print_callback_.is_null()) {
-        BrowserThread::PostTask(BrowserThread::UI, FROM_HERE,
-                                base::BindOnce(print_callback_, false));
+        base::PostTask(FROM_HERE, base::BindOnce(print_callback_, false));
       }
       break;
     }
@@ -343,8 +342,7 @@ void CefPrintViewManagerBase::OnNotifyPrintJobEvent(
           content::Source<content::WebContents>(web_contents()),
           content::NotificationService::NoDetails());
       if (!print_callback_.is_null()) {
-        BrowserThread::PostTask(BrowserThread::UI, FROM_HERE,
-                                base::BindOnce(print_callback_, true));
+        base::PostTask(FROM_HERE, base::BindOnce(print_callback_, true));
       }
       break;
     }
