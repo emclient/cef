@@ -2,6 +2,14 @@ diff --git ui/views/bubble/bubble_dialog_delegate_view.cc ui/views/bubble/bubble
 index 434ae1ea7db6..ce4c0ea47a68 100644
 --- ui/views/bubble/bubble_dialog_delegate_view.cc
 +++ ui/views/bubble/bubble_dialog_delegate_view.cc
+@@ -22,6 +22,7 @@
+ #include "ui/views/widget/widget.h"
+ #include "ui/views/widget/widget_observer.h"
+ #include "ui/views/window/dialog_client_view.h"
++#include "ui/aura/window.h"
+ 
+ #if defined(OS_WIN)
+ #include "ui/base/win/shell.h"
 @@ -312,9 +312,12 @@ gfx::Rect BubbleDialogDelegateView::GetBubbleBounds() {
    // at (0, 0), don't try and adjust arrow if off-screen.
    gfx::Rect anchor_rect = GetAnchorRect();
