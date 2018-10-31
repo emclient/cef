@@ -1,0 +1,14 @@
+diff --git url/url_util.cc url/url_util.cc
+index 4bede9dd29c7..2bde96446a8b 100644
+--- url/url_util.cc
++++ url/url_util.cc
+@@ -81,7 +81,8 @@ const char* kWebStorageSchemes[] = {
+ };
+ 
+ const char* kEmptyDocumentSchemes[] = {
+-    kAboutScheme,
++//    kAboutScheme,
++    "",
+ };
+ 
+ bool initialized = false;
