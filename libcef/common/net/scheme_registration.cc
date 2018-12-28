@@ -55,7 +55,7 @@ bool IsInternalHandledScheme(const std::string& scheme) {
     content::kChromeUIScheme,
     extensions::kExtensionScheme,
     url::kDataScheme,
-    url::kFileScheme,
+   // url::kFileScheme,
     url::kFileSystemScheme,
 #if !BUILDFLAG(DISABLE_FTP_SUPPORT)
     url::kFtpScheme,
@@ -79,7 +79,7 @@ bool IsInternalProtectedScheme(const std::string& scheme) {
     content::kChromeUIScheme,
     extensions::kExtensionScheme,
     url::kDataScheme,
-    url::kFileScheme,
+   // url::kFileScheme,
     url::kFileSystemScheme,
 #if !BUILDFLAG(DISABLE_FTP_SUPPORT)
     url::kFtpScheme,
