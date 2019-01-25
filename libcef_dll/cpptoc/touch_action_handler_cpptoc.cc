@@ -1,4 +1,4 @@
-// Copyright (c) 2018 The Chromium Embedded Framework Authors. All rights
+// Copyright (c) 2019 The Chromium Embedded Framework Authors. All rights
 // reserved. Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
 //
@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=010ed246908973960479b3d5673601fc822f99a0$
+// $hash=727b909fe9d0fad49dc0a7771a3405c25939574d$
 //
 
 #include "libcef_dll/cpptoc/touch_action_handler_cpptoc.h"

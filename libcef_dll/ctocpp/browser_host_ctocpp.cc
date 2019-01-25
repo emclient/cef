@@ -1,4 +1,4 @@
-// Copyright (c) 2018 The Chromium Embedded Framework Authors. All rights
+// Copyright (c) 2019 The Chromium Embedded Framework Authors. All rights
 // reserved. Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
 //
@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=0b2c7c24a96c8f5791b69cbbfd2ef6f09f027b4d$
+// $hash=ed0dc40b326300a487f7556f10a28b3a28a3e3ee$
 //
 
 #include "libcef_dll/ctocpp/browser_host_ctocpp.h"
@@ -316,7 +316,10 @@ void CefBrowserHostCToCpp::Print(CefRefPtr<CefPrintCallback> callback) {
 
   // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
 
-  // Unverified params: callback
+  // Verify param: callback; type: refptr_diff
+  DCHECK(callback.get());
+  if (!callback.get())
+    return;
 
   // Execute
   _struct->print(_struct, CefPrintCallbackCppToC::Wrap(callback));
@@ -337,7 +340,10 @@ void CefBrowserHostCToCpp::PrintWithSettings(
   DCHECK(!printerName.empty());
   if (printerName.empty())
     return;
-  // Unverified params: callback
+  // Verify param: callback; type: refptr_diff
+  DCHECK(callback.get());
+  if (!callback.get())
+    return;
 
   // Translate param: pages; type: simple_vec_byref_const
   const size_t pagesCount = pages.size();

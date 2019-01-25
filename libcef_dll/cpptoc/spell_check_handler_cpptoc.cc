@@ -1,4 +1,4 @@
-// Copyright (c) 2018 The Chromium Embedded Framework Authors. All rights
+// Copyright (c) 2019 The Chromium Embedded Framework Authors. All rights
 // reserved. Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
 //
@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=bde2d015bb7ced94b61672651e76d7bb6c084c8d$
+// $hash=e375f17786de495c329918ad7acb2c996122a006$
 //
 
 #include "libcef_dll/cpptoc/spell_check_handler_cpptoc.h"

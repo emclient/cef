@@ -1,4 +1,4 @@
-// Copyright (c) 2018 The Chromium Embedded Framework Authors. All rights
+// Copyright (c) 2019 The Chromium Embedded Framework Authors. All rights
 // reserved. Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
 //
@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=850b2d52a84597aa4b32ddf2a3b291c5870573fa$
+// $hash=845cb9b0071f11bbf7a8e4525a954f50a5090a84$
 //
 
 #include "libcef_dll/cpptoc/browser_host_cpptoc.h"
@@ -346,7 +346,10 @@ void CEF_CALLBACK browser_host_print(struct _cef_browser_host_t* self,
   DCHECK(self);
   if (!self)
     return;
-  // Unverified params: callback
+  // Verify param: callback; type: refptr_diff
+  DCHECK(callback);
+  if (!callback)
+    return;
 
   // Execute
   CefBrowserHostCppToC::Get(self)->Print(
@@ -372,7 +375,10 @@ browser_host_print_with_settings(struct _cef_browser_host_t* self,
   DCHECK(pagesCount == 0 || pages);
   if (pagesCount > 0 && !pages)
     return;
-  // Unverified params: callback
+  // Verify param: callback; type: refptr_diff
+  DCHECK(callback);
+  if (!callback)
+    return;
 
   // Translate param: pages; type: simple_vec_byref_const
   std::vector<CefRange> pagesList;
