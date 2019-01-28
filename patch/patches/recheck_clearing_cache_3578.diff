@@ -1,0 +1,237 @@
+diff --git components/spellcheck/renderer/spellcheck_provider.cc components/spellcheck/renderer/spellcheck_provider.cc
+index c668347448b4..9a5fc8167a1a 100644
+--- components/spellcheck/renderer/spellcheck_provider.cc
++++ components/spellcheck/renderer/spellcheck_provider.cc
+@@ -187,7 +187,8 @@ void SpellCheckProvider::CheckSpelling(
+ 
+ void SpellCheckProvider::RequestCheckingOfText(
+     const WebString& text,
+-    WebTextCheckingCompletion* completion) {
++    WebTextCheckingCompletion* completion,
++	bool clear_cache) {
+   RequestTextChecking(text.Utf16(), completion);
+   UMA_HISTOGRAM_COUNTS_1M("SpellCheck.api.async", text.length());
+ }
+diff --git components/spellcheck/renderer/spellcheck_provider.h components/spellcheck/renderer/spellcheck_provider.h
+index d14270743fb1..700c35aeef8b 100644
+--- components/spellcheck/renderer/spellcheck_provider.h
++++ components/spellcheck/renderer/spellcheck_provider.h
+@@ -95,7 +95,8 @@ class SpellCheckProvider
+       blink::WebVector<blink::WebString>* optional_suggestions) override;
+   void RequestCheckingOfText(
+       const blink::WebString& text,
+-      blink::WebTextCheckingCompletion* completion) override;
++      blink::WebTextCheckingCompletion* completion,
++	  bool clear_cache) override;
+   void CancelAllPendingRequests() override;
+ 
+ #if !BUILDFLAG(USE_BROWSER_SPELLCHECKER)
+diff --git components/spellcheck/renderer/spellcheck_provider_callback.cc components/spellcheck/renderer/spellcheck_provider_callback.cc
+index 98d2c035d6a4..1a89efe2ac2b 100644
+--- components/spellcheck/renderer/spellcheck_provider_callback.cc
++++ components/spellcheck/renderer/spellcheck_provider_callback.cc
+@@ -113,16 +113,21 @@ SpellCheckProviderCallback::GetSpellCheckHost() {
+ 
+ void SpellCheckProviderCallback::RequestTextChecking(
+     const base::string16& text,
+-    WebTextCheckingCompletion* completion) {
++    WebTextCheckingCompletion* completion,
++    bool clear_cache) {
+   // Ignore invalid requests.
+   if (text.empty() || !HasWordCharacters(text, 0)) {
+     completion->DidCancelCheckingText();
+     return;
+   }
+-  
+-  // Try to satisfy check from cache.
+-  if (SatisfyRequestFromCache(text, completion))
++
++  if (clear_cache) {
++    last_request_.clear();
++  } else { 
++    // Try to satisfy check from cache.
++	if (SatisfyRequestFromCache(text, completion))
+     return;
++  }
+ 
+   // Send this text to a browser. A browser checks the user profile and send
+   // this text to the Spelling service only if a user enables this feature.
+@@ -149,8 +154,9 @@ void SpellCheckProviderCallback::CheckSpelling(
+ 
+ void SpellCheckProviderCallback::RequestCheckingOfText(
+     const WebString& text,
+-    WebTextCheckingCompletion* completion) {
+-  RequestTextChecking(text.Utf16(), completion);
++    WebTextCheckingCompletion* completion,
++	bool clear_cache) {
++  RequestTextChecking(text.Utf16(), completion, clear_cache);
+   UMA_HISTOGRAM_COUNTS("SpellCheck.api.async", text.length());
+ }
+ 
+diff --git components/spellcheck/renderer/spellcheck_provider_callback.h components/spellcheck/renderer/spellcheck_provider_callback.h
+index edd388861212..b97a2f0e0eef 100644
+--- components/spellcheck/renderer/spellcheck_provider_callback.h
++++ components/spellcheck/renderer/spellcheck_provider_callback.h
+@@ -52,7 +52,8 @@ class SpellCheckProviderCallback
+   // handling for partial words, as Blink guarantees that no request is made
+   // when typing in the middle of a word.
+   void RequestTextChecking(const base::string16& text,
+-                           blink::WebTextCheckingCompletion* completion);
++                           blink::WebTextCheckingCompletion* completion,
++	                       bool clear_cache);
+ 
+   // The number of ongoing spell check host requests.
+   size_t pending_text_request_size() const {
+@@ -100,7 +101,8 @@ class SpellCheckProviderCallback
+       blink::WebVector<blink::WebString>* optional_suggestions) override;
+   void RequestCheckingOfText(
+       const blink::WebString& text,
+-      blink::WebTextCheckingCompletion* completion) override;
++      blink::WebTextCheckingCompletion* completion,
++	  bool clear_cache) override;
+   void CancelAllPendingRequests() override;
+ 
+   void OnRespondSpellingService(int identifier,
+diff --git third_party/blink/public/web/web_text_check_client.h third_party/blink/public/web/web_text_check_client.h
+index 71b4bdfb2916..aa9743c510c3 100644
+--- third_party/blink/public/web/web_text_check_client.h
++++ third_party/blink/public/web/web_text_check_client.h
+@@ -32,7 +32,8 @@ class WebTextCheckClient {
+   // returned by passed completion object.
+   virtual void RequestCheckingOfText(
+       const WebString& text_to_check,
+-      WebTextCheckingCompletion* completion_callback) {}
++      WebTextCheckingCompletion* completion_callback,
++	  bool clear_cache) {}
+ 
+   // Clear all stored references to requests, so that it will not become a
+   // leak source.
+diff --git third_party/blink/renderer/core/editing/spellcheck/spell_check_requester.cc third_party/blink/renderer/core/editing/spellcheck/spell_check_requester.cc
+index 706f274d258a..d42a111465a6 100644
+--- third_party/blink/renderer/core/editing/spellcheck/spell_check_requester.cc
++++ third_party/blink/renderer/core/editing/spellcheck/spell_check_requester.cc
+@@ -79,13 +79,15 @@ class WebTextCheckingCompletionImpl : public WebTextCheckingCompletion {
+ 
+ SpellCheckRequest::SpellCheckRequest(Range* checking_range,
+                                      const String& text,
+-                                     int request_number)
++                                     int request_number,
++	                                 bool clear_cache)
+     : requester_(nullptr),
+       checking_range_(checking_range),
+       root_editable_element_(
+           blink::RootEditableElement(*checking_range_->startContainer())),
+       text_(text),
+-      request_number_(request_number) {
++      request_number_(request_number),
++      clear_cache_(clear_cache) {
+   DCHECK(checking_range_);
+   DCHECK(checking_range_->IsConnected());
+ }
+@@ -106,7 +108,8 @@ void SpellCheckRequest::Dispose() {
+ // static
+ SpellCheckRequest* SpellCheckRequest::Create(
+     const EphemeralRange& checking_range,
+-    int request_number) {
++    int request_number,
++	bool clear_cache) {
+   if (checking_range.IsNull())
+     return nullptr;
+   if (!blink::RootEditableElement(
+@@ -123,7 +126,7 @@ SpellCheckRequest* SpellCheckRequest::Create(
+   Range* checking_range_object = CreateRange(checking_range);
+ 
+   SpellCheckRequest* request =
+-      new SpellCheckRequest(checking_range_object, text, request_number);
++      new SpellCheckRequest(checking_range_object, text, request_number, clear_cache);
+   if (request->RootEditableElement())
+     return request;
+ 
+@@ -186,12 +189,18 @@ void SpellCheckRequester::TimerFiredToProcessQueuedRequest(TimerBase*) {
+ }
+ 
+ bool SpellCheckRequester::RequestCheckingFor(const EphemeralRange& range) {
+-  return RequestCheckingFor(range, 0);
++  return RequestCheckingFor(range, 0, false);
+ }
+ 
+ bool SpellCheckRequester::RequestCheckingFor(const EphemeralRange& range,
+                                              int request_num) {
+-  SpellCheckRequest* request = SpellCheckRequest::Create(range, request_num);
++  return RequestCheckingFor(range, 0, false);
++}
++
++bool SpellCheckRequester::RequestCheckingFor(const EphemeralRange& range,
++                                             int request_num,
++	                                         bool clear_cache) {
++  SpellCheckRequest* request = SpellCheckRequest::Create(range, request_num, clear_cache);
+   if (!request)
+     return false;
+ 
+@@ -246,7 +255,8 @@ void SpellCheckRequester::InvokeRequest(SpellCheckRequest* request) {
+   if (WebTextCheckClient* text_checker_client = GetTextCheckerClient()) {
+     text_checker_client->RequestCheckingOfText(
+         processing_request_->GetText(),
+-        new WebTextCheckingCompletionImpl(request));
++        new WebTextCheckingCompletionImpl(request),
++	    request->ClearCache());
+   }
+ }
+ 
+diff --git third_party/blink/renderer/core/editing/spellcheck/spell_check_requester.h third_party/blink/renderer/core/editing/spellcheck/spell_check_requester.h
+index 2085f68910f5..260af3f98ec8 100644
+--- third_party/blink/renderer/core/editing/spellcheck/spell_check_requester.h
++++ third_party/blink/renderer/core/editing/spellcheck/spell_check_requester.h
+@@ -49,7 +49,8 @@ class CORE_EXPORT SpellCheckRequest
+   static const int kUnrequestedTextCheckingSequence = -1;
+ 
+   static SpellCheckRequest* Create(const EphemeralRange& checking_range,
+-                                   int request_number);
++                                   int request_number,
++	                               bool clear_cache);
+ 
+   ~SpellCheckRequest();
+   void Dispose();
+@@ -66,11 +67,12 @@ class CORE_EXPORT SpellCheckRequest
+   void DidCancel();
+ 
+   int RequestNumber() const { return request_number_; }
++  int ClearCache() const { return clear_cache_; }
+ 
+   void Trace(blink::Visitor*);
+ 
+  private:
+-  SpellCheckRequest(Range* checking_range, const String&, int request_number);
++  SpellCheckRequest(Range* checking_range, const String&, int request_number, bool clear_cache);
+ 
+   Member<SpellCheckRequester> requester_;
+   Member<Range> checking_range_;
+@@ -78,6 +80,7 @@ class CORE_EXPORT SpellCheckRequest
+   int sequence_ = kUnrequestedTextCheckingSequence;
+   String text_;
+   int request_number_;
++  bool clear_cache_;
+ };
+ 
+ class CORE_EXPORT SpellCheckRequester final
+@@ -93,6 +96,7 @@ class CORE_EXPORT SpellCheckRequester final
+   // Returns true if a request is initiated. Returns false otherwise.
+   bool RequestCheckingFor(const EphemeralRange&);
+   bool RequestCheckingFor(const EphemeralRange&, int request_num);
++  bool RequestCheckingFor(const EphemeralRange&, int request_num, bool clear_cache);
+   void CancelCheck();
+ 
+   int LastRequestSequence() const { return last_request_sequence_; }
+diff --git third_party/blink/renderer/core/editing/spellcheck/spell_checker.cc third_party/blink/renderer/core/editing/spellcheck/spell_checker.cc
+index f1fac9ff736c..3d77d7c44a0c 100644
+--- third_party/blink/renderer/core/editing/spellcheck/spell_checker.cc
++++ third_party/blink/renderer/core/editing/spellcheck/spell_checker.cc
+@@ -549,7 +549,7 @@ void SpellChecker::MarkAllMisspellingsAndBadGrammar(Element& element) {
+ 
+   GetFrame().GetDocument()->Markers().RemoveMarkersInRange(
+       range, DocumentMarker::MarkerTypes::Misspelling());
+-  spell_check_requester_->RequestCheckingFor(range);
++  spell_check_requester_->RequestCheckingFor(range, 0, true);
+ }
+ 
+ static Node* FindFirstMarkable(Node* node) {
