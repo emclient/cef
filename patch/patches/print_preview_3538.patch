@@ -1,0 +1,105 @@
+diff --git chrome/browser/resources/pdf/pdf_viewer.js chrome/browser/resources/pdf/pdf_viewer.js
+index f98dfc0a6f07..bcecc2d21037 100644
+--- chrome/browser/resources/pdf/pdf_viewer.js
++++ chrome/browser/resources/pdf/pdf_viewer.js
+@@ -145,9 +145,11 @@ function PDFViewer(browserApi) {
+   // Parse open pdf parameters.
+   this.paramsParser_ = new OpenPDFParamsParser(
+       message => this.pluginController_.postMessage(message));
++  var toolbarParam = this.paramsParser_.getUiUrlParams(this.originalUrl_).toolbar;
+   const toolbarEnabled =
+-      this.paramsParser_.getUiUrlParams(this.originalUrl_).toolbar &&
++      toolbarParam &&
+       !this.isPrintPreview_;
++  var toolbarButtonsEnabled = toolbarParam;
+ 
+   // The sizer element is placed behind the plugin element to cause scrollbars
+   // to be displayed in the window. It is sized according to the document size
+@@ -265,6 +267,12 @@ function PDFViewer(browserApi) {
+     this.toolbar_.docTitle = getFilenameFromURL(this.originalUrl_);
+   }
+ 
++  if (!toolbarButtonsEnabled) {
++  	this.zoomToolbar_.style.display = 'none';
++  	if (this.pageIndicator_)
++      this.pageIndicator_.style.display = 'none';
++  }
++
+   document.body.addEventListener('change-page', e => {
+     this.viewport_.goToPage(e.detail.page);
+     if (e.detail.origin == 'bookmark') {
+@@ -319,7 +327,8 @@ function PDFViewer(browserApi) {
+       new ViewportScroller(this.viewport_, this.plugin_, window);
+ 
+   // Request translated strings.
+-  chrome.resourcesPrivate.getStrings('pdf', this.handleStrings_.bind(this));
++  if (chrome.resourcesPrivate)
++    chrome.resourcesPrivate.getStrings('pdf', this.handleStrings_.bind(this));
+ }
+ 
+ PDFViewer.prototype = {
+@@ -859,7 +868,8 @@ PDFViewer.prototype = {
+       pageY: visiblePageDimensions.y,
+       pageWidth: visiblePageDimensions.width,
+       viewportWidth: size.width,
+-      viewportHeight: size.height
++      viewportHeight: size.height,
++      firstPage: visiblePage
+     });
+   },
+ 
+@@ -897,6 +907,21 @@ PDFViewer.prototype = {
+       case 'selectAll':
+         this.pluginController_.postMessage(message.data);
+         break;
++      case 'zoom':
++	  	if (message.data.zoom == 'fitToPage')
++	  		this.viewport_.fitToPage();
++	  	if (message.data.zoom == 'fitToWidth')
++	  		this.viewport_.fitToWidth();
++	  	else
++	  	{
++	  		var val = parseFloat(message.data.zoom);
++	  		if (!isNaN(val))
++	  			this.viewport_.setZoom(message.data.zoom);
++	  	}
++	  	break;
++	  case 'goToPage':
++	  	this.viewport_.goToPage(message.data.page);
++		break;
+     }
+   },
+ 
+@@ -981,7 +1006,7 @@ PDFViewer.prototype = {
+       // leak important information.
+       if (this.parentOrigin_ == window.location.origin) {
+         targetOrigin = this.parentOrigin_;
+-      } else if (message.type == 'documentLoaded') {
++      } else if (message.type == 'documentLoaded' || this.isPrintPreview_) {
+         targetOrigin = '*';
+       } else {
+         targetOrigin = this.originalUrl_;
+@@ -1422,6 +1447,10 @@ class PluginController extends ContentController {
+         break;
+       case 'documentDimensions':
+         viewer.setDocumentDimensions(message.data);
++        this.sendScriptingMessage_({
++      	  type: 'documentDimensionsChanged',
++          pageCount: this.documentDimensions_.pageDimensions.length
++        });
+         break;
+       case 'email':
+         const href = 'mailto:' + message.data.to + '?cc=' + message.data.cc +
+diff --git chrome/browser/resources/pdf/viewport.js chrome/browser/resources/pdf/viewport.js
+index dce8d534ccdf..c7d12b00441e 100644
+--- chrome/browser/resources/pdf/viewport.js
++++ chrome/browser/resources/pdf/viewport.js
+@@ -754,7 +754,7 @@ Viewport.prototype = {
+     let zoomHeight;
+ 
+     if (fitWidth) {
+-      zoomWidth = windowWidth / pageWidth;
++      zoomWidth = zoomWidth = (windowWidth - 1) / pageWidth;
+     }
+ 
+     if (fitHeight) {
