@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=7c4161d81ffe71747b31f7ec9f23ae422cfccc29$
+// $hash=9c9847cbce916c4956a041cafd860978b740de6f$
 //
 
 #include "libcef_dll/ctocpp/browser_host_ctocpp.h"
@@ -356,6 +356,45 @@ NO_SANITIZE("cfi-icall") void CefBrowserHostCToCpp::Print() {
 
   // Execute
   _struct->print(_struct);
+}
+
+NO_SANITIZE("cfi-icall")
+void CefBrowserHostCToCpp::PrintWithSettings(
+    const CefString& printerName,
+    const std::vector<CefRange>& pages) {
+  shutdown_checker::AssertNotShutdown();
+
+  cef_browser_host_t* _struct = GetStruct();
+  if (CEF_MEMBER_MISSING(_struct, print_with_settings))
+    return;
+
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  // Verify param: printerName; type: string_byref_const
+  DCHECK(!printerName.empty());
+  if (printerName.empty())
+    return;
+
+  // Translate param: pages; type: simple_vec_byref_const
+  const size_t pagesCount = pages.size();
+  cef_range_t* pagesList = NULL;
+  if (pagesCount > 0) {
+    pagesList = new cef_range_t[pagesCount];
+    DCHECK(pagesList);
+    if (pagesList) {
+      for (size_t i = 0; i < pagesCount; ++i) {
+        pagesList[i] = pages[i];
+      }
+    }
+  }
+
+  // Execute
+  _struct->print_with_settings(_struct, printerName.GetStruct(), pagesCount,
+                               pagesList);
+
+  // Restore param:pages; type: simple_vec_byref_const
+  if (pagesList)
+    delete[] pagesList;
 }
 
 NO_SANITIZE("cfi-icall")

@@ -178,6 +178,7 @@ class CefBrowserHostImpl : public CefBrowserHost,
                      bool bypass_cache,
                      CefRefPtr<CefDownloadImageCallback> callback) override;
   void Print() override;
+  void PrintWithSettings(const CefString& printerName, const std::vector<CefRange>& pages) override;
   void PrintToPDF(const CefString& path,
                   const CefPdfPrintSettings& settings,
                   CefRefPtr<CefPdfPrintCallback> callback) override;

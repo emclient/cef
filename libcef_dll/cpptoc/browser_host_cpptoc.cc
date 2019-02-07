@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=2940e7b5fac9477d9fe7268403cba5cf1fa38618$
+// $hash=55d00fa11f8e84e1a8c4e9c4c3e5104eb569e1f0$
 //
 
 #include "libcef_dll/cpptoc/browser_host_cpptoc.h"
@@ -387,6 +387,41 @@ void CEF_CALLBACK browser_host_print(struct _cef_browser_host_t* self) {
 
   // Execute
   CefBrowserHostCppToC::Get(self)->Print();
+}
+
+void CEF_CALLBACK
+browser_host_print_with_settings(struct _cef_browser_host_t* self,
+                                 const cef_string_t* printerName,
+                                 size_t pagesCount,
+                                 cef_range_t const* pages) {
+  shutdown_checker::AssertNotShutdown();
+
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  DCHECK(self);
+  if (!self)
+    return;
+  // Verify param: printerName; type: string_byref_const
+  DCHECK(printerName);
+  if (!printerName)
+    return;
+  // Verify param: pages; type: simple_vec_byref_const
+  DCHECK(pagesCount == 0 || pages);
+  if (pagesCount > 0 && !pages)
+    return;
+
+  // Translate param: pages; type: simple_vec_byref_const
+  std::vector<CefRange> pagesList;
+  if (pagesCount > 0) {
+    for (size_t i = 0; i < pagesCount; ++i) {
+      CefRange pagesVal = pages[i];
+      pagesList.push_back(pagesVal);
+    }
+  }
+
+  // Execute
+  CefBrowserHostCppToC::Get(self)->PrintWithSettings(CefString(printerName),
+                                                     pagesList);
 }
 
 void CEF_CALLBACK
@@ -1292,6 +1327,7 @@ CefBrowserHostCppToC::CefBrowserHostCppToC() {
   GetStruct()->start_download = browser_host_start_download;
   GetStruct()->download_image = browser_host_download_image;
   GetStruct()->print = browser_host_print;
+  GetStruct()->print_with_settings = browser_host_print_with_settings;
   GetStruct()->print_to_pdf = browser_host_print_to_pdf;
   GetStruct()->find = browser_host_find;
   GetStruct()->stop_finding = browser_host_stop_finding;
