@@ -1,0 +1,144 @@
+diff --git components/printing/browser/print_manager_utils.cc components/printing/browser/print_manager_utils.cc
+index c1073bacdbb9..0b5ff8346aae 100644
+--- components/printing/browser/print_manager_utils.cc
++++ components/printing/browser/print_manager_utils.cc
+@@ -70,6 +70,7 @@ void RenderParamsFromPrintSettings(const PrintSettings& settings,
+   params->display_header_footer = settings.display_header_footer();
+   params->title = settings.title();
+   params->url = settings.url();
++  params->localized_date = settings.localized_date();
+   params->printed_doc_type = IsOopifEnabled() && settings.is_modifiable()
+                                  ? SkiaDocumentType::MSKP
+                                  : SkiaDocumentType::PDF;
+diff --git components/printing/common/print_messages.cc components/printing/common/print_messages.cc
+index 3355de3884cd..b4ff36b1e5c5 100644
+--- components/printing/common/print_messages.cc
++++ components/printing/common/print_messages.cc
+@@ -107,6 +107,7 @@ void PrintMsg_Print_Params::Reset() {
+   display_header_footer = false;
+   title = base::string16();
+   url = base::string16();
++  localized_date = base::string16();
+   header_template = base::string16();
+   footer_template = base::string16();
+   should_print_backgrounds = false;
+diff --git components/printing/common/print_messages.h components/printing/common/print_messages.h
+index ae0d479ecafa..4b90129ce508 100644
+--- components/printing/common/print_messages.h
++++ components/printing/common/print_messages.h
+@@ -57,6 +57,7 @@ struct PrintMsg_Print_Params {
+   bool display_header_footer;
+   base::string16 title;
+   base::string16 url;
++  base::string16 localized_date;
+   base::string16 header_template;
+   base::string16 footer_template;
+   bool should_print_backgrounds;
+@@ -180,6 +181,9 @@ IPC_STRUCT_TRAITS_BEGIN(PrintMsg_Print_Params)
+   // URL string to be printed as footer if requested by the user.
+   IPC_STRUCT_TRAITS_MEMBER(url)
+ 
++  // Localized date to be printed in header if requested by the user.
++  IPC_STRUCT_TRAITS_MEMBER(localized_date)
++
+   // HTML template to use as a print header.
+   IPC_STRUCT_TRAITS_MEMBER(header_template)
+ 
+diff --git components/printing/renderer/print_render_frame_helper.cc components/printing/renderer/print_render_frame_helper.cc
+index ddaa19d8d241..ad314cb735cf 100644
+--- components/printing/renderer/print_render_frame_helper.cc
++++ components/printing/renderer/print_render_frame_helper.cc
+@@ -709,6 +709,7 @@ void PrintRenderFrameHelper::PrintHeaderAndFooter(
+   options->SetInteger("pageNumber", page_number);
+   options->SetInteger("totalPages", total_pages);
+   options->SetString("url", params.url);
++  options->SetString(kSettingHeaderFooterLocalizedDate, params.localized_date);
+   base::string16 title = source_frame.GetDocument().Title().Utf16();
+   options->SetString("title", title.empty() ? params.title : title);
+   options->SetString("headerTemplate", params.header_template);
+diff --git components/printing/resources/print_header_footer_template_page.html components/printing/resources/print_header_footer_template_page.html
+index 5fee7a64f36a..df8134aabd53 100644
+--- components/printing/resources/print_header_footer_template_page.html
++++ components/printing/resources/print_header_footer_template_page.html
+@@ -80,7 +80,7 @@ function setupHeaderFooterTemplate(options) {
+       <span class='pageNumber'></span>/<span class='totalPages'></span>
+     </div>`;
+ 
+-  options.date = new Date(options.date).toLocaleDateString();
++  options.date = options['localized_date'] ? options['localized_date'] : new Date(options['date']).toLocaleDateString();
+   for (const cssClass of ['date', 'title', 'url', 'pageNumber', 'totalPages']) {
+     for (const element of document.querySelectorAll(`.${cssClass}`)) {
+       element.textContent = options[cssClass];
+diff --git printing/print_job_constants.cc printing/print_job_constants.cc
+index 427a530553aa..f8ffdfe35f87 100644
+--- printing/print_job_constants.cc
++++ printing/print_job_constants.cc
+@@ -81,6 +81,10 @@ const float kSettingHeaderFooterInterstice = 14.2f;
+ // and footers.
+ const char kSettingHeaderFooterDate[] = "date";
+ 
++// Key that specifies the localized date of the page that will be printed in the headers
++// and footers.
++const char kSettingHeaderFooterLocalizedDate[] = "localized_date";
++
+ // Key that specifies the title of the page that will be printed in the headers
+ // and footers.
+ const char kSettingHeaderFooterTitle[] = "title";
+diff --git printing/print_job_constants.h printing/print_job_constants.h
+index 4e601a99617d..13f9acbb4cfa 100644
+--- printing/print_job_constants.h
++++ printing/print_job_constants.h
+@@ -32,6 +32,7 @@ PRINTING_EXPORT extern const char kSettingFitToPageScaling[];
+ PRINTING_EXPORT extern const char kSettingHeaderFooterEnabled[];
+ PRINTING_EXPORT extern const float kSettingHeaderFooterInterstice;
+ PRINTING_EXPORT extern const char kSettingHeaderFooterDate[];
++PRINTING_EXPORT extern const char kSettingHeaderFooterLocalizedDate[];
+ PRINTING_EXPORT extern const char kSettingHeaderFooterTitle[];
+ PRINTING_EXPORT extern const char kSettingHeaderFooterURL[];
+ PRINTING_EXPORT extern const char kSettingJobTitle[];
+diff --git printing/print_settings.h printing/print_settings.h
+index 6a8c17abb54c..ccd432d708b9 100644
+--- printing/print_settings.h
++++ printing/print_settings.h
+@@ -149,6 +149,9 @@ class PRINTING_EXPORT PrintSettings {
+   }
+   bool display_header_footer() const { return display_header_footer_; }
+ 
++  void set_localized_date(const base::string16& date) { date_ = date; }
++  const base::string16& localized_date() const { return date_; }
++
+   void set_title(const base::string16& title) { title_ = title; }
+   const base::string16& title() const { return title_; }
+ 
+@@ -225,6 +228,7 @@ class PRINTING_EXPORT PrintSettings {
+   MarginType margin_type_;
+ 
+   // Strings to be printed as headers and footers if requested by the user.
++  base::string16 date_;
+   base::string16 title_;
+   base::string16 url_;
+ 
+diff --git printing/print_settings_conversion.cc printing/print_settings_conversion.cc
+index 2ba733326771..c88994bcf73a 100644
+--- printing/print_settings_conversion.cc
++++ printing/print_settings_conversion.cc
+@@ -91,8 +91,11 @@ bool PrintSettingsFromJobSettings(const base::Value& job_settings,
+     if (!title || !url)
+       return false;
+ 
++    const std::string* date = job_settings.FindStringKey(kSettingHeaderFooterLocalizedDate);
++
+     settings->set_title(base::UTF8ToUTF16(*title));
+     settings->set_url(base::UTF8ToUTF16(*url));
++    settings->set_localized_date(base::UTF8ToUTF16(*date));
+   }
+ 
+   base::Optional<bool> backgrounds =
+@@ -237,6 +240,7 @@ void PrintSettingsToJobSettingsDebug(const PrintSettings& settings,
+                            settings.display_header_footer());
+   job_settings->SetString(kSettingHeaderFooterTitle, settings.title());
+   job_settings->SetString(kSettingHeaderFooterURL, settings.url());
++  job_settings->SetString(kSettingHeaderFooterLocalizedDate, settings.localized_date());
+   job_settings->SetBoolean(kSettingShouldPrintBackgrounds,
+                            settings.should_print_backgrounds());
+   job_settings->SetBoolean(kSettingShouldPrintSelectionOnly,
