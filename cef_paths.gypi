@@ -8,7 +8,7 @@
 # by hand. See the translator.README.txt file in the tools directory for
 # more information.
 #
-# $hash=a8e80ae73a0d30776c2e6aaceaf9dbd4031f6c74$
+# $hash=ddd6a846f0d08adf819d85a89f22f0826328608d$
 #
 
 {
@@ -69,6 +69,7 @@
       'include/cef_response_filter.h',
       'include/cef_scheme.h',
       'include/cef_server.h',
+      'include/cef_spellcheck_handler.h',
       'include/cef_ssl_info.h',
       'include/cef_ssl_status.h',
       'include/cef_stream.h',
@@ -163,6 +164,7 @@
       'include/capi/cef_response_filter_capi.h',
       'include/capi/cef_scheme_capi.h',
       'include/capi/cef_server_capi.h',
+      'include/capi/cef_spellcheck_handler_capi.h',
       'include/capi/cef_ssl_info_capi.h',
       'include/capi/cef_ssl_status_capi.h',
       'include/capi/cef_stream_capi.h',
@@ -404,6 +406,8 @@
       'libcef_dll/ctocpp/server_handler_ctocpp.h',
       'libcef_dll/ctocpp/set_cookie_callback_ctocpp.cc',
       'libcef_dll/ctocpp/set_cookie_callback_ctocpp.h',
+      'libcef_dll/ctocpp/spell_check_handler_ctocpp.cc',
+      'libcef_dll/ctocpp/spell_check_handler_ctocpp.h',
       'libcef_dll/cpptoc/stream_reader_cpptoc.cc',
       'libcef_dll/cpptoc/stream_reader_cpptoc.h',
       'libcef_dll/cpptoc/stream_writer_cpptoc.cc',
@@ -696,6 +700,8 @@
       'libcef_dll/cpptoc/server_handler_cpptoc.h',
       'libcef_dll/cpptoc/set_cookie_callback_cpptoc.cc',
       'libcef_dll/cpptoc/set_cookie_callback_cpptoc.h',
+      'libcef_dll/cpptoc/spell_check_handler_cpptoc.cc',
+      'libcef_dll/cpptoc/spell_check_handler_cpptoc.h',
       'libcef_dll/ctocpp/stream_reader_ctocpp.cc',
       'libcef_dll/ctocpp/stream_reader_ctocpp.h',
       'libcef_dll/ctocpp/stream_writer_ctocpp.cc',

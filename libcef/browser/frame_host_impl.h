@@ -139,6 +139,9 @@ class CefFrameHostImpl : public CefFrame {
   static const int64_t kUnspecifiedFrameId;
   static const int64_t kInvalidFrameId;
 
+  // Send a message to the RenderFrameHost associated with this frame.
+  void Send(IPC::Message* message);
+
  private:
   int64 GetFrameId() const;
   CefRefPtr<CefBrowserHostImpl> GetBrowserHostImpl() const;
@@ -152,9 +155,8 @@ class CefFrameHostImpl : public CefFrame {
   void OnRequest(const Cef_Request_Params& params);
   void OnResponse(const Cef_Response_Params& params);
   void OnResponseAck(int request_id);
-
-  // Send a message to the RenderFrameHost associated with this frame.
-  void Send(IPC::Message* message);
+  void OnSpellCheckRequest(base::string16 word, bool* misspelled);
+  void OnSpellCheckLanguage(std::string* word);
 
   const bool is_main_frame_;
 

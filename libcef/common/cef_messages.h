@@ -193,6 +193,21 @@ IPC_SYNC_MESSAGE_CONTROL1_1(
 // Sent by the renderer when the frame can begin receiving messages.
 IPC_MESSAGE_ROUTED0(CefHostMsg_FrameAttached)
 
+IPC_SYNC_MESSAGE_ROUTED1_1(
+    CefHostMsg_SpellCheckRequest,
+    base::string16 /* word */,
+    bool /* misspelled */)
+
+ IPC_SYNC_MESSAGE_ROUTED0_1(
+    CefHostMsg_SpellCheckLanguage,
+    std::string /* lang */)
+    
+// Sent when a frame is identified for the first time.
+IPC_MESSAGE_ROUTED3(CefHostMsg_FrameIdentified,
+                    int64_t /* frame_id */,
+                    int64_t /* parent_frame_id */,
+                    base::string16 /* frame_name */)
+
 // Sent by the renderer when the frame becomes focused.
 IPC_MESSAGE_ROUTED0(CefHostMsg_FrameFocused)
 

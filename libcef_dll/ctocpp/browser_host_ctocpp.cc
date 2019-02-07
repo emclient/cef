@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=0516b8b72819ab4b5a9d6f4c68d774ebde06c94c$
+// $hash=7c4161d81ffe71747b31f7ec9f23ae422cfccc29$
 //
 
 #include "libcef_dll/ctocpp/browser_host_ctocpp.h"
@@ -559,6 +559,19 @@ void CefBrowserHostCToCpp::AddWordToDictionary(const CefString& word) {
   _struct->add_word_to_dictionary(_struct, word.GetStruct());
 }
 
+NO_SANITIZE("cfi-icall") void CefBrowserHostCToCpp::Recheck() {
+  shutdown_checker::AssertNotShutdown();
+
+  cef_browser_host_t* _struct = GetStruct();
+  if (CEF_MEMBER_MISSING(_struct, recheck))
+    return;
+
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  // Execute
+  _struct->recheck(_struct);
+}
+
 NO_SANITIZE("cfi-icall")
 bool CefBrowserHostCToCpp::IsWindowRenderingDisabled() {
   shutdown_checker::AssertNotShutdown();
@@ -969,8 +982,8 @@ void CefBrowserHostCToCpp::DragSourceSystemDragEnded() {
 }
 
 NO_SANITIZE("cfi-icall")
-CefRefPtr<CefNavigationEntry>
-CefBrowserHostCToCpp::GetVisibleNavigationEntry() {
+CefRefPtr<
+    CefNavigationEntry> CefBrowserHostCToCpp::GetVisibleNavigationEntry() {
   shutdown_checker::AssertNotShutdown();
 
   cef_browser_host_t* _struct = GetStruct();

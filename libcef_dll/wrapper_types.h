@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=98cdfe3302019e8169a9db0371a64ec7b3ad419b$
+// $hash=ac5bb1da46fd690828c69a7ddbafa4acdaab60b8$
 //
 
 #ifndef CEF_LIBCEF_DLL_WRAPPER_TYPES_H_
@@ -120,6 +120,7 @@ enum CefWrapperType {
   WT_SERVER,
   WT_SERVER_HANDLER,
   WT_SET_COOKIE_CALLBACK,
+  WT_SPELL_CHECK_HANDLER,
   WT_STREAM_READER,
   WT_STREAM_WRITER,
   WT_STRING_VISITOR,

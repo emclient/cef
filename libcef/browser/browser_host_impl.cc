@@ -1059,6 +1059,16 @@ void CefBrowserHostImpl::AddWordToDictionary(const CefString& word) {
 #endif
 }
 
+void CefBrowserHostImpl::Recheck() {
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    CEF_POST_TASK(CEF_UIT, base::Bind(&CefBrowserHostImpl::Recheck, this));
+    return;
+  }
+
+  if (web_contents())
+    web_contents()->Recheck();
+}
+
 void CefBrowserHostImpl::WasResized() {
   if (!CEF_CURRENTLY_ON_UIT()) {
     CEF_POST_TASK(CEF_UIT,

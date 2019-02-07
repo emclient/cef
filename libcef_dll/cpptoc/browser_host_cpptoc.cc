@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=efa046db24821251ee93d40d36516d11b915325c$
+// $hash=2940e7b5fac9477d9fe7268403cba5cf1fa38618$
 //
 
 #include "libcef_dll/cpptoc/browser_host_cpptoc.h"
@@ -613,6 +613,19 @@ browser_host_add_word_to_dictionary(struct _cef_browser_host_t* self,
 
   // Execute
   CefBrowserHostCppToC::Get(self)->AddWordToDictionary(CefString(word));
+}
+
+void CEF_CALLBACK browser_host_recheck(struct _cef_browser_host_t* self) {
+  shutdown_checker::AssertNotShutdown();
+
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  DCHECK(self);
+  if (!self)
+    return;
+
+  // Execute
+  CefBrowserHostCppToC::Get(self)->Recheck();
 }
 
 int CEF_CALLBACK
@@ -1292,6 +1305,7 @@ CefBrowserHostCppToC::CefBrowserHostCppToC() {
       browser_host_is_mouse_cursor_change_disabled;
   GetStruct()->replace_misspelling = browser_host_replace_misspelling;
   GetStruct()->add_word_to_dictionary = browser_host_add_word_to_dictionary;
+  GetStruct()->recheck = browser_host_recheck;
   GetStruct()->is_window_rendering_disabled =
       browser_host_is_window_rendering_disabled;
   GetStruct()->was_resized = browser_host_was_resized;

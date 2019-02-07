@@ -499,6 +499,8 @@ bool CefFrameHostImpl::OnMessageReceived(const IPC::Message& message) {
     IPC_MESSAGE_HANDLER(CefHostMsg_Request, OnRequest)
     IPC_MESSAGE_HANDLER(CefHostMsg_Response, OnResponse)
     IPC_MESSAGE_HANDLER(CefHostMsg_ResponseAck, OnResponseAck)
+    IPC_MESSAGE_HANDLER(CefHostMsg_SpellCheckRequest, OnSpellCheckRequest)
+    IPC_MESSAGE_HANDLER(CefHostMsg_SpellCheckLanguage, OnSpellCheckLanguage)
     IPC_MESSAGE_UNHANDLED(handled = false)
   IPC_END_MESSAGE_MAP()
   return handled;
@@ -673,6 +675,37 @@ void CefFrameHostImpl::OnResponse(const Cef_Response_Params& params) {
 void CefFrameHostImpl::OnResponseAck(int request_id) {
   response_manager_->RunAckHandler(request_id);
 }
+
+
+void CefFrameHostImpl::OnSpellCheckRequest(base::string16 word,
+                                             bool* misspelled) {
+  if (GetBrowserHostImpl().get() && GetBrowserHostImpl().get()->GetClient()) {
+    CefRefPtr<CefSpellCheckHandler> spellCheckHandler =
+		GetBrowserHostImpl().get()->GetClient()->GetSpellCheckHandler();
+    if (spellCheckHandler.get()) {
+      CefString w = CefString(word);
+      *misspelled = spellCheckHandler.get()->IsWordMisspelled(w);      
+      w.ClearAndFree();
+      return;
+    }
+  }
+
+  *misspelled = false;
+}
+
+void CefFrameHostImpl::OnSpellCheckLanguage(std::string* lang) {
+  if (GetBrowserHostImpl().get() && GetBrowserHostImpl().get()->GetClient()) {
+    CefRefPtr<CefSpellCheckHandler> spellCheckHandler =
+		GetBrowserHostImpl().get()->GetClient()->GetSpellCheckHandler();
+    if (spellCheckHandler.get()) {
+      CefString cef_lang = CefString(*lang);
+      spellCheckHandler.get()->GetLanguageCode(cef_lang);
+      *lang = cef_lang.ToString();
+      cef_lang.ClearAndFree();
+    }
+  }
+}
+
 
 void CefFrameHostImpl::Send(IPC::Message* message) {
   if (!CEF_CURRENTLY_ON_UIT()) {

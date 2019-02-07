@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=4cf201c5e2c106fe4054cb3704114f937e763295$
+// $hash=0f76b003e7372f4e351b4f2dba896841cdddfcc2$
 //
 
 #include "libcef_dll/ctocpp/client_ctocpp.h"
@@ -30,6 +30,7 @@
 #include "libcef_dll/ctocpp/load_handler_ctocpp.h"
 #include "libcef_dll/ctocpp/render_handler_ctocpp.h"
 #include "libcef_dll/ctocpp/request_handler_ctocpp.h"
+#include "libcef_dll/ctocpp/spell_check_handler_ctocpp.h"
 
 // VIRTUAL METHODS - Body may be edited by hand.
 
@@ -242,6 +243,22 @@ CefRefPtr<CefRequestHandler> CefClientCToCpp::GetRequestHandler() {
 
   // Return type: refptr_same
   return CefRequestHandlerCToCpp::Wrap(_retval);
+}
+
+NO_SANITIZE("cfi-icall")
+CefRefPtr<CefSpellCheckHandler> CefClientCToCpp::GetSpellCheckHandler() {
+  cef_client_t* _struct = GetStruct();
+  if (CEF_MEMBER_MISSING(_struct, get_spell_check_handler))
+    return NULL;
+
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  // Execute
+  cef_spell_check_handler_t* _retval =
+      _struct->get_spell_check_handler(_struct);
+
+  // Return type: refptr_same
+  return CefSpellCheckHandlerCToCpp::Wrap(_retval);
 }
 
 NO_SANITIZE("cfi-icall")
