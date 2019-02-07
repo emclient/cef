@@ -1090,6 +1090,16 @@ void CefBrowserHostImpl::AddWordToDictionary(const CefString& word) {
 #endif
 }
 
+void CefBrowserHostImpl::Recheck() {
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    CEF_POST_TASK(CEF_UIT, base::Bind(&CefBrowserHostImpl::Recheck, this));
+    return;
+  }
+
+  if (web_contents())
+    web_contents()->Recheck();
+}
+
 void CefBrowserHostImpl::WasResized() {
   if (!CEF_CURRENTLY_ON_UIT()) {
     CEF_POST_TASK(CEF_UIT,
@@ -2981,6 +2991,8 @@ bool CefBrowserHostImpl::OnMessageReceived(const IPC::Message& message) {
     IPC_MESSAGE_HANDLER(CefHostMsg_Request, OnRequest)
     IPC_MESSAGE_HANDLER(CefHostMsg_Response, OnResponse)
     IPC_MESSAGE_HANDLER(CefHostMsg_ResponseAck, OnResponseAck)
+    IPC_MESSAGE_HANDLER(CefHostMsg_SpellCheckRequest, OnSpellCheckRequest)
+    IPC_MESSAGE_HANDLER(CefHostMsg_SpellCheckLanguage, OnSpellCheckLanguage)
     IPC_MESSAGE_UNHANDLED(handled = false)
   IPC_END_MESSAGE_MAP()
   return handled;
@@ -3220,6 +3232,35 @@ void CefBrowserHostImpl::OnResponse(const Cef_Response_Params& params) {
 
 void CefBrowserHostImpl::OnResponseAck(int request_id) {
   response_manager_->RunAckHandler(request_id);
+}
+
+void CefBrowserHostImpl::OnSpellCheckRequest(base::string16 word,
+                                             bool* misspelled) {
+  if (client_.get()) {
+    CefRefPtr<CefSpellCheckHandler> spellCheckHandler =
+        client_.get()->GetSpellCheckHandler();
+    if (spellCheckHandler.get()) {
+      CefString w = CefString(word);
+      *misspelled = spellCheckHandler.get()->IsWordMisspelled(w);      
+      w.ClearAndFree();
+      return;
+    }
+  }
+
+  *misspelled = false;
+}
+
+void CefBrowserHostImpl::OnSpellCheckLanguage(std::string* lang) {
+  if (client_.get()) {
+    CefRefPtr<CefSpellCheckHandler> spellCheckHandler =
+        client_.get()->GetSpellCheckHandler();
+    if (spellCheckHandler.get()) {
+      CefString cef_lang = CefString(*lang);
+      spellCheckHandler.get()->GetLanguageCode(cef_lang);
+      *lang = cef_lang.ToString();
+      cef_lang.ClearAndFree();
+    }
+  }
 }
 
 // content::NotificationObserver methods.

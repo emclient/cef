@@ -22,6 +22,7 @@
 
 #include "libcef/browser/content_browser_client.h"
 #include "libcef/browser/context.h"
+#include "libcef/browser/spellcheck_proxy_handler.h"
 #include "libcef/common/cef_messages.h"
 #include "libcef/common/cef_switches.h"
 #include "libcef/common/content_client.h"
@@ -64,6 +65,7 @@
 #include "components/printing/renderer/print_render_frame_helper.h"
 #include "components/spellcheck/renderer/spellcheck.h"
 #include "components/spellcheck/renderer/spellcheck_provider.h"
+#include "components/spellcheck/renderer/spellcheck_provider_callback.h"
 #include "components/startup_metric_utils/common/startup_metric.mojom.h"
 #include "components/visitedlink/renderer/visitedlink_slave.h"
 #include "components/web_cache/renderer/web_cache_impl.h"
@@ -468,7 +470,13 @@ void CefContentRendererClient::RenderFrameCreated(
   const base::CommandLine* command_line =
       base::CommandLine::ForCurrentProcess();
   if (!command_line->HasSwitch(switches::kDisableSpellChecking)) {
-    new SpellCheckProvider(render_frame, spellcheck_.get(), this);
+    CefSpellCheckProxyHandler* handler = NULL;
+    if (!command_line->HasSwitch(switches::kDisableSpellingCallback)) {
+          handler = new CefSpellCheckProxyHandler(render_frame);
+          new SpellCheckProviderCallback(render_frame, this, handler);
+    }
+    else
+        new SpellCheckProvider(render_frame, spellcheck_.get(), this);
   }
 
   BrowserCreated(render_frame->GetRenderView(), render_frame);

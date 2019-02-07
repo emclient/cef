@@ -554,6 +554,12 @@ class CefBrowserHost : public virtual CefBaseRefCounted {
   virtual void AddWordToDictionary(const CefString& word) = 0;
 
   ///
+  // Performs spellcheck on selection.
+  ///
+  /*--cef()--*/
+  virtual void Recheck() = 0;
+
+  ///
   // Returns true if window rendering is disabled.
   ///
   /*--cef()--*/

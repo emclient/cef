@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=36b0b2964486a8b1412209b1146f1b4338255a80$
+// $hash=6e55e8a5dc46616f6004031839c83cf71f04d818$
 //
 
 #include "include/capi/cef_app_capi.h"
@@ -114,7 +114,6 @@
 #include "libcef_dll/cpptoc/zip_reader_cpptoc.h"
 #include "libcef_dll/ctocpp/accessibility_handler_ctocpp.h"
 #include "libcef_dll/ctocpp/app_ctocpp.h"
-#include "libcef_dll/ctocpp/audio_handler_ctocpp.h"
 #include "libcef_dll/ctocpp/browser_process_handler_ctocpp.h"
 #include "libcef_dll/ctocpp/completion_callback_ctocpp.h"
 #include "libcef_dll/ctocpp/context_menu_handler_ctocpp.h"
@@ -151,6 +150,7 @@
 #include "libcef_dll/ctocpp/scheme_handler_factory_ctocpp.h"
 #include "libcef_dll/ctocpp/server_handler_ctocpp.h"
 #include "libcef_dll/ctocpp/set_cookie_callback_ctocpp.h"
+#include "libcef_dll/ctocpp/spell_check_handler_ctocpp.h"
 #include "libcef_dll/ctocpp/string_visitor_ctocpp.h"
 #include "libcef_dll/ctocpp/task_ctocpp.h"
 #include "libcef_dll/ctocpp/test/translator_test_ref_ptr_client_child_ctocpp.h"
@@ -244,7 +244,6 @@ CEF_EXPORT void cef_shutdown() {
   // Check that all wrapper objects have been destroyed
   DCHECK(
       base::AtomicRefCountIsZero(&CefAccessibilityHandlerCToCpp::DebugObjCt));
-  DCHECK(base::AtomicRefCountIsZero(&CefAudioHandlerCToCpp::DebugObjCt));
   DCHECK(base::AtomicRefCountIsZero(&CefAuthCallbackCppToC::DebugObjCt));
   DCHECK(
       base::AtomicRefCountIsZero(&CefBeforeDownloadCallbackCppToC::DebugObjCt));
@@ -343,6 +342,7 @@ CEF_EXPORT void cef_shutdown() {
   DCHECK(base::AtomicRefCountIsZero(&CefServerCppToC::DebugObjCt));
   DCHECK(base::AtomicRefCountIsZero(&CefServerHandlerCToCpp::DebugObjCt));
   DCHECK(base::AtomicRefCountIsZero(&CefSetCookieCallbackCToCpp::DebugObjCt));
+  DCHECK(base::AtomicRefCountIsZero(&CefSpellCheckHandlerCToCpp::DebugObjCt));
   DCHECK(base::AtomicRefCountIsZero(&CefStreamReaderCppToC::DebugObjCt));
   DCHECK(base::AtomicRefCountIsZero(&CefStreamWriterCppToC::DebugObjCt));
   DCHECK(base::AtomicRefCountIsZero(&CefStringVisitorCToCpp::DebugObjCt));

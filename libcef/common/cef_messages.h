@@ -196,6 +196,15 @@ IPC_SYNC_MESSAGE_CONTROL1_1(
     int /* render_frame_routing_id */,
     CefProcessHostMsg_GetNewBrowserInfo_Params /* params*/)
 
+IPC_SYNC_MESSAGE_ROUTED1_1(
+    CefHostMsg_SpellCheckRequest,
+    base::string16 /* word */,
+    bool /* misspelled */)
+
+ IPC_SYNC_MESSAGE_ROUTED0_1(
+    CefHostMsg_SpellCheckLanguage,
+    std::string /* lang */)
+    
 // Sent when a frame is identified for the first time.
 IPC_MESSAGE_ROUTED3(CefHostMsg_FrameIdentified,
                     int64_t /* frame_id */,

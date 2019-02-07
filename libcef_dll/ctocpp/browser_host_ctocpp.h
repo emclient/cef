@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=a7acce93e2b4109ddf76e4a82e0ff6d85be1451a$
+// $hash=9e9e94ad47ea7f376db21e088ac1411ca175f4a9$
 //
 
 #ifndef CEF_LIBCEF_DLL_CTOCPP_BROWSER_HOST_CTOCPP_H_
@@ -81,6 +81,7 @@ class CefBrowserHostCToCpp : public CefCToCppRefCounted<CefBrowserHostCToCpp,
   bool IsMouseCursorChangeDisabled() OVERRIDE;
   void ReplaceMisspelling(const CefString& word) OVERRIDE;
   void AddWordToDictionary(const CefString& word) OVERRIDE;
+  void Recheck() OVERRIDE;
   bool IsWindowRenderingDisabled() OVERRIDE;
   void WasResized() OVERRIDE;
   void WasHidden(bool hidden) OVERRIDE;
@@ -96,7 +97,6 @@ class CefBrowserHostCToCpp : public CefCToCppRefCounted<CefBrowserHostCToCpp,
   void SendMouseWheelEvent(const CefMouseEvent& event,
                            int deltaX,
                            int deltaY) OVERRIDE;
-  void SendTouchEvent(const CefTouchEvent& event) OVERRIDE;
   void SendFocusEvent(bool setFocus) OVERRIDE;
   void SendCaptureLostEvent() OVERRIDE;
   void NotifyMoveOrResizeStarted() OVERRIDE;
@@ -127,8 +127,6 @@ class CefBrowserHostCToCpp : public CefCToCppRefCounted<CefBrowserHostCToCpp,
                             const CefSize& max_size) OVERRIDE;
   CefRefPtr<CefExtension> GetExtension() OVERRIDE;
   bool IsBackgroundHost() OVERRIDE;
-  void SetAudioMuted(bool mute) OVERRIDE;
-  bool IsAudioMuted() OVERRIDE;
 };
 
 #endif  // CEF_LIBCEF_DLL_CTOCPP_BROWSER_HOST_CTOCPP_H_

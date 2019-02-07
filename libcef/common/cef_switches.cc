@@ -82,6 +82,9 @@ const char kEnableProfanityFilter[] = "enable-profanity-filter";
 // Disable spell checking.
 const char kDisableSpellChecking[] = "disable-spell-checking";
 
+// Disable spelling callback.
+const char kDisableSpellingCallback[] = "disable-spelling-callback";
+
 // Enable the remote spelling service.
 const char kEnableSpellingService[] = "enable-spelling-service";
 
