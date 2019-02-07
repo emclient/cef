@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=9e9e94ad47ea7f376db21e088ac1411ca175f4a9$
+// $hash=cbae6adb5ae7b336206a240254096b390d92bb2f$
 //
 
 #ifndef CEF_LIBCEF_DLL_CTOCPP_BROWSER_HOST_CTOCPP_H_
@@ -60,6 +60,8 @@ class CefBrowserHostCToCpp : public CefCToCppRefCounted<CefBrowserHostCToCpp,
                      bool bypass_cache,
                      CefRefPtr<CefDownloadImageCallback> callback) OVERRIDE;
   void Print() OVERRIDE;
+  void PrintWithSettings(const CefString& printerName,
+                         const std::vector<CefRange>& pages) OVERRIDE;
   void PrintToPDF(const CefString& path,
                   const CefPdfPrintSettings& settings,
                   CefRefPtr<CefPdfPrintCallback> callback) OVERRIDE;

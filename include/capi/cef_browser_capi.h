@@ -33,7 +33,7 @@
 // by hand. See the translator.README.txt file in the tools directory for
 // more information.
 //
-// $hash=c1ea38815f27dd95a631e8e8316e81e7bbbe95bb$
+// $hash=dc349238cab83f05660af4db703eafc526e51fd5$
 //
 
 #ifndef CEF_INCLUDE_CAPI_CEF_BROWSER_CAPI_H_
@@ -430,6 +430,15 @@ typedef struct _cef_browser_host_t {
   // Print the current browser contents.
   ///
   void(CEF_CALLBACK* print)(struct _cef_browser_host_t* self);
+
+  ///
+  // Print the specifed pages (1-based) of the current browser contents on a
+  // specified printer
+  ///
+  void(CEF_CALLBACK* print_with_settings)(struct _cef_browser_host_t* self,
+                                          const cef_string_t* printerName,
+                                          size_t pagesCount,
+                                          cef_range_t const* pages);
 
   ///
   // Print the current browser contents to the PDF file specified by |path| and
