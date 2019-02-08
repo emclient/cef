@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=ac5bb1da46fd690828c69a7ddbafa4acdaab60b8$
+// $hash=16578b1794385b055392c9f9e4f79ee975382790$
 //
 
 #ifndef CEF_LIBCEF_DLL_WRAPPER_TYPES_H_
@@ -86,6 +86,7 @@ enum CefWrapperType {
   WT_PDF_PRINT_CALLBACK,
   WT_POST_DATA,
   WT_POST_DATA_ELEMENT,
+  WT_PRINT_CALLBACK,
   WT_PRINT_DIALOG_CALLBACK,
   WT_PRINT_HANDLER,
   WT_PRINT_JOB_CALLBACK,

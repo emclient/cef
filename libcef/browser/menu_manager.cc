@@ -439,7 +439,7 @@ void CefMenuManager::ExecuteDefaultCommand(int command_id) {
       NOTIMPLEMENTED();
       break;
     case MENU_ID_PRINT:
-      browser_->Print();
+      browser_->Print(nullptr);
       break;
     case MENU_ID_VIEW_SOURCE:
       browser_->GetFocusedFrame()->ViewSource();

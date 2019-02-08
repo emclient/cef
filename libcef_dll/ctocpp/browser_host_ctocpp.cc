@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=9c9847cbce916c4956a041cafd860978b740de6f$
+// $hash=59ca510a9b61c91e0cd79e620990ba9955f4da64$
 //
 
 #include "libcef_dll/ctocpp/browser_host_ctocpp.h"
@@ -17,6 +17,7 @@
 #include "libcef_dll/cpptoc/download_image_callback_cpptoc.h"
 #include "libcef_dll/cpptoc/navigation_entry_visitor_cpptoc.h"
 #include "libcef_dll/cpptoc/pdf_print_callback_cpptoc.h"
+#include "libcef_dll/cpptoc/print_callback_cpptoc.h"
 #include "libcef_dll/cpptoc/run_file_dialog_callback_cpptoc.h"
 #include "libcef_dll/ctocpp/browser_ctocpp.h"
 #include "libcef_dll/ctocpp/dictionary_value_ctocpp.h"
@@ -345,7 +346,8 @@ void CefBrowserHostCToCpp::DownloadImage(
                           CefDownloadImageCallbackCppToC::Wrap(callback));
 }
 
-NO_SANITIZE("cfi-icall") void CefBrowserHostCToCpp::Print() {
+NO_SANITIZE("cfi-icall")
+void CefBrowserHostCToCpp::Print(CefRefPtr<CefPrintCallback> callback) {
   shutdown_checker::AssertNotShutdown();
 
   cef_browser_host_t* _struct = GetStruct();
@@ -354,14 +356,20 @@ NO_SANITIZE("cfi-icall") void CefBrowserHostCToCpp::Print() {
 
   // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
 
+  // Verify param: callback; type: refptr_diff
+  DCHECK(callback.get());
+  if (!callback.get())
+    return;
+
   // Execute
-  _struct->print(_struct);
+  _struct->print(_struct, CefPrintCallbackCppToC::Wrap(callback));
 }
 
 NO_SANITIZE("cfi-icall")
 void CefBrowserHostCToCpp::PrintWithSettings(
     const CefString& printerName,
-    const std::vector<CefRange>& pages) {
+    const std::vector<CefRange>& pages,
+    CefRefPtr<CefPrintCallback> callback) {
   shutdown_checker::AssertNotShutdown();
 
   cef_browser_host_t* _struct = GetStruct();
@@ -373,6 +381,10 @@ void CefBrowserHostCToCpp::PrintWithSettings(
   // Verify param: printerName; type: string_byref_const
   DCHECK(!printerName.empty());
   if (printerName.empty())
+    return;
+  // Verify param: callback; type: refptr_diff
+  DCHECK(callback.get());
+  if (!callback.get())
     return;
 
   // Translate param: pages; type: simple_vec_byref_const
@@ -390,7 +402,8 @@ void CefBrowserHostCToCpp::PrintWithSettings(
 
   // Execute
   _struct->print_with_settings(_struct, printerName.GetStruct(), pagesCount,
-                               pagesList);
+                               pagesList,
+                               CefPrintCallbackCppToC::Wrap(callback));
 
   // Restore param:pages; type: simple_vec_byref_const
   if (pagesList)
