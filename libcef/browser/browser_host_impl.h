@@ -272,6 +272,8 @@ class CefBrowserHostImpl : public CefBrowserHost,
   void GetFrameIdentifiers(std::vector<int64>& identifiers) override;
   void GetFrameNames(std::vector<CefString>& names) override;
 
+  void AddVisitedURL(const CefString& url) override;
+
   // Returns true if windowless rendering is enabled.
   bool IsWindowless() const;
 

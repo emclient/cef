@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=6f837c31f288ade419b7924e9d1e7f55f44507f4$
+// $hash=2196f8ad83693f107cf170ecc9d4bc8f1160b4e0$
 //
 
 #include "libcef_dll/cpptoc/browser_host_cpptoc.h"
@@ -1191,6 +1191,24 @@ browser_host_drag_source_system_drag_ended(struct _cef_browser_host_t* self) {
   CefBrowserHostCppToC::Get(self)->DragSourceSystemDragEnded();
 }
 
+void CEF_CALLBACK browser_host_add_visited_url(struct _cef_browser_host_t* self,
+                                               const cef_string_t* url) {
+  shutdown_checker::AssertNotShutdown();
+
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  DCHECK(self);
+  if (!self)
+    return;
+  // Verify param: url; type: string_byref_const
+  DCHECK(url);
+  if (!url)
+    return;
+
+  // Execute
+  CefBrowserHostCppToC::Get(self)->AddVisitedURL(CefString(url));
+}
+
 struct _cef_navigation_entry_t* CEF_CALLBACK
 browser_host_get_visible_navigation_entry(struct _cef_browser_host_t* self) {
   shutdown_checker::AssertNotShutdown();
@@ -1389,6 +1407,7 @@ CefBrowserHostCppToC::CefBrowserHostCppToC() {
   GetStruct()->drag_source_ended_at = browser_host_drag_source_ended_at;
   GetStruct()->drag_source_system_drag_ended =
       browser_host_drag_source_system_drag_ended;
+  GetStruct()->add_visited_url = browser_host_add_visited_url;
   GetStruct()->get_visible_navigation_entry =
       browser_host_get_visible_navigation_entry;
   GetStruct()->set_accessibility_state = browser_host_set_accessibility_state;
