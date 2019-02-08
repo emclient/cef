@@ -1,0 +1,100 @@
+diff --git src/ports/SkFontMgr_win_dw.cpp src/ports/SkFontMgr_win_dw.cpp
+index 60e3e28f63..c9dc7be380 100644
+--- third_party/skia/src/ports/SkFontMgr_win_dw.cpp
++++ third_party/skia/src/ports/SkFontMgr_win_dw.cpp
+@@ -312,6 +312,7 @@ private:
+     sk_sp<SkTypeface> makeTypefaceFromDWriteFont(IDWriteFontFace* fontFace,
+                                                  IDWriteFont* font,
+                                                  IDWriteFontFamily* fontFamily) const;
++    SkFontStyleSet* matchFamilyFromLogfont(const char familyName[], SkFontStyle& fontstyle) const;
+ 
+     SkTScopedComPtr<IDWriteFactory> fFactory;
+     SkTScopedComPtr<IDWriteFactory2> fFactory2;
+@@ -512,8 +513,30 @@ SkFontStyleSet* SkFontMgr_DirectWrite::onMatchFamily(const char familyName[]) co
+ 
+ SkTypeface* SkFontMgr_DirectWrite::onMatchFamilyStyle(const char familyName[],
+                                                       const SkFontStyle& fontstyle) const {
+-    sk_sp<SkFontStyleSet> sset(this->matchFamily(familyName));
+-    return sset->matchStyle(fontstyle);
++    SkFontStyleSet* family = this->matchFamily(familyName);
++
++    if (family->count() == 0)
++    {
++        // if the lookup of the DW font family failed, create a LOGFONT and try to convert it into a DW font
++        SkFontStyle familyStyle;
++        family = this->matchFamilyFromLogfont(familyName, familyStyle);
++        if (family == nullptr)
++            family = SkFontStyleSet::CreateEmpty();
++
++        SkFontStyle combinedStyle(
++            fontstyle.weight() != (int)SkFontStyle::kNormal_Weight ? fontstyle.weight() : familyStyle.weight(),
++            fontstyle.width() != (int)SkFontStyle::kNormal_Width ? fontstyle.width() : familyStyle.width(),
++            fontstyle.slant() != (int)SkFontStyle::kUpright_Slant ? fontstyle.slant() : familyStyle.slant()
++        );
++
++        sk_sp<SkFontStyleSet> sset(family);
++        return sset->matchStyle(combinedStyle);
++    }
++    else
++    {
++        sk_sp<SkFontStyleSet> sset(family);
++        return sset->matchStyle(fontstyle);
++    }
+ }
+ 
+ class FontFallbackRenderer : public IDWriteTextRenderer {
+@@ -1078,6 +1101,54 @@ sk_sp<SkTypeface> SkFontMgr_DirectWrite::onLegacyMakeTypeface(const char familyN
+     return this->makeTypefaceFromDWriteFont(fontFace.get(), font.get(), fontFamily.get());
+ }
+ 
++SkFontStyleSet* SkFontMgr_DirectWrite::matchFamilyFromLogfont(const char familyName[], SkFontStyle& fontstyle) const {
++    SkSMallocWCHAR dwFamilyName;
++    HRN(sk_cstring_to_wchar(familyName, &dwFamilyName));
++
++    UINT32 index;
++    BOOL exists;
++
++    SkTScopedComPtr<IDWriteGdiInterop> gdi_interop;
++    fFactory->GetGdiInterop(&gdi_interop);
++
++    wchar_t* family_name = dwFamilyName.get();
++    if (wcslen(family_name) >= 32)
++        return nullptr;
++
++    LOGFONTW* lf = new LOGFONTW();
++    if (family_name)
++        wcscpy_s(lf->lfFaceName, LF_FACESIZE, family_name);
++
++    SkTScopedComPtr<IDWriteFont> dwrite_font;
++    HRNM(gdi_interop->CreateFontFromLOGFONT(lf, &dwrite_font),
++        "Failed while finding family from LOGFONT.");
++
++    SkTScopedComPtr<IDWriteFontFamily> fontFamily;
++    HRNM(dwrite_font->GetFontFamily(&fontFamily), "Could not get family.");
++
++    SkTScopedComPtr<IDWriteLocalizedStrings> familyNames;
++    HRNM(fontFamily->GetFamilyNames(&familyNames), "Could not get family names.");
++
++    SkString* updatedFamilyName = new SkString();
++    sk_get_locale_string(familyNames.get(), L"", updatedFamilyName);
++
++    HRN(sk_cstring_to_wchar(updatedFamilyName->c_str(), &dwFamilyName));
++    HRNM(fFontCollection->FindFamilyName(dwFamilyName.get(), &index, &exists),
++        "Failed while finding family by name.");
++
++    if (!exists) {
++        return nullptr;
++    }
++
++    DWRITE_FONT_WEIGHT weight = dwrite_font->GetWeight();
++    DWRITE_FONT_STYLE style = dwrite_font->GetStyle();
++    DWRITE_FONT_STRETCH stretch = dwrite_font->GetStretch();
++
++    SkFontStyleSet* set = this->onCreateStyleSet(index);
++    fontstyle = SkFontStyle((int)weight, (int)stretch, style == DWRITE_FONT_STYLE_ITALIC ? SkFontStyle::kItalic_Slant : SkFontStyle::kUpright_Slant);
++
++    return set;
++}
+ ///////////////////////////////////////////////////////////////////////////////
+ 
+ int SkFontStyleSet_DirectWrite::count() {
