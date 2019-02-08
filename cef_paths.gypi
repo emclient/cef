@@ -8,7 +8,7 @@
 # by hand. See the translator.README.txt file in the tools directory for
 # more information.
 #
-# $hash=c3ae79230ce6fc32bfde032ad1c499de71220f6f$
+# $hash=32840909fe78d6d33e334bada9cc8cb98b564142$
 #
 
 {
@@ -332,6 +332,8 @@
       'libcef_dll/cpptoc/post_data_cpptoc.h',
       'libcef_dll/cpptoc/post_data_element_cpptoc.cc',
       'libcef_dll/cpptoc/post_data_element_cpptoc.h',
+      'libcef_dll/ctocpp/print_callback_ctocpp.cc',
+      'libcef_dll/ctocpp/print_callback_ctocpp.h',
       'libcef_dll/cpptoc/print_dialog_callback_cpptoc.cc',
       'libcef_dll/cpptoc/print_dialog_callback_cpptoc.h',
       'libcef_dll/ctocpp/print_handler_ctocpp.cc',
@@ -618,6 +620,8 @@
       'libcef_dll/ctocpp/post_data_ctocpp.h',
       'libcef_dll/ctocpp/post_data_element_ctocpp.cc',
       'libcef_dll/ctocpp/post_data_element_ctocpp.h',
+      'libcef_dll/cpptoc/print_callback_cpptoc.cc',
+      'libcef_dll/cpptoc/print_callback_cpptoc.h',
       'libcef_dll/ctocpp/print_dialog_callback_ctocpp.cc',
       'libcef_dll/ctocpp/print_dialog_callback_ctocpp.h',
       'libcef_dll/cpptoc/print_handler_cpptoc.cc',

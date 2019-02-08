@@ -798,29 +798,42 @@ void CefBrowserHostImpl::DownloadImage(
       bypass_cache, base::BindOnce(OnDownloadImage, max_image_size, callback));
 }
 
-void CefBrowserHostImpl::Print() {
+void CefBrowserHostImpl::Print(CefRefPtr<CefPrintCallback> callback) {
   if (CEF_CURRENTLY_ON_UIT()) {
     content::WebContents* actionable_contents = GetActionableWebContents();
     if (!actionable_contents)
       return;
+    printing::CefPrintViewManager::PrintCallback print_callback;
+    if (callback.get()) {
+      print_callback =
+          base::Bind(&CefPrintCallback::OnPrintFinished, callback.get());
+    }
     printing::CefPrintViewManager::FromWebContents(actionable_contents)
-        ->PrintNow(actionable_contents->GetRenderViewHost()->GetMainFrame());
+        ->PrintNow(actionable_contents->GetRenderViewHost()->GetMainFrame(), print_callback);
   } else {
-    CEF_POST_TASK(CEF_UIT, base::BindOnce(&CefBrowserHostImpl::Print, this));
+    CEF_POST_TASK(CEF_UIT, base::BindOnce(&CefBrowserHostImpl::Print, this, callback));
   }
 }
 
-void CefBrowserHostImpl::PrintWithSettings(const CefString& printerName, const std::vector<CefRange>& pages) {
+void CefBrowserHostImpl::PrintWithSettings(const CefString& printerName,
+                                           const std::vector<CefRange>& pages,
+                                           CefRefPtr<CefPrintCallback> callback) {
   if (CEF_CURRENTLY_ON_UIT()) {
     content::WebContents* actionable_contents = GetActionableWebContents();
     if (!actionable_contents)
       return;
+    printing::CefPrintViewManager::PrintCallback print_callback;
+    if (callback.get()) {
+      print_callback =
+          base::Bind(&CefPrintCallback::OnPrintFinished, callback.get());
+    }
     printing::CefPrintViewManager::FromWebContents(actionable_contents)
-        ->PrintNowWithSettings(actionable_contents->GetRenderViewHost()->GetMainFrame(),
-                               printerName, pages);
-  }
-  else {
-  	CEF_POST_TASK(CEF_UIT, base::Bind(&CefBrowserHostImpl::PrintWithSettings, this, printerName, pages));
+        ->PrintNowWithSettings(
+            actionable_contents->GetRenderViewHost()->GetMainFrame(),
+            printerName, pages, print_callback);
+  } else {
+    CEF_POST_TASK(CEF_UIT, base::Bind(&CefBrowserHostImpl::PrintWithSettings,
+                                      this, printerName, pages, callback));
   }
 }
 
@@ -3255,7 +3268,7 @@ void CefBrowserHostImpl::OnSpellCheckRequest(base::string16 word,
         client_.get()->GetSpellCheckHandler();
     if (spellCheckHandler.get()) {
       CefString w = CefString(word);
-      *misspelled = spellCheckHandler.get()->IsWordMisspelled(w);      
+      *misspelled = spellCheckHandler.get()->IsWordMisspelled(w);
       w.ClearAndFree();
       return;
     }
