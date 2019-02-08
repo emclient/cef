@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=16578b1794385b055392c9f9e4f79ee975382790$
+// $hash=be7a3bf3d634f2ec9f991a0d83c8f0c946e390e4$
 //
 
 #ifndef CEF_LIBCEF_DLL_WRAPPER_TYPES_H_
@@ -130,6 +130,7 @@ enum CefWrapperType {
   WT_TEXTFIELD,
   WT_TEXTFIELD_DELEGATE,
   WT_THREAD,
+  WT_TOUCH_ACTION_HANDLER,
   WT_TRANSLATOR_TEST,
   WT_TRANSLATOR_TEST_REF_PTR_CLIENT,
   WT_TRANSLATOR_TEST_REF_PTR_CLIENT_CHILD,

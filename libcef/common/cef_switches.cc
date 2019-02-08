@@ -119,6 +119,9 @@ const char kEnablePreferenceTesting[] = "enable-preference-testing";
 // Enable date-based expiration of built in network security information.
 const char kEnableNetSecurityExpiration[] = "enable-net-security-expiration";
 
+// Use the touch action callback instead letting the browser handle the actions by itself.
+const char kUseTouchActionHandler[] = "use-touch-action-handler";
+
 #if defined(OS_MACOSX)
 // Path to the framework directory.
 const char kFrameworkDirPath[] = "framework-dir-path";

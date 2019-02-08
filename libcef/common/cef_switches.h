@@ -53,6 +53,7 @@ extern const char kPluginPolicy_Detect[];
 extern const char kPluginPolicy_Block[];
 extern const char kEnablePreferenceTesting[];
 extern const char kEnableNetSecurityExpiration[];
+extern const char kUseTouchActionHandler[];
 
 #if defined(OS_MACOSX)
 extern const char kFrameworkDirPath[];

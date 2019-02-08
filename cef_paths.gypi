@@ -8,7 +8,7 @@
 # by hand. See the translator.README.txt file in the tools directory for
 # more information.
 #
-# $hash=48e2ad92a798657b2824b40c3f806663d76cea62$
+# $hash=f2a12c167668f10fc416441f53e3d720e7786bf9$
 #
 
 {
@@ -76,6 +76,7 @@
       'include/cef_string_visitor.h',
       'include/cef_task.h',
       'include/cef_thread.h',
+      'include/cef_touch_action_handler.h',
       'include/cef_trace.h',
       'include/cef_urlrequest.h',
       'include/cef_v8.h',
@@ -171,6 +172,7 @@
       'include/capi/cef_string_visitor_capi.h',
       'include/capi/cef_task_capi.h',
       'include/capi/cef_thread_capi.h',
+      'include/capi/cef_touch_action_handler_capi.h',
       'include/capi/cef_trace_capi.h',
       'include/capi/cef_urlrequest_capi.h',
       'include/capi/cef_v8_capi.h',
@@ -426,6 +428,8 @@
       'libcef_dll/ctocpp/views/textfield_delegate_ctocpp.h',
       'libcef_dll/cpptoc/thread_cpptoc.cc',
       'libcef_dll/cpptoc/thread_cpptoc.h',
+      'libcef_dll/ctocpp/touch_action_handler_ctocpp.cc',
+      'libcef_dll/ctocpp/touch_action_handler_ctocpp.h',
       'libcef_dll/cpptoc/test/translator_test_cpptoc.cc',
       'libcef_dll/cpptoc/test/translator_test_cpptoc.h',
       'libcef_dll/ctocpp/test/translator_test_ref_ptr_client_ctocpp.cc',
@@ -722,6 +726,8 @@
       'libcef_dll/cpptoc/views/textfield_delegate_cpptoc.h',
       'libcef_dll/ctocpp/thread_ctocpp.cc',
       'libcef_dll/ctocpp/thread_ctocpp.h',
+      'libcef_dll/cpptoc/touch_action_handler_cpptoc.cc',
+      'libcef_dll/cpptoc/touch_action_handler_cpptoc.h',
       'libcef_dll/ctocpp/test/translator_test_ctocpp.cc',
       'libcef_dll/ctocpp/test/translator_test_ctocpp.h',
       'libcef_dll/cpptoc/test/translator_test_ref_ptr_client_cpptoc.cc',
