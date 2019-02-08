@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=9cc0310fa3c21fede0654cc49a10c732a5d57625$
+// $hash=e361e2c5d57c0256af0993ff93c789c1175ec2ff$
 //
 
 #ifndef CEF_LIBCEF_DLL_CTOCPP_CLIENT_CTOCPP_H_
@@ -46,6 +46,7 @@ class CefClientCToCpp
   CefRefPtr<CefRenderHandler> GetRenderHandler() override;
   CefRefPtr<CefRequestHandler> GetRequestHandler() override;
   CefRefPtr<CefSpellCheckHandler> GetSpellCheckHandler() override;
+  CefRefPtr<CefTouchActionHandler> GetTouchActionHandler() override;
   bool OnProcessMessageReceived(CefRefPtr<CefBrowser> browser,
                                 CefProcessId source_process,
                                 CefRefPtr<CefProcessMessage> message) override;

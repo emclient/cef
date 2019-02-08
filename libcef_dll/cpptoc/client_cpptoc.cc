@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=c536de4b9b362076adc4752239a5777d0509ccb2$
+// $hash=9a8f7053f7a13f9674f9cbf5866373d2140ff052$
 //
 
 #include "libcef_dll/cpptoc/client_cpptoc.h"
@@ -28,6 +28,7 @@
 #include "libcef_dll/cpptoc/render_handler_cpptoc.h"
 #include "libcef_dll/cpptoc/request_handler_cpptoc.h"
 #include "libcef_dll/cpptoc/spell_check_handler_cpptoc.h"
+#include "libcef_dll/cpptoc/touch_action_handler_cpptoc.h"
 #include "libcef_dll/ctocpp/browser_ctocpp.h"
 #include "libcef_dll/ctocpp/process_message_ctocpp.h"
 
@@ -275,6 +276,22 @@ client_get_spell_check_handler(struct _cef_client_t* self) {
   return CefSpellCheckHandlerCppToC::Wrap(_retval);
 }
 
+struct _cef_touch_action_handler_t* CEF_CALLBACK
+client_get_touch_action_handler(struct _cef_client_t* self) {
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  DCHECK(self);
+  if (!self)
+    return NULL;
+
+  // Execute
+  CefRefPtr<CefTouchActionHandler> _retval =
+      CefClientCppToC::Get(self)->GetTouchActionHandler();
+
+  // Return type: refptr_same
+  return CefTouchActionHandlerCppToC::Wrap(_retval);
+}
+
 int CEF_CALLBACK
 client_on_process_message_received(struct _cef_client_t* self,
                                    cef_browser_t* browser,
@@ -323,6 +340,7 @@ CefClientCppToC::CefClientCppToC() {
   GetStruct()->get_render_handler = client_get_render_handler;
   GetStruct()->get_request_handler = client_get_request_handler;
   GetStruct()->get_spell_check_handler = client_get_spell_check_handler;
+  GetStruct()->get_touch_action_handler = client_get_touch_action_handler;
   GetStruct()->on_process_message_received = client_on_process_message_received;
 }
 

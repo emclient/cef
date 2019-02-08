@@ -176,6 +176,9 @@ std::unique_ptr<PrefService> CreatePrefService(Profile* profile,
   registry->SetDefaultPrefValue(spellcheck::prefs::kSpellCheckEnable,
                                 base::Value(!enable_spelling_service_));
 
+  registry->RegisterBooleanPref(prefs::kTouchUseHandler,
+	  command_line->HasSwitch(switches::kUseTouchActionHandler));
+
   // Pepper flash preferences.
   // Modify defaults from DeviceIDFetcher::RegisterProfilePrefs.
   registry->SetDefaultPrefValue(prefs::kEnableDRM, base::Value(false));

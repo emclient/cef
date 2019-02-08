@@ -55,6 +55,7 @@
 #include "include/cef_render_handler.h"
 #include "include/cef_request_handler.h"
 #include "include/cef_spellcheck_handler.h"
+#include "include/cef_touch_action_handler.h"
 
 ///
 // Implement this interface to provide handler implementations.
@@ -157,6 +158,12 @@ class CefClient : public virtual CefBaseRefCounted {
   ///
   /*--cef()--*/
   virtual CefRefPtr<CefSpellCheckHandler> GetSpellCheckHandler() { return NULL; }
+
+  ///
+  // Return the handler for touch events.
+  ///
+  /*--cef()--*/
+  virtual CefRefPtr<CefTouchActionHandler> GetTouchActionHandler() { return NULL; }
 
   ///
   // Called when a new message is received from a different process. Return true

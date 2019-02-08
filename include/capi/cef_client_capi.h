@@ -33,7 +33,7 @@
 // by hand. See the translator.README.txt file in the tools directory for
 // more information.
 //
-// $hash=9df48c1c867dbda3977c7c8cc995d1c21a84da8d$
+// $hash=6d7cc963580e90a63ea7839a16e2a73d226f7362$
 //
 
 #ifndef CEF_INCLUDE_CAPI_CEF_CLIENT_CAPI_H_
@@ -57,6 +57,7 @@
 #include "include/capi/cef_render_handler_capi.h"
 #include "include/capi/cef_request_handler_capi.h"
 #include "include/capi/cef_spellcheck_handler_capi.h"
+#include "include/capi/cef_touch_action_handler_capi.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -163,6 +164,12 @@ typedef struct _cef_client_t {
   // Return the handler for spellcheck events.
   ///
   struct _cef_spell_check_handler_t*(CEF_CALLBACK* get_spell_check_handler)(
+      struct _cef_client_t* self);
+
+  ///
+  // Return the handler for touch events.
+  ///
+  struct _cef_touch_action_handler_t*(CEF_CALLBACK* get_touch_action_handler)(
       struct _cef_client_t* self);
 
   ///
