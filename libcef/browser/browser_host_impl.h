@@ -284,6 +284,8 @@ class CefBrowserHostImpl : public CefBrowserHost,
   bool SendProcessMessage(CefProcessId target_process,
                           CefRefPtr<CefProcessMessage> message) override;
 
+  void AddVisitedURL(const CefString& url) override;
+
   // Returns true if windowless rendering is enabled.
   bool IsWindowless() const;
 

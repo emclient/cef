@@ -33,7 +33,7 @@
 // by hand. See the translator.README.txt file in the tools directory for
 // more information.
 //
-// $hash=4fd3db7e0bb07ff5e230c4b6f9ebb1dfe190ea74$
+// $hash=a5405a8bf621356101213345d5694c74def5f75d$
 //
 
 #ifndef CEF_INCLUDE_CAPI_CEF_BROWSER_CAPI_H_
@@ -826,6 +826,12 @@ typedef struct _cef_browser_host_t {
   ///
   void(CEF_CALLBACK* drag_source_system_drag_ended)(
       struct _cef_browser_host_t* self);
+
+  ///
+  // Inserts an url into the list of visited urls
+  ///
+  void(CEF_CALLBACK* add_visited_url)(struct _cef_browser_host_t* self,
+                                      const cef_string_t* url);
 
   ///
   // Returns the current visible navigation entry for this browser. This

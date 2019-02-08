@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=a4ecd59704935fc0b11c39c4256144de6a931ffa$
+// $hash=845cb9b0071f11bbf7a8e4525a954f50a5090a84$
 //
 
 #include "libcef_dll/cpptoc/browser_host_cpptoc.h"
@@ -346,7 +346,10 @@ void CEF_CALLBACK browser_host_print(struct _cef_browser_host_t* self,
   DCHECK(self);
   if (!self)
     return;
-  // Unverified params: callback
+  // Verify param: callback; type: refptr_diff
+  DCHECK(callback);
+  if (!callback)
+    return;
 
   // Execute
   CefBrowserHostCppToC::Get(self)->Print(
@@ -372,7 +375,10 @@ browser_host_print_with_settings(struct _cef_browser_host_t* self,
   DCHECK(pagesCount == 0 || pages);
   if (pagesCount > 0 && !pages)
     return;
-  // Unverified params: callback
+  // Verify param: callback; type: refptr_diff
+  DCHECK(callback);
+  if (!callback)
+    return;
 
   // Translate param: pages; type: simple_vec_byref_const
   std::vector<CefRange> pagesList;
@@ -1067,6 +1073,22 @@ browser_host_drag_source_system_drag_ended(struct _cef_browser_host_t* self) {
   CefBrowserHostCppToC::Get(self)->DragSourceSystemDragEnded();
 }
 
+void CEF_CALLBACK browser_host_add_visited_url(struct _cef_browser_host_t* self,
+                                               const cef_string_t* url) {
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  DCHECK(self);
+  if (!self)
+    return;
+  // Verify param: url; type: string_byref_const
+  DCHECK(url);
+  if (!url)
+    return;
+
+  // Execute
+  CefBrowserHostCppToC::Get(self)->AddVisitedURL(CefString(url));
+}
+
 struct _cef_navigation_entry_t* CEF_CALLBACK
 browser_host_get_visible_navigation_entry(struct _cef_browser_host_t* self) {
   // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
@@ -1251,6 +1273,7 @@ CefBrowserHostCppToC::CefBrowserHostCppToC() {
   GetStruct()->drag_source_ended_at = browser_host_drag_source_ended_at;
   GetStruct()->drag_source_system_drag_ended =
       browser_host_drag_source_system_drag_ended;
+  GetStruct()->add_visited_url = browser_host_add_visited_url;
   GetStruct()->get_visible_navigation_entry =
       browser_host_get_visible_navigation_entry;
   GetStruct()->set_accessibility_state = browser_host_set_accessibility_state;

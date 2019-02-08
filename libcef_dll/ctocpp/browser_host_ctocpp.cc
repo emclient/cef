@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=efdd682e26665e107ce1cdf0042f88cc4f85f183$
+// $hash=ed0dc40b326300a487f7556f10a28b3a28a3e3ee$
 //
 
 #include "libcef_dll/ctocpp/browser_host_ctocpp.h"
@@ -316,7 +316,10 @@ void CefBrowserHostCToCpp::Print(CefRefPtr<CefPrintCallback> callback) {
 
   // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
 
-  // Unverified params: callback
+  // Verify param: callback; type: refptr_diff
+  DCHECK(callback.get());
+  if (!callback.get())
+    return;
 
   // Execute
   _struct->print(_struct, CefPrintCallbackCppToC::Wrap(callback));
@@ -337,7 +340,10 @@ void CefBrowserHostCToCpp::PrintWithSettings(
   DCHECK(!printerName.empty());
   if (printerName.empty())
     return;
-  // Unverified params: callback
+  // Verify param: callback; type: refptr_diff
+  DCHECK(callback.get());
+  if (!callback.get())
+    return;
 
   // Translate param: pages; type: simple_vec_byref_const
   const size_t pagesCount = pages.size();
@@ -895,6 +901,23 @@ void CefBrowserHostCToCpp::DragSourceSystemDragEnded() {
 
   // Execute
   _struct->drag_source_system_drag_ended(_struct);
+}
+
+NO_SANITIZE("cfi-icall")
+void CefBrowserHostCToCpp::AddVisitedURL(const CefString& url) {
+  cef_browser_host_t* _struct = GetStruct();
+  if (CEF_MEMBER_MISSING(_struct, add_visited_url))
+    return;
+
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  // Verify param: url; type: string_byref_const
+  DCHECK(!url.empty());
+  if (url.empty())
+    return;
+
+  // Execute
+  _struct->add_visited_url(_struct, url.GetStruct());
 }
 
 NO_SANITIZE("cfi-icall")
