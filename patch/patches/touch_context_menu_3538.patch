@@ -1,0 +1,14 @@
+diff --git content/renderer/render_frame_impl.cc content/renderer/render_frame_impl.cc
+index 8d654d142309..2b5575983ea8 100644
+--- content/renderer/render_frame_impl.cc
++++ content/renderer/render_frame_impl.cc
+@@ -4830,6 +4830,8 @@ bool RenderFrameImpl::RunModalBeforeUnloadDialog(bool is_reload) {
+ }
+ 
+ void RenderFrameImpl::ShowContextMenu(const blink::WebContextMenuData& data) {
++  if (data.source_type == blink::kMenuSourceLongTap)
++    return;
+   ContextMenuParams params = ContextMenuParamsBuilder::Build(data);
+   blink::WebRect position_in_window(params.x, params.y, 0, 0);
+   GetLocalRootRenderWidget()->ConvertViewportToWindow(&position_in_window);
+
