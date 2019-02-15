@@ -61,6 +61,9 @@ void SetDefaultPrefs(content::WebPreferences& web) {
       command_line->HasSwitch(switches::kImageShrinkStandaloneToFit);
   web.text_areas_are_resizable =
       !command_line->HasSwitch(switches::kDisableTextAreaResize);
+  web.caret_width =
+	  atoi(command_line->GetSwitchValueASCII(
+      switches::kCaretWidth).c_str());
 }
 
 // Chrome preferences.
