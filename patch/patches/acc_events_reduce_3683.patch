@@ -1,0 +1,71 @@
+diff --git components/spellcheck/renderer/spellcheck_provider_callback.cc components/spellcheck/renderer/spellcheck_provider_callback.cc
+index d14ed0330c56..9d378cbe0a96 100644
+--- components/spellcheck/renderer/spellcheck_provider_callback.cc
++++ components/spellcheck/renderer/spellcheck_provider_callback.cc
+@@ -175,23 +175,28 @@ void SpellCheckProviderCallback::OnRespondSpellingService(
+ 
+   blink::WebVector<blink::WebTextCheckingResult> textcheck_results;
+ 
+-  int misspelled_count = render_frame()->GetWebFrame()->GetMisspelledCount();
++  /*int misspelled_count = render_frame()->GetWebFrame()->GetMisspelledCount();
+ 
+   if (misspelled_count > 500) {
+-   /* completion->DidFinishCheckingText(textcheck_results);
+-    return;*/
+-  }
++    completion->DidFinishCheckingText(textcheck_results);
++    return;
++  }*/
++
++  base::string16 trimmedLine = line;
++
++  if (line.length() > 16000)
++    trimmedLine = line.substr(0, 16000);
+ 
+   std::vector<SpellCheckResult> results_copy = results;
+-  handler_->OnTextCheck(line, results_copy);
++  handler_->OnTextCheck(trimmedLine, results_copy);
+ 
+   CreateTextCheckingResults(
+-       0, line, results_copy, &textcheck_results);
++       0, trimmedLine, results_copy, &textcheck_results);
+ 
+   completion->DidFinishCheckingText(textcheck_results);
+ 
+   // Cache the request and the converted results.
+-  last_request_ = line;
++  last_request_ = trimmedLine;
+   last_results_.Swap(textcheck_results);
+ }
+ 
+diff --git content/renderer/accessibility/render_accessibility_impl.cc content/renderer/accessibility/render_accessibility_impl.cc
+index ffec479467c0..913e5d0a2fb7 100644
+--- content/renderer/accessibility/render_accessibility_impl.cc
++++ content/renderer/accessibility/render_accessibility_impl.cc
+@@ -377,12 +377,14 @@ void RenderAccessibilityImpl::HandleAXEvent(const WebAXObject& obj,
+   }
+ 
+   // Add the accessibility object to our cache and ensure it's valid.
++  if (event != ax::mojom::Event::kChildrenChanged)
++  {
+   ui::AXEvent acc_event;
+   acc_event.id = obj.AxID();
+   acc_event.event_type = event;
+   acc_event.event_from = GetEventFrom();
+   acc_event.action_request_id = action_request_id;
+-
++    
+   // Discard duplicate accessibility events.
+   for (uint32_t i = 0; i < pending_events_.size(); ++i) {
+     if (pending_events_[i].id == acc_event.id &&
+@@ -391,8 +393,9 @@ void RenderAccessibilityImpl::HandleAXEvent(const WebAXObject& obj,
+     }
+   }
+   pending_events_.push_back(acc_event);
+-
++    
+   ScheduleSendAccessibilityEventsIfNeeded();
++  }
+ }
+ 
+ void RenderAccessibilityImpl::ScheduleSendAccessibilityEventsIfNeeded() {
