@@ -1,8 +1,8 @@
 diff --git content/renderer/render_frame_impl.cc content/renderer/render_frame_impl.cc
-index 860bbe9e1c14..759b9a864090 100644
+index 7cf57b285d24..15bcd9a79571 100644
 --- content/renderer/render_frame_impl.cc
 +++ content/renderer/render_frame_impl.cc
-@@ -5193,6 +5193,8 @@ bool RenderFrameImpl::RunModalBeforeUnloadDialog(bool is_reload) {
+@@ -5244,6 +5244,8 @@ bool RenderFrameImpl::RunModalBeforeUnloadDialog(bool is_reload) {
  }
  
  void RenderFrameImpl::ShowContextMenu(const blink::WebContextMenuData& data) {

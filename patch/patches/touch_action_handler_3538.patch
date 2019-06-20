@@ -53,10 +53,10 @@ index c54ff3c81953..f41429974ba0 100644
    virtual void RunJavaScriptDialog(RenderFrameHost* render_frame_host,
                                     const base::string16& message,
 diff --git content/browser/frame_host/render_frame_host_impl.cc content/browser/frame_host/render_frame_host_impl.cc
-index 64bd8abb107a..95c916a57b0e 100644
+index fdac71164199..2a6caaaaefeb 100644
 --- content/browser/frame_host/render_frame_host_impl.cc
 +++ content/browser/frame_host/render_frame_host_impl.cc
-@@ -1399,6 +1399,7 @@ bool RenderFrameHostImpl::OnMessageReceived(const IPC::Message &msg) {
+@@ -1402,6 +1402,7 @@ bool RenderFrameHostImpl::OnMessageReceived(const IPC::Message &msg) {
      IPC_MESSAGE_HANDLER(FrameHostMsg_BeforeUnload_ACK, OnBeforeUnloadACK)
      IPC_MESSAGE_HANDLER(FrameHostMsg_SwapOut_ACK, OnSwapOutACK)
      IPC_MESSAGE_HANDLER(FrameHostMsg_ContextMenu, OnContextMenu)
@@ -64,7 +64,7 @@ index 64bd8abb107a..95c916a57b0e 100644
      IPC_MESSAGE_HANDLER(FrameHostMsg_VisualStateResponse,
                          OnVisualStateResponse)
      IPC_MESSAGE_HANDLER_DELAY_REPLY(FrameHostMsg_RunJavaScriptDialog,
-@@ -2671,6 +2672,10 @@ void RenderFrameHostImpl::OnContextMenu(const ContextMenuParams& params) {
+@@ -2676,6 +2677,10 @@ void RenderFrameHostImpl::OnContextMenu(const ContextMenuParams& params) {
    delegate_->ShowContextMenu(this, validated_params);
  }
  
@@ -76,10 +76,10 @@ index 64bd8abb107a..95c916a57b0e 100644
  void RenderFrameHostImpl::RequestSmartClipExtract(
      ExtractSmartClipDataCallback callback,
 diff --git content/browser/frame_host/render_frame_host_impl.h content/browser/frame_host/render_frame_host_impl.h
-index 3186e56cfa21..e353a6bfd77f 100644
+index 1da0a57d6bc7..2842ea03e231 100644
 --- content/browser/frame_host/render_frame_host_impl.h
 +++ content/browser/frame_host/render_frame_host_impl.h
-@@ -1069,6 +1069,7 @@ class CONTENT_EXPORT RenderFrameHostImpl
+@@ -1070,6 +1070,7 @@ class CONTENT_EXPORT RenderFrameHostImpl
    void OnSwapOutACK();
    void OnRenderProcessGone(int status, int error_code);
    void OnContextMenu(const ContextMenuParams& params);
@@ -187,10 +187,10 @@ index 050d74e5b779..bd146bdf9e09 100644
    virtual void MoveRangeSelectionExtent(const gfx::Point& extent) {}
  
 diff --git content/browser/web_contents/web_contents_impl.cc content/browser/web_contents/web_contents_impl.cc
-index 4ada26225203..891ddbe9f3df 100644
+index a79a0bbd2eae..18fcd712819c 100644
 --- content/browser/web_contents/web_contents_impl.cc
 +++ content/browser/web_contents/web_contents_impl.cc
-@@ -5326,6 +5326,12 @@ void WebContentsImpl::ShowContextMenu(RenderFrameHost* render_frame_host,
+@@ -5327,6 +5327,12 @@ void WebContentsImpl::ShowContextMenu(RenderFrameHost* render_frame_host,
                                                     context_menu_params);
  }
  
@@ -272,10 +272,10 @@ index 04dee2983825..6e887b1b7681 100644
    IPC_STRUCT_TRAITS_MEMBER(system_font_family_name)
  #endif
 diff --git content/renderer/render_widget.cc content/renderer/render_widget.cc
-index 970bdf426edc..d1b49ec99a51 100644
+index 24449d777903..c82ac6aad116 100644
 --- content/renderer/render_widget.cc
 +++ content/renderer/render_widget.cc
-@@ -629,6 +629,7 @@ bool RenderWidget::OnMessageReceived(const IPC::Message& message) {
+@@ -641,6 +641,7 @@ bool RenderWidget::OnMessageReceived(const IPC::Message& message) {
    bool handled = true;
    IPC_BEGIN_MESSAGE_MAP(RenderWidget, message)
      IPC_MESSAGE_HANDLER(WidgetMsg_ShowContextMenu, OnShowContextMenu)
@@ -283,7 +283,7 @@ index 970bdf426edc..d1b49ec99a51 100644
      IPC_MESSAGE_HANDLER(WidgetMsg_Close, OnClose)
      IPC_MESSAGE_HANDLER(WidgetMsg_SynchronizeVisualProperties,
                          OnSynchronizeVisualProperties)
-@@ -2103,6 +2104,21 @@ void RenderWidget::OnShowContextMenu(ui::MenuSourceType source_type,
+@@ -2115,6 +2116,21 @@ void RenderWidget::OnShowContextMenu(ui::MenuSourceType source_type,
    has_host_context_menu_location_ = false;
  }
  
