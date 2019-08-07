@@ -522,13 +522,7 @@ class CefBrowserHostImpl : public CefBrowserHost,
 
   // Block navigation-related events on NavigationLock life span.
   std::unique_ptr<NavigationLock> CreateNavigationLock();
-  
-  // Send a message to the RenderViewHost associated with this browser.
-  // TODO(cef): With the introduction of OOPIFs, WebContents can span multiple
-  // processes. Messages should be sent to specific RenderFrameHosts instead.
-  bool Send(IPC::Message* message);
-
-
+ 
  private:
   class DevToolsWebContentsObserver;
 

@@ -83,10 +83,10 @@ void CefSpellCheckProxyHandler::OnTextCheck(
 
 bool CefSpellCheckProxyHandler::IsMisspelled(base::string16& word) {
   bool is_misspelled;
-  render_frame_->Send(new CefHostMsg_SpellCheckRequest(render_frame_->GetRenderView()->GetRoutingID(), word, &is_misspelled));
+  render_frame_->Send(new CefHostMsg_SpellCheckRequest(render_frame_->GetRoutingID(), word, &is_misspelled));
   return is_misspelled;
 }
 
 void CefSpellCheckProxyHandler::GetLanguageCode(std::string& lang) {
-  render_frame_->Send(new CefHostMsg_SpellCheckLanguage(render_frame_->GetRenderView()->GetRoutingID(), &lang));
+  render_frame_->Send(new CefHostMsg_SpellCheckLanguage(render_frame_->GetRoutingID(), &lang));
 }
