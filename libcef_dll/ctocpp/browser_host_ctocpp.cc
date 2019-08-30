@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=ed0dc40b326300a487f7556f10a28b3a28a3e3ee$
+// $hash=b8a358080d671f4dc199269bc66fd053d7be7c65$
 //
 
 #include "libcef_dll/ctocpp/browser_host_ctocpp.h"
@@ -316,10 +316,7 @@ void CefBrowserHostCToCpp::Print(CefRefPtr<CefPrintCallback> callback) {
 
   // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
 
-  // Verify param: callback; type: refptr_diff
-  DCHECK(callback.get());
-  if (!callback.get())
-    return;
+  // Unverified params: callback
 
   // Execute
   _struct->print(_struct, CefPrintCallbackCppToC::Wrap(callback));
@@ -340,10 +337,8 @@ void CefBrowserHostCToCpp::PrintWithSettings(
   DCHECK(!printerName.empty());
   if (printerName.empty())
     return;
-  // Verify param: callback; type: refptr_diff
-  DCHECK(callback.get());
-  if (!callback.get())
-    return;
+
+  // Unverified params: callback
 
   // Translate param: pages; type: simple_vec_byref_const
   const size_t pagesCount = pages.size();
@@ -684,6 +679,18 @@ void CefBrowserHostCToCpp::SendMouseWheelEvent(const CefMouseEvent& event,
 }
 
 NO_SANITIZE("cfi-icall")
+void CefBrowserHostCToCpp::SendTouchEvent(const CefTouchEvent& event) {
+  cef_browser_host_t* _struct = GetStruct();
+  if (CEF_MEMBER_MISSING(_struct, send_touch_event))
+    return;
+
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  // Execute
+  _struct->send_touch_event(_struct, &event);
+}
+
+NO_SANITIZE("cfi-icall")
 void CefBrowserHostCToCpp::SendFocusEvent(bool setFocus) {
   cef_browser_host_t* _struct = GetStruct();
   if (CEF_MEMBER_MISSING(_struct, send_focus_event))
@@ -988,6 +995,31 @@ NO_SANITIZE("cfi-icall") bool CefBrowserHostCToCpp::IsBackgroundHost() {
 
   // Execute
   int _retval = _struct->is_background_host(_struct);
+
+  // Return type: bool
+  return _retval ? true : false;
+}
+
+NO_SANITIZE("cfi-icall") void CefBrowserHostCToCpp::SetAudioMuted(bool mute) {
+  cef_browser_host_t* _struct = GetStruct();
+  if (CEF_MEMBER_MISSING(_struct, set_audio_muted))
+    return;
+
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  // Execute
+  _struct->set_audio_muted(_struct, mute);
+}
+
+NO_SANITIZE("cfi-icall") bool CefBrowserHostCToCpp::IsAudioMuted() {
+  cef_browser_host_t* _struct = GetStruct();
+  if (CEF_MEMBER_MISSING(_struct, is_audio_muted))
+    return false;
+
+  // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
+
+  // Execute
+  int _retval = _struct->is_audio_muted(_struct);
 
   // Return type: bool
   return _retval ? true : false;

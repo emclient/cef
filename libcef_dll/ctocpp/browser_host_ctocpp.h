@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=4a944dba62f41e04750546d1d0164b85fbf3362f$
+// $hash=dabad2fa0d0dcf0c22188f5fb4e9b1608e1aaf90$
 //
 
 #ifndef CEF_LIBCEF_DLL_CTOCPP_BROWSER_HOST_CTOCPP_H_
@@ -100,6 +100,7 @@ class CefBrowserHostCToCpp : public CefCToCppRefCounted<CefBrowserHostCToCpp,
   void SendMouseWheelEvent(const CefMouseEvent& event,
                            int deltaX,
                            int deltaY) OVERRIDE;
+  void SendTouchEvent(const CefTouchEvent& event) OVERRIDE;
   void SendFocusEvent(bool setFocus) OVERRIDE;
   void SendCaptureLostEvent() OVERRIDE;
   void NotifyMoveOrResizeStarted() OVERRIDE;
@@ -131,6 +132,8 @@ class CefBrowserHostCToCpp : public CefCToCppRefCounted<CefBrowserHostCToCpp,
                             const CefSize& max_size) OVERRIDE;
   CefRefPtr<CefExtension> GetExtension() OVERRIDE;
   bool IsBackgroundHost() OVERRIDE;
+  void SetAudioMuted(bool mute) OVERRIDE;
+  bool IsAudioMuted() OVERRIDE;
 };
 
 #endif  // CEF_LIBCEF_DLL_CTOCPP_BROWSER_HOST_CTOCPP_H_

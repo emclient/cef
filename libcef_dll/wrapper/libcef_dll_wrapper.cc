@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=2de42c13405ac9b977c4a2c1a6debc3682050c3c$
+// $hash=a9962d4dee1438c23830a3618c9471876dd28586$
 //
 
 #include "include/capi/cef_app_capi.h"
@@ -26,6 +26,7 @@
 #include "include/capi/cef_v8_capi.h"
 #include "include/capi/cef_web_plugin_capi.h"
 #include "include/capi/test/cef_test_helpers_capi.h"
+#include "include/cef_api_hash.h"
 #include "include/cef_app.h"
 #include "include/cef_crash_util.h"
 #include "include/cef_file_util.h"
@@ -38,11 +39,11 @@
 #include "include/cef_task.h"
 #include "include/cef_trace.h"
 #include "include/cef_v8.h"
-#include "include/cef_version.h"
 #include "include/cef_web_plugin.h"
 #include "include/test/cef_test_helpers.h"
 #include "libcef_dll/cpptoc/accessibility_handler_cpptoc.h"
 #include "libcef_dll/cpptoc/app_cpptoc.h"
+#include "libcef_dll/cpptoc/audio_handler_cpptoc.h"
 #include "libcef_dll/cpptoc/browser_process_handler_cpptoc.h"
 #include "libcef_dll/cpptoc/completion_callback_cpptoc.h"
 #include "libcef_dll/cpptoc/context_menu_handler_cpptoc.h"
@@ -239,6 +240,7 @@ NO_SANITIZE("cfi-icall") CEF_GLOBAL void CefShutdown() {
   // Check that all wrapper objects have been destroyed
   DCHECK(
       base::AtomicRefCountIsZero(&CefAccessibilityHandlerCppToC::DebugObjCt));
+  DCHECK(base::AtomicRefCountIsZero(&CefAudioHandlerCppToC::DebugObjCt));
   DCHECK(base::AtomicRefCountIsZero(&CefAuthCallbackCToCpp::DebugObjCt));
   DCHECK(
       base::AtomicRefCountIsZero(&CefBeforeDownloadCallbackCToCpp::DebugObjCt));

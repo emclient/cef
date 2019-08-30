@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=845cb9b0071f11bbf7a8e4525a954f50a5090a84$
+// $hash=e5f7897a84b36acaae268e67323e36d055c9cf62$
 //
 
 #include "libcef_dll/cpptoc/browser_host_cpptoc.h"
@@ -346,10 +346,8 @@ void CEF_CALLBACK browser_host_print(struct _cef_browser_host_t* self,
   DCHECK(self);
   if (!self)
     return;
-  // Verify param: callback; type: refptr_diff
-  DCHECK(callback);
-  if (!callback)
-    return;
+
+  // Unverified params: callback
 
   // Execute
   CefBrowserHostCppToC::Get(self)->Print(
@@ -375,10 +373,8 @@ browser_host_print_with_settings(struct _cef_browser_host_t* self,
   DCHECK(pagesCount == 0 || pages);
   if (pagesCount > 0 && !pages)
     return;
-  // Verify param: callback; type: refptr_diff
-  DCHECK(callback);
-  if (!callback)
-    return;
+
+  // Unverified params: callback
 
   // Translate param: pages; type: simple_vec_byref_const
   std::vector<CefRange> pagesList;
