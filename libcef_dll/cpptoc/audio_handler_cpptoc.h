@@ -1,4 +1,4 @@
-// Copyright (c) 2019 The Chromium Embedded Framework Authors. All rights
+// Copyright (c) 2020 The Chromium Embedded Framework Authors. All rights
 // reserved. Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
 //
@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=7b72089e8ee155c1b2dee881fb63ab65f6c0fc71$
+// $hash=546d9be2af481a855f2a3c223497b2f38fe98f4c$
 //
 
 #ifndef CEF_LIBCEF_DLL_CPPTOC_AUDIO_HANDLER_CPPTOC_H_

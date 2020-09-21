@@ -1,4 +1,4 @@
-// Copyright (c) 2019 The Chromium Embedded Framework Authors. All rights
+// Copyright (c) 2020 The Chromium Embedded Framework Authors. All rights
 // reserved. Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
 //
@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=d724378fed459f63276c4177c77b5de98ad33178$
+// $hash=24c8f172c7294aa8434687caaefca9b3fcdf8a10$
 //
 
 #include "libcef_dll/cpptoc/menu_model_delegate_cpptoc.h"

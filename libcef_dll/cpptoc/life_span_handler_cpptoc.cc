@@ -1,4 +1,4 @@
-// Copyright (c) 2019 The Chromium Embedded Framework Authors. All rights
+// Copyright (c) 2020 The Chromium Embedded Framework Authors. All rights
 // reserved. Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
 //
@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=e63407d8b685d6ec0d5786c18bbe48345165f15f$
+// $hash=a70bee54d0e01c5711e9169f33cefc44b153d235$
 //
 
 #include "libcef_dll/cpptoc/life_span_handler_cpptoc.h"

@@ -1,4 +1,4 @@
-// Copyright (c) 2019 The Chromium Embedded Framework Authors. All rights
+// Copyright (c) 2020 The Chromium Embedded Framework Authors. All rights
 // reserved. Use of this source code is governed by a BSD-style license that
 // can be found in the LICENSE file.
 //
@@ -9,7 +9,7 @@
 // implementations. See the translator.README.txt file in the tools directory
 // for more information.
 //
-// $hash=b8a358080d671f4dc199269bc66fd053d7be7c65$
+// $hash=e1385b3c60722db03db22f6973799913853c7c42$
 //
 
 #include "libcef_dll/ctocpp/browser_host_ctocpp.h"
