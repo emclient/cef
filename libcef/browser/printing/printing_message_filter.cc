@@ -188,7 +188,9 @@ void CefPrintingMessageFilter::OnScriptedPrint(
 		  base::Bind(&CefPrintingMessageFilter::OnScriptedPrintReply, this,
 			  printer_query, reply_msg),
 		  params.forced_printer,
-		  params.pages);
+		  params.pages,
+		  params.copies,
+		  params.collate);
   }
   else
 	  printer_query->GetSettings(

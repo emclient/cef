@@ -57,7 +57,7 @@ class CefPrintViewManagerBase : public content::NotificationObserver,
   // Prints the current document immediately on a specified printer. Since the rendering is
   // asynchronous, the actual printing will not be completed on the return of
   // this function. Returns false if printing is impossible at the moment.
-  virtual bool PrintNowWithSettings(content::RenderFrameHost* rfh, const CefString& printerName, const std::vector<CefRange>& pages, const PrintCallback& callback);
+  virtual bool PrintNowWithSettings(content::RenderFrameHost* rfh, const CefString& printerName, const std::vector<CefRange>& pages, int copies, bool collate, const PrintCallback& callback);
 
   // Whether printing is enabled or not.
   void UpdatePrintingEnabled();

@@ -817,6 +817,8 @@ void CefBrowserHostImpl::Print(CefRefPtr<CefPrintCallback> callback) {
 
 void CefBrowserHostImpl::PrintWithSettings(const CefString& printerName,
                                            const std::vector<CefRange>& pages,
+                                           int copies,
+                                           bool collate,
                                            CefRefPtr<CefPrintCallback> callback) {
   if (CEF_CURRENTLY_ON_UIT()) {
     content::WebContents* actionable_contents = GetActionableWebContents();
@@ -830,10 +832,10 @@ void CefBrowserHostImpl::PrintWithSettings(const CefString& printerName,
     printing::CefPrintViewManager::FromWebContents(actionable_contents)
         ->PrintNowWithSettings(
             actionable_contents->GetRenderViewHost()->GetMainFrame(),
-            printerName, pages, print_callback);
+            printerName, pages, copies, collate, print_callback);
   } else {
     CEF_POST_TASK(CEF_UIT, base::Bind(&CefBrowserHostImpl::PrintWithSettings,
-                                      this, printerName, pages, callback));
+                                      this, printerName, pages, copies, collate, callback));
   }
 }
 

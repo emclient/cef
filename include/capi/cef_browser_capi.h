@@ -459,6 +459,8 @@ typedef struct _cef_browser_host_t {
       const cef_string_t* printerName,
       size_t pagesCount,
       cef_range_t const* pages,
+      int copies,
+      int collate,
       struct _cef_print_callback_t* callback);
 
   ///

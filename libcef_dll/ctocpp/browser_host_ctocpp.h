@@ -62,6 +62,8 @@ class CefBrowserHostCToCpp : public CefCToCppRefCounted<CefBrowserHostCToCpp,
   void Print(CefRefPtr<CefPrintCallback> callback) OVERRIDE;
   void PrintWithSettings(const CefString& printerName,
                          const std::vector<CefRange>& pages,
+                         int copies,
+                         bool collate,
                          CefRefPtr<CefPrintCallback> callback) OVERRIDE;
   void PrintToPDF(const CefString& path,
                   const CefPdfPrintSettings& settings,

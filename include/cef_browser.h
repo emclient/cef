@@ -473,7 +473,7 @@ class CefBrowserHost : public virtual CefBaseRefCounted {
   // Print the specifed pages (1-based) of the current browser contents on a specified printer
   ///
   /*--cef()--*/
-  virtual void PrintWithSettings(const CefString& printerName, const std::vector<CefRange>& pages, CefRefPtr<CefPrintCallback> callback) = 0;
+  virtual void PrintWithSettings(const CefString& printerName, const std::vector<CefRange>& pages, int copies, bool collate, CefRefPtr<CefPrintCallback> callback) = 0;
 
   ///
   // Print the current browser contents to the PDF file specified by |path| and

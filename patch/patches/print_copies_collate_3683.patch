@@ -1,0 +1,339 @@
+diff --git chrome/browser/printing/print_job_worker.cc chrome/browser/printing/print_job_worker.cc
+index c675ea2944e3..76cda0aa450a 100644
+--- chrome/browser/printing/print_job_worker.cc
++++ chrome/browser/printing/print_job_worker.cc
+@@ -178,7 +178,9 @@ void PrintJobWorker::GetSettings(bool ask_user_for_settings,
+                                  bool is_scripted,
+                                  bool is_modifiable,
+                                  const base::string16& forced_printer,
+-                                 const PageRanges& forced_pages) {
++                                 const PageRanges& forced_pages,
++                                 int copies,
++	                             bool collate) {
+   DCHECK(task_runner_->RunsTasksInCurrentSequence());
+   DCHECK_EQ(page_number_, PageNumber::npos());
+ 
+@@ -211,7 +213,7 @@ void PrintJobWorker::GetSettings(bool ask_user_for_settings,
+                        base::BindOnce(&PrintJobWorker::UseDefaultSettings,
+                                       base::Unretained(this),
+                                       forced_printer,
+-                                      forced_pages)));
++                                      forced_pages, copies, collate)));
+   }
+ }
+ 
+@@ -317,12 +319,12 @@ void PrintJobWorker::GetSettingsWithUI(
+ 
+ void PrintJobWorker::UseDefaultSettings(
+     const base::string16& forced_printer,
+-    const printing::PageRanges& forced_pages) {
++    const printing::PageRanges& forced_pages, int copies, bool collate) {
+   PrintingContext::Result result;
+   if (forced_printer.empty())
+     result = printing_context_->UseDefaultSettings();
+   else
+-    result = printing_context_->UseDefaultSettingsWithPrinterAndRanges(forced_printer, forced_pages);
++    result = printing_context_->UseDefaultSettingsWithPrinterAndRanges(forced_printer, forced_pages, copies, collate);
+   GetSettingsDone(result);
+ }
+ 
+diff --git chrome/browser/printing/print_job_worker.h chrome/browser/printing/print_job_worker.h
+index f54c2c270000..e2c666b7934e 100644
+--- chrome/browser/printing/print_job_worker.h
++++ chrome/browser/printing/print_job_worker.h
+@@ -53,7 +53,9 @@ class PrintJobWorker {
+                    bool is_scripted,
+                    bool is_modifiable,
+ 	               const base::string16& forced_printer,
+-	               const PageRanges& forced_pages);
++	               const PageRanges& forced_pages,
++                   int copies,
++	               bool collate);
+ 
+   // Set the new print settings from a dictionary value.
+   void SetSettings(base::Value new_settings);
+@@ -153,7 +155,7 @@ class PrintJobWorker {
+   // displaying a dialog. So this needs to happen from the UI thread on these
+   // systems.
+   void UseDefaultSettings(const base::string16& forced_printer,
+-                          const PageRanges& forced_pages);
++                          const PageRanges& forced_pages, int copies, bool collate);
+ 
+   // Printing context delegate.
+   const std::unique_ptr<PrintingContext::Delegate> printing_context_delegate_;
+diff --git chrome/browser/printing/printer_query.cc chrome/browser/printing/printer_query.cc
+index 01996364babb..5343bd6cf17c 100644
+--- chrome/browser/printing/printer_query.cc
++++ chrome/browser/printing/printer_query.cc
+@@ -88,7 +88,7 @@ void PrinterQuery::GetSettings(GetSettingsAskParam ask_user_for_settings,
+                                base::OnceClosure callback) {
+   GetSettings(ask_user_for_settings, expected_page_count, has_selection,
+               margin_type, is_scripted, is_modifiable, std::move(callback), L"",
+-              PageRanges());
++              PageRanges(), 0, false);
+ }
+ 
+ void PrinterQuery::GetSettings(GetSettingsAskParam ask_user_for_settings,
+@@ -99,7 +99,9 @@ void PrinterQuery::GetSettings(GetSettingsAskParam ask_user_for_settings,
+                                bool is_modifiable,
+                                base::OnceClosure callback,
+                                const base::string16& forced_printer,
+-                               const PageRanges& forced_pages) {
++                               const PageRanges& forced_pages,
++                               int copies,
++	                           bool collate) {
+   DCHECK_CURRENTLY_ON(content::BrowserThread::IO);
+   DCHECK(!is_print_dialog_box_shown_ || !is_scripted);
+ 
+@@ -113,7 +115,7 @@ void PrinterQuery::GetSettings(GetSettingsAskParam ask_user_for_settings,
+       base::BindOnce(&PrintJobWorker::GetSettings,
+                      base::Unretained(worker_.get()),
+                      is_print_dialog_box_shown_, expected_page_count,
+-                     has_selection, margin_type, is_scripted, is_modifiable, forced_printer, forced_pages));
++                     has_selection, margin_type, is_scripted, is_modifiable, forced_printer, forced_pages, copies, collate));
+ }
+ 
+ void PrinterQuery::SetSettings(base::Value new_settings,
+diff --git chrome/browser/printing/printer_query.h chrome/browser/printing/printer_query.h
+index d860232de1c1..4e0957968cd3 100644
+--- chrome/browser/printing/printer_query.h
++++ chrome/browser/printing/printer_query.h
+@@ -74,7 +74,9 @@ class PrinterQuery : public base::RefCountedDeleteOnSequence<PrinterQuery> {
+       bool is_modifiable,
+ 	  base::OnceClosure callback,
+ 	  const base::string16& forced_printer,
+-	  const PageRanges& forced_pages);
++	  const PageRanges& forced_pages,
++	  int copies,
++	  bool collate);
+ 
+   // Updates the current settings with |new_settings| dictionary values.
+   virtual void SetSettings(base::Value new_settings,
+diff --git components/printing/common/print_messages.h components/printing/common/print_messages.h
+index 3dfe1ffc080c..69335bb6beec 100644
+--- components/printing/common/print_messages.h
++++ components/printing/common/print_messages.h
+@@ -351,9 +351,10 @@ IPC_STRUCT_BEGIN(PrintHostMsg_ScriptedPrint_Params)
+   IPC_STRUCT_MEMBER(printing::MarginType, margin_type)
+   IPC_STRUCT_MEMBER(base::string16, forced_printer)
+   IPC_STRUCT_MEMBER(printing::PageRanges, pages)
++  IPC_STRUCT_MEMBER(int, copies)
++  IPC_STRUCT_MEMBER(bool, collate)
+ IPC_STRUCT_END()
+ 
+-
+ // Messages sent from the browser to the renderer.
+ 
+ // Tells the RenderFrame to initiate print preview for the entire document.
+@@ -369,7 +370,11 @@ IPC_MESSAGE_ROUTED0(PrintMsg_PrintPages)
+ 
+ // Tells the RenderFrame to switch the CSS to print media type, renders every
+ // requested pages and switch back the CSS to display media type.
+-IPC_MESSAGE_ROUTED2(PrintMsg_PrintPagesWithSettings, base::string16, printing::PageRanges)
++IPC_MESSAGE_ROUTED4(PrintMsg_PrintPagesWithSettings,
++                    base::string16,
++                    printing::PageRanges,
++                    int,
++                    bool)
+ 
+ #if BUILDFLAG(ENABLE_PRINTING)
+ // Like PrintMsg_PrintPages, but using the print preview document's frame/node.
+@@ -441,7 +446,7 @@ IPC_SYNC_MESSAGE_ROUTED2_2(PrintHostMsg_UpdatePrintSettings,
+ IPC_SYNC_MESSAGE_ROUTED1_1(PrintHostMsg_ScriptedPrint,
+                            PrintHostMsg_ScriptedPrint_Params,
+                            PrintMsg_PrintPages_Params
+-                               /* settings chosen by the user*/)
++                           /* settings chosen by the user*/)
+ 
+ // Asks the browser to do print preview.
+ IPC_MESSAGE_ROUTED1(PrintHostMsg_RequestPrintPreview,
+diff --git components/printing/renderer/print_render_frame_helper.cc components/printing/renderer/print_render_frame_helper.cc
+index dda580d83b7d..7d87b29a3fa8 100644
+--- components/printing/renderer/print_render_frame_helper.cc
++++ components/printing/renderer/print_render_frame_helper.cc
+@@ -1171,8 +1171,11 @@ void PrintRenderFrameHelper::OnPrintPages() {
+   // just return.
+ }
+ 
+-void PrintRenderFrameHelper::OnPrintPagesWithSettings(base::string16 printer, PageRanges pages) {
+-  if (ipc_nesting_level_> 1)
++void PrintRenderFrameHelper::OnPrintPagesWithSettings(base::string16 printer,
++                                                      PageRanges pages,
++                                                      int copies,
++                                                      bool collate) {
++  if (ipc_nesting_level_ > 1)
+     return;
+ 
+   auto weak_this = weak_ptr_factory_.GetWeakPtr();
+@@ -1184,7 +1187,7 @@ void PrintRenderFrameHelper::OnPrintPagesWithSettings(base::string16 printer, Pa
+   // If we are printing a PDF extension frame, find the plugin node and print
+   // that instead.
+   auto plugin = delegate_->GetPdfElement(frame);
+-  Print(frame, plugin, PrintRequestType::kRegular, printer, pages);
++  Print(frame, plugin, PrintRequestType::kRegular, printer, pages, copies, collate);
+   if (weak_this)
+     frame->DispatchAfterPrintEvent();
+   // WARNING: |this| may be gone at this point. Do not do any more work here and
+@@ -1636,16 +1639,18 @@ void PrintRenderFrameHelper::PrintNode(const blink::WebNode& node) {
+ }
+ 
+ void PrintRenderFrameHelper::Print(blink::WebLocalFrame* frame,
+-	const blink::WebNode& node,
+-	PrintRequestType print_request_type){
+-	Print(frame, node, print_request_type, L"", printing::PageRanges());
++                                   const blink::WebNode& node,
++                                   PrintRequestType print_request_type) {
++  Print(frame, node, print_request_type, L"", printing::PageRanges(), 0, false);
+ }
+ 
+ void PrintRenderFrameHelper::Print(blink::WebLocalFrame* frame,
+                                    const blink::WebNode& node,
+                                    PrintRequestType print_request_type,
+                                    const base::string16& printer,
+-                                   const printing::PageRanges& pages) {
++                                   const printing::PageRanges& pages,
++                                   int copies,
++                                   bool collate) {
+   // If still not finished with earlier print request simply ignore.
+   if (prep_frame_view_)
+     return;
+@@ -1673,12 +1678,14 @@ void PrintRenderFrameHelper::Print(blink::WebLocalFrame* frame,
+ 
+     PrintMsg_PrintPages_Params print_settings;
+     auto self = weak_ptr_factory_.GetWeakPtr();
+-	if (printer.empty())
+-		GetPrintSettingsFromUser(frame_ref.GetFrame(), node, expected_page_count,
+-                             print_request_type, &print_settings);
+-	else
+-		GetPrintSettingsWithPrinterAndPages(frame_ref.GetFrame(), node, expected_page_count,
+-			                 printer, pages, print_request_type, &print_settings);
++    if (printer.empty())
++      GetPrintSettingsFromUser(frame_ref.GetFrame(), node, expected_page_count,
++                               print_request_type, &print_settings);
++    else
++      GetPrintSettingsWithPrinterAndPages(
++          frame_ref.GetFrame(), node, expected_page_count, printer, pages, copies, collate,
++          print_request_type, &print_settings);
++
+     // Check if |this| is still valid.
+     if (!self)
+       return;
+@@ -2045,10 +2052,12 @@ void PrintRenderFrameHelper::GetPrintSettingsWithPrinterAndPages(
+     int expected_pages_count,
+     const base::string16& printer_name,
+     const printing::PageRanges& pages,
+-	PrintRequestType print_request_type,
++    int copies,
++    bool collate,
++    PrintRequestType print_request_type,
+     PrintMsg_PrintPages_Params* print_settings) {
+-	bool is_scripted = print_request_type == PrintRequestType::kScripted;
+-	DCHECK(is_scripted || print_request_type == PrintRequestType::kRegular);
++  bool is_scripted = print_request_type == PrintRequestType::kScripted;
++  DCHECK(is_scripted || print_request_type == PrintRequestType::kRegular);
+ 
+   PrintHostMsg_ScriptedPrint_Params params;
+   params.cookie = print_pages_params_->params.document_cookie;
+@@ -2061,6 +2070,8 @@ void PrintRenderFrameHelper::GetPrintSettingsWithPrinterAndPages(
+   params.is_modifiable = !IsPrintingNodeOrPdfFrame(frame, node);
+   params.pages = pages;
+   params.forced_printer = printer_name;
++  params.collate = collate;
++  params.copies = copies;
+ 
+   //Send(new PrintHostMsg_DidShowPrintDialog(routing_id()));
+ 
+diff --git components/printing/renderer/print_render_frame_helper.h components/printing/renderer/print_render_frame_helper.h
+index 8353cd43556e..b8a76eaf1d87 100644
+--- components/printing/renderer/print_render_frame_helper.h
++++ components/printing/renderer/print_render_frame_helper.h
+@@ -192,7 +192,7 @@ class PrintRenderFrameHelper
+ 
+   // Message handlers ---------------------------------------------------------
+   void OnPrintPages();
+-  void OnPrintPagesWithSettings(base::string16 printer, printing::PageRanges pages);
++  void OnPrintPagesWithSettings(base::string16 printer, printing::PageRanges pages, int copies, bool collate);
+   void OnPrintForSystemDialog();
+   void OnInitiatePrintPreview(bool has_selection);
+   void OnPrintPreview(const base::DictionaryValue& settings);
+@@ -245,7 +245,9 @@ class PrintRenderFrameHelper
+              const blink::WebNode& node,
+              PrintRequestType print_request_type,
+              const base::string16& printer,
+-             const printing::PageRanges& pages);
++             const printing::PageRanges& pages,
++             int copies,
++	         bool collate);
+ 
+   // Notification when printing is done - signal tear-down/free resources.
+   void DidFinishPrinting(PrintingResult result);
+@@ -287,6 +289,8 @@ class PrintRenderFrameHelper
+                                 int expected_pages_count,
+                                 const base::string16& printer_name,
+                                 const printing::PageRanges& pages,
++	                            int copies,
++	                            bool collate,
+ 	                            PrintRequestType print_request_type,
+                                 PrintMsg_PrintPages_Params* print_settings);
+ 
+diff --git printing/printing_context.h printing/printing_context.h
+index a7d34adc8861..762777b84818 100644
+--- printing/printing_context.h
++++ printing/printing_context.h
+@@ -67,7 +67,7 @@ class PRINTING_EXPORT PrintingContext {
+   virtual Result UseDefaultSettings() = 0;
+ 
+   // Selects the user's passed printer and default format.
+-  virtual Result UseDefaultSettingsWithPrinterAndRanges(const base::string16& forced_printer, const PageRanges& ranges) = 0;
++  virtual Result UseDefaultSettingsWithPrinterAndRanges(const base::string16& forced_printer, const PageRanges& ranges, int copies, bool collate) = 0;
+ 
+   // Updates the context with PDF printer settings.
+   Result UsePdfSettings();
+diff --git printing/printing_context_win.cc printing/printing_context_win.cc
+index 5856418d0b47..70d2c76679fe 100644
+--- printing/printing_context_win.cc
++++ printing/printing_context_win.cc
+@@ -112,7 +112,7 @@ PrintingContext::Result PrintingContextWin::UseDefaultSettings() {
+   return OnError();
+ }
+ 
+-PrintingContext::Result PrintingContextWin::UseDefaultSettingsWithPrinterAndRanges(const base::string16& forced_printer, const PageRanges& ranges) {
++PrintingContext::Result PrintingContextWin::UseDefaultSettingsWithPrinterAndRanges(const base::string16& forced_printer, const PageRanges& ranges, int copies, bool collate) {
+   DCHECK(!in_print_job_);
+ 
+   if (!forced_printer.empty()) {
+@@ -120,6 +120,12 @@ PrintingContext::Result PrintingContextWin::UseDefaultSettingsWithPrinterAndRang
+     if (printer.OpenPrinter(forced_printer.c_str())) {
+       std::unique_ptr<DEVMODE, base::FreeDeleter> dev_mode =
+         CreateDevMode(printer.Get(), nullptr);
++
++      // we actually have to set the copies for DEVMODE, because the settings are ignored
++      if (copies > 1)
++        dev_mode.get()->dmCopies = copies;
++      dev_mode.get()->dmCollate = collate;
++
+       if (InitializeSettings(forced_printer, dev_mode.get()) == OK) {
+         if (ranges.size() > 0) {
+           PageRanges ranges_vector;
+@@ -134,6 +140,8 @@ PrintingContext::Result PrintingContextWin::UseDefaultSettingsWithPrinterAndRang
+           }
+           settings_.set_ranges(ranges_vector);
+         }
++        settings_.set_copies(copies);
++        settings_.set_collate(collate);
+         return OK;
+       }
+     }
+diff --git printing/printing_context_win.h printing/printing_context_win.h
+index 6b86c7cbda67..7e3ac532be31 100644
+--- printing/printing_context_win.h
++++ printing/printing_context_win.h
+@@ -30,7 +30,7 @@ class PRINTING_EXPORT PrintingContextWin : public PrintingContext {
+                           bool is_scripted,
+                           PrintSettingsCallback callback) override;
+   Result UseDefaultSettings() override;
+-  Result UseDefaultSettingsWithPrinterAndRanges(const base::string16& forced_printer, const PageRanges& ranges) override;
++  Result UseDefaultSettingsWithPrinterAndRanges(const base::string16& forced_printer, const PageRanges& ranges, int copies, bool collate) override;
+   gfx::Size GetPdfPaperSizeDeviceUnits() override;
+   Result UpdatePrinterSettings(bool external_preview,
+                                bool show_system_dialog,

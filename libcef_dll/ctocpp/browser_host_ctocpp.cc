@@ -326,6 +326,8 @@ NO_SANITIZE("cfi-icall")
 void CefBrowserHostCToCpp::PrintWithSettings(
     const CefString& printerName,
     const std::vector<CefRange>& pages,
+    int copies,
+    bool collate,
     CefRefPtr<CefPrintCallback> callback) {
   cef_browser_host_t* _struct = GetStruct();
   if (CEF_MEMBER_MISSING(_struct, print_with_settings))
@@ -355,7 +357,7 @@ void CefBrowserHostCToCpp::PrintWithSettings(
 
   // Execute
   _struct->print_with_settings(_struct, printerName.GetStruct(), pagesCount,
-                               pagesList,
+                               pagesList, copies, collate,
                                CefPrintCallbackCppToC::Wrap(callback));
 
   // Restore param:pages; type: simple_vec_byref_const

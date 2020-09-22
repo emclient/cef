@@ -95,6 +95,8 @@ bool CefPrintViewManagerBase::PrintNowWithSettings(
     content::RenderFrameHost* rfh,
     const CefString& printerName,
     const std::vector<CefRange>& pages,
+	int copies,
+	bool collate,
     const PrintCallback& callback) {
   DisconnectFromCurrentPrintJob();
 
@@ -111,7 +113,7 @@ bool CefPrintViewManagerBase::PrintNowWithSettings(
   int32_t id = rfh->GetRoutingID();
   return PrintNowInternal(rfh,
                           std::make_unique<PrintMsg_PrintPagesWithSettings>(
-                              id, printerName.ToString16(), ranges),
+                              id, printerName.ToString16(), ranges, copies, collate),
                           callback);
 }
 

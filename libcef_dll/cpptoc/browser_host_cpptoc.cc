@@ -359,6 +359,8 @@ browser_host_print_with_settings(struct _cef_browser_host_t* self,
                                  const cef_string_t* printerName,
                                  size_t pagesCount,
                                  cef_range_t const* pages,
+                                 int copies,
+                                 int collate,
                                  cef_print_callback_t* callback) {
   // AUTO-GENERATED CONTENT - DELETE THIS COMMENT BEFORE MODIFYING
 
@@ -387,7 +389,7 @@ browser_host_print_with_settings(struct _cef_browser_host_t* self,
 
   // Execute
   CefBrowserHostCppToC::Get(self)->PrintWithSettings(
-      CefString(printerName), pagesList,
+      CefString(printerName), pagesList, copies, collate ? true : false,
       CefPrintCallbackCToCpp::Wrap(callback));
 }
 
