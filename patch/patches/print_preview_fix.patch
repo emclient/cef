@@ -1,0 +1,13 @@
+diff --git chrome/browser/resources/pdf/pdf_viewer.js chrome/browser/resources/pdf/pdf_viewer.js
+index 14fb22b02969..0e05101df782 100644
+--- chrome/browser/resources/pdf/pdf_viewer.js
++++ chrome/browser/resources/pdf/pdf_viewer.js
+@@ -1618,7 +1618,7 @@ class PluginController extends ContentController {
+         this.viewer_.setDocumentDimensions(message.data);
+         this.sendScriptingMessage_({
+       	  type: 'documentDimensionsChanged',
+-          pageCount: this.documentDimensions_.pageDimensions.length
++          pageCount: this.viewer_.documentDimensions_.pageDimensions.length
+         });
+         break;
+       case 'email':
