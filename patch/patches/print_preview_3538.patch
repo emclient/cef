@@ -83,9 +83,9 @@ index f98dfc0a6f07..bcecc2d21037 100644
          break;
        case 'documentDimensions':
          viewer.setDocumentDimensions(message.data);
-+        this.sendScriptingMessage_({
++        viewer.sendScriptingMessage_({
 +      	  type: 'documentDimensionsChanged',
-+          pageCount: this.documentDimensions_.pageDimensions.length
++          pageCount: message.data.pageDimensions.length
 +        });
          break;
        case 'email':
