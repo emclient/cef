@@ -1,0 +1,39 @@
+diff --git content/browser/frame_host/render_frame_host_impl.cc content/browser/frame_host/render_frame_host_impl.cc
+index 68db12450bd07..035aa0aa52892 100644
+--- content/browser/frame_host/render_frame_host_impl.cc
++++ content/browser/frame_host/render_frame_host_impl.cc
+@@ -107,6 +107,7 @@
+ #include "content/common/associated_interfaces.mojom.h"
+ #include "content/common/content_security_policy/content_security_policy.h"
+ #include "content/common/frame_messages.h"
++#include "content/common/view_messages.h"
+ #include "content/common/frame_owner_properties.h"
+ #include "content/common/input/input_handler.mojom.h"
+ #include "content/common/inter_process_time_ticks_converter.h"
+diff --git content/renderer/render_widget.cc content/renderer/render_widget.cc
+index 203598022a013..d174b0d6b7f5d 100644
+--- content/renderer/render_widget.cc
++++ content/renderer/render_widget.cc
+@@ -39,6 +39,7 @@
+ #include "content/common/content_switches_internal.h"
+ #include "content/common/drag_event_source_info.h"
+ #include "content/common/drag_messages.h"
++#include "content/common/view_messages.h"
+ #include "content/common/render_frame_metadata.mojom.h"
+ #include "content/common/render_message_filter.mojom.h"
+ #include "content/common/swapped_out_messages.h"
+diff --git third_party/blink/renderer/platform/fonts/win/font_cache_skia_win.cc third_party/blink/renderer/platform/fonts/win/font_cache_skia_win.cc
+index 0cb685728d100..8cccf2738984e 100644
+--- third_party/blink/renderer/platform/fonts/win/font_cache_skia_win.cc
++++ third_party/blink/renderer/platform/fonts/win/font_cache_skia_win.cc
+@@ -280,10 +280,6 @@ scoped_refptr<SimpleFontData> FontCache::PlatformFallbackFontForCharacter(
+   return nullptr;
+ }
+ 
+-static inline bool DeprecatedEqualIgnoringCase(const AtomicString& a,
+-                                               const SkString& b) {
+-  return DeprecatedEqualIgnoringCase(a, ToAtomicString(b));
+-}
+ 
+ std::unique_ptr<FontPlatformData> FontCache::CreateFontPlatformData(
+     const FontDescription& font_description,
