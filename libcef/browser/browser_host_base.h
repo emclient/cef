@@ -295,6 +295,7 @@ class CefBrowserHostBase : public CefBrowserHost,
   size_t GetFrameCount() override;
   void GetFrameIdentifiers(std::vector<CefString>& identifiers) override;
   void GetFrameNames(std::vector<CefString>& names) override;
+  void AddVisitedURL(const CefString& url) override;
   void SetAccessibilityState(cef_state_t accessibility_state) override;
 
   // CefBrowserContentsDelegate::Observer methods:
