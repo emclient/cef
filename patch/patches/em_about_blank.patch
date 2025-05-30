@@ -1,0 +1,13 @@
+diff --git url/url_util.cc url/url_util.cc
+index 67c4c5f3ce124..f82e67586e50d 100644
+--- url/url_util.cc
++++ url/url_util.cc
+@@ -118,7 +118,7 @@ struct SchemeRegistry {
+   // Schemes that are strictly empty documents, allowing them to commit
+   // synchronously.
+   std::vector<std::string> empty_document_schemes = {
+-      kAboutScheme,
++      // kAboutScheme,
+   };
+ 
+   // Non-special schemes that should be treated as opaque path URLs for
