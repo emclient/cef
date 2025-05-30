@@ -1,0 +1,35 @@
+diff --git url/url_util.cc url/url_util.cc
+index 67c4c5f3ce124..f82e67586e50d 100644
+--- url/url_util.cc
++++ url/url_util.cc
+@@ -118,7 +118,7 @@ struct SchemeRegistry {
+   // Schemes that are strictly empty documents, allowing them to commit
+   // synchronously.
+   std::vector<std::string> empty_document_schemes = {
+-      kAboutScheme,
++      // kAboutScheme,
+   };
+ 
+   // Non-special schemes that should be treated as opaque path URLs for
+diff --git components/subresource_filter/content/renderer/subresource_filter_agent.cc components/subresource_filter/content/renderer/subresource_filter_agent.cc
+index cc9d7baa25985..c3c4dd37c213d 100644
+--- components/subresource_filter/content/renderer/subresource_filter_agent.cc
++++ components/subresource_filter/content/renderer/subresource_filter_agent.cc
+@@ -60,7 +60,7 @@ SubresourceFilterAgent::SubresourceFilterAgent(
+ void SubresourceFilterAgent::Initialize() {
+   const GURL& url = GetDocumentURL();
+   // The initial empty document will always inherit activation.
+-  CHECK(ShouldInheritActivation(url), base::NotFatalUntil::M129);
++  //CHECK(ShouldInheritActivation(url), base::NotFatalUntil::M129);
+
+   // We must check for provisional here because in that case 2 RenderFrames will
+   // be created for the same FrameTreeNode in the browser. The browser service
+@@ -332,7 +332,7 @@ void SubresourceFilterAgent::DidCreateNewDocument() {
+
+ const mojom::ActivationState
+ SubresourceFilterAgent::GetInheritedActivationStateForNewDocument() {
+-  CHECK(ShouldInheritActivation(GetDocumentURL()), base::NotFatalUntil::M129);
++  //CHECK(ShouldInheritActivation(GetDocumentURL()), base::NotFatalUntil::M129);
+   return GetInheritedActivationState(render_frame());
+ }
+ 
