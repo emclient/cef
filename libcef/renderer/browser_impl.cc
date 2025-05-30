@@ -270,6 +270,12 @@ void CefBrowserImpl::GetFrameNames(std::vector<CefString>& names) {
   }
 }
 
+void CefBrowserImpl::AddVisitedURL(const CefString& url) {
+  CEF_REQUIRE_RT_RETURN_VOID();
+
+  // No-op
+}
+
 // CefBrowserImpl public methods.
 // -----------------------------------------------------------------------------
 

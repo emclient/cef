@@ -63,6 +63,7 @@ class CefBrowserImpl : public CefBrowser, public blink::WebViewObserver {
   size_t GetFrameCount() override;
   void GetFrameIdentifiers(std::vector<CefString>& identifiers) override;
   void GetFrameNames(std::vector<CefString>& names) override;
+  void AddVisitedURL(const CefString& url) override;
 
   CefBrowserImpl(blink::WebView* web_view,
                  int browser_id,

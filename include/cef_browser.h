@@ -197,6 +197,14 @@ class CefBrowser : public virtual CefBaseRefCounted {
   ///
   /*--cef()--*/
   virtual void GetFrameNames(std::vector<CefString>& names) = 0;
+
+#if CEF_API_ADDED(CEF_NEXT)
+  ///
+  /// Inserts an url into the list of visited urls.
+  ///
+  /*--cef(added=next)--*/
+  virtual void AddVisitedURL(const CefString& url) = 0;
+#endif
 };
 
 ///
