@@ -1080,6 +1080,14 @@ class CefBrowserHost : public virtual CefBaseRefCounted {
   /*--cef(added=next)--*/
   virtual void RecheckSpelling() = 0;
 #endif
+
+#if CEF_API_ADDED(CEF_NEXT)
+  ///
+  /// Inserts an url into the list of visited urls.
+  ///
+  /*--cef(added=next)--*/
+  virtual void AddVisitedURL(const CefString& url) = 0;
+#endif
 };
 
 #endif  // CEF_INCLUDE_CEF_BROWSER_H_

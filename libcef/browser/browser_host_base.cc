@@ -1211,6 +1211,22 @@ void CefBrowserHostBase::GetFrameNames(std::vector<CefString>& names) {
   }
 }
 
+void CefBrowserHostBase::AddVisitedURL(const CefString& url) {
+  auto browser_context = GetBrowserContext();
+  if (!browser_context) {
+    return;
+  }
+
+  auto cef_browser_context = CefBrowserContext::FromBrowserContext(browser_context);
+  if (cef_browser_context) {
+    std::vector<GURL> redirect_chain;
+    cef_browser_context->AddVisitedURLs(
+      GURL(url.ToString()),
+      redirect_chain,
+      CefFrameHostImpl::kPageTransitionExplicit);
+  }
+}
+
 void CefBrowserHostBase::SetAccessibilityState(
     cef_state_t accessibility_state) {
   if (!CEF_CURRENTLY_ON_UIT()) {
