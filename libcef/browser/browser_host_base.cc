@@ -18,11 +18,14 @@
 #include "cef/libcef/browser/thread_util.h"
 #include "cef/libcef/common/frame_util.h"
 #include "cef/libcef/common/net/url_util.h"
+#include "chrome/browser/history/history_service_factory.h"
 #include "chrome/browser/platform_util.h"
+#include "chrome/browser/profiles/off_the_record_profile_impl.h"
 #include "chrome/browser/spellchecker/spellcheck_factory.h"
 #include "chrome/browser/spellchecker/spellcheck_service.h"
 #include "chrome/browser/ui/browser_commands.h"
 #include "components/favicon/core/favicon_url.h"
+#include "components/history/core/browser/history_service.h"
 #include "components/spellcheck/common/spellcheck_features.h"
 #include "components/zoom/page_zoom.h"
 #include "components/zoom/zoom_controller.h"
@@ -1208,6 +1211,42 @@ void CefBrowserHostBase::GetFrameNames(std::vector<CefString>& names) {
   names.reserve(frames.size());
   for (const auto& frame : frames) {
     names.push_back(frame->GetName());
+  }
+}
+
+void CefBrowserHostBase::AddVisitedURL(const CefString& url) {
+  // The API is only supported when the partitioned visited link database
+  // feature is disabled.
+  if (!base::FeatureList::IsEnabled(
+        blink::features::kPartitionVisitedLinkDatabaseWithSelfLinks)) {
+    auto browser_context = GetBrowserContext();
+    if (!browser_context) {
+      return;
+    }
+
+    auto cef_browser_context = CefBrowserContext::FromBrowserContext(browser_context);
+    if (!cef_browser_context) {
+      return;
+    }
+
+    auto* profile = cef_browser_context->AsProfile();
+    if (profile->IsOffTheRecord()) {
+      // Don't persist state.
+      return;
+    }
+
+    // Called from DidFinishNavigation by Alloy style browsers. Chrome style
+    // browsers will handle this via HistoryTabHelper.
+    if (auto history_service = HistoryServiceFactory::GetForProfile(
+            profile, ServiceAccessType::IMPLICIT_ACCESS)) {
+                    std::vector<GURL> redirect_chain;
+      history::HistoryAddPageArgs add_page_args;
+      add_page_args.url = GURL(url.ToString());
+      add_page_args.redirects = std::vector<GURL>();
+      add_page_args.transition = CefFrameHostImpl::kPageTransitionExplicit;
+      add_page_args.time = base::Time::Now();
+      history_service->AddPage(std::move(add_page_args));
+    }
   }
 }
 
