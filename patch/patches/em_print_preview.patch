@@ -1,0 +1,115 @@
+diff --git chrome/browser/resources/pdf/pdf_viewer.ts chrome/browser/resources/pdf/pdf_viewer.ts
+index 087c90555657d..d2e906a94befb 100644
+--- chrome/browser/resources/pdf/pdf_viewer.ts
++++ chrome/browser/resources/pdf/pdf_viewer.ts
+@@ -89,6 +89,8 @@ enum PostMessageDataType {
+   GET_SELECTED_TEXT = 0,
+   PRINT = 1,
+   SELECT_ALL = 2,
++  ZOOM = 3,
++  GO_TO_PAGE = 4,
+ }
+ 
+ interface EmailMessageData {
+@@ -913,6 +915,27 @@ export class PdfViewerElement extends PdfViewerBaseElement {
+         messageType = PostMessageDataType.SELECT_ALL;
+         this.pluginController_.selectAll();
+         break;
++      case 'zoom':
++        messageType = PostMessageDataType.ZOOM;
++        const zoomData = message.data.zoom.toString();
++        if (zoomData == 'fitToPage')
++          this.viewport.fitToPage();
++        else if (zoomData == 'fitToWidth')
++          this.viewport.fitToWidth();
++        else {
++          var zoomValue = parseFloat(zoomData);
++          if (!isNaN(zoomValue)) {
++            this.viewport.setZoom(zoomValue);
++          }
++        }
++        break;
++      case 'goToPage':
++        messageType = PostMessageDataType.GO_TO_PAGE;
++        var pageValue = parseInt(message.data.page.toString());
++        if (!isNaN(pageValue)) {
++          this.viewport.goToPage(pageValue);
++        }
++        break;
+       default:
+         return false;
+     }
+@@ -940,6 +963,10 @@ export class PdfViewerElement extends PdfViewerBaseElement {
+         return;
+       case 'documentDimensions':
+         this.setDocumentDimensions(convertDocumentDimensionsMessage(data));
++        this.sendScriptingMessage({
++          type: 'documentDimensionsChanged',
++          pageCount: this.documentDimensions?.pageDimensions.length
++        });
+         return;
+       case 'documentFocusChanged':
+         const hasFocusData = data as unknown as {hasFocus: boolean};
+diff --git chrome/browser/resources/pdf/pdf_viewer_base.ts chrome/browser/resources/pdf/pdf_viewer_base.ts
+index 10f5be7ef50af..fa50170ad7f9e 100644
+--- chrome/browser/resources/pdf/pdf_viewer_base.ts
++++ chrome/browser/resources/pdf/pdf_viewer_base.ts
+@@ -227,9 +227,11 @@ export abstract class PdfViewerBaseElement extends CrLitElement {
+         (zoom: number) => this.zoomManager_!.onBrowserZoomChange(zoom));
+ 
+     // Request translated strings.
+-    chrome.resourcesPrivate.getStrings(
+-        chrome.resourcesPrivate.Component.PDF,
+-        strings => this.handleStrings(strings));
++    if (chrome.resourcesPrivate) {
++      chrome.resourcesPrivate.getStrings(
++          chrome.resourcesPrivate.Component.PDF,
++          strings => this.handleStrings(strings));
++    }
+   }
+ 
+   /**
+@@ -303,6 +305,7 @@ export abstract class PdfViewerBaseElement extends CrLitElement {
+       pageWidth: visiblePageDimensions.width,
+       viewportWidth: size.width,
+       viewportHeight: size.height,
++      firstPage: visiblePage
+     });
+   }
+ 
+@@ -502,7 +505,8 @@ export abstract class PdfViewerBaseElement extends CrLitElement {
+         targetOrigin = this.parentOrigin_;
+       } else if (
+           message.type === 'documentLoaded' ||
+-          message.type === 'passwordPrompted') {
++          message.type === 'passwordPrompted' ||
++          this.parentOrigin_ === 'chrome://print') {
+         targetOrigin = '*';
+       } else {
+         targetOrigin = this.originalUrl;
+diff --git chrome/browser/resources/pdf/viewport.ts chrome/browser/resources/pdf/viewport.ts
+index dc1ed59896437..354d96eac5019 100644
+--- chrome/browser/resources/pdf/viewport.ts
++++ chrome/browser/resources/pdf/viewport.ts
+@@ -924,7 +924,7 @@ export class Viewport {
+     let zoomHeight: number|null = null;
+ 
+     if (fitWidth) {
+-      zoomWidth = windowWidth / pageWidth;
++      zoomWidth = (windowWidth - 1) / pageWidth;
+     }
+ 
+     if (fitHeight) {
+diff --git tools/metrics/histograms/metadata/pdf/enums.xml tools/metrics/histograms/metadata/pdf/enums.xml
+index 673aa593ec789..e004d6e265ee2 100644
+--- tools/metrics/histograms/metadata/pdf/enums.xml
++++ tools/metrics/histograms/metadata/pdf/enums.xml
+@@ -243,6 +243,8 @@ chromium-metrics-reviews@google.com.
+   <int value="0" label="getSelectedText"/>
+   <int value="1" label="print"/>
+   <int value="2" label="selectAll"/>
++  <int value="3" label="zoom"/>
++  <int value="4" label="goToPage"/>
+ </enum>
+ 
+ <enum name="PDFVersion">
