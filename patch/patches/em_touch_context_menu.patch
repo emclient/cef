@@ -1,0 +1,13 @@
+diff --git third_party/blink/renderer/core/frame/web_local_frame_impl.cc third_party/blink/renderer/core/frame/web_local_frame_impl.cc
+index 3440c2ffbb8b3..b881ec0953052 100644
+--- third_party/blink/renderer/core/frame/web_local_frame_impl.cc
++++ third_party/blink/renderer/core/frame/web_local_frame_impl.cc
+@@ -3060,6 +3060,8 @@ void WebLocalFrameImpl::ShowContextMenu(
+     mojo::PendingAssociatedRemote<mojom::blink::ContextMenuClient> client,
+     const blink::ContextMenuData& data,
+     const std::optional<gfx::Point>& host_context_menu_location) {
++  if (data.source_type == blink::kMenuSourceLongTap)
++    return;
+   UntrustworthyContextMenuParams params =
+       blink::ContextMenuParamsBuilder::Build(data);
+   if (host_context_menu_location.has_value()) {
