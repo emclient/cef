@@ -27,6 +27,8 @@ void SetDefaultPrefs(blink::web_pref::WebPreferences& web) {
       command_line->HasSwitch(switches::kImageShrinkStandaloneToFit);
   web.text_areas_are_resizable =
       !command_line->HasSwitch(switches::kDisableTextAreaResize);
+  web.caret_width =
+      (float)atof(command_line->GetSwitchValueASCII(switches::kCaretWidth).c_str());
 }
 
 // Helper macro for setting a WebPreferences variable based on the value of a
