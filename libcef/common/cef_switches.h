@@ -53,6 +53,7 @@ extern const char kDevToolsProtocolLogFile[];
 extern const char kDisableChromeLoginPrompt[];
 extern const char kUserAgentProductAndVersion[];
 extern const char kDisableRequestHandlingForTesting[];
+extern const char kCaretWidth[];
 
 #if BUILDFLAG(IS_MAC)
 extern const char kFrameworkDirPath[];
