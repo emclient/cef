@@ -1,0 +1,17 @@
+diff --git third_party/blink/renderer/core/editing/commands/apply_style_command.cc third_party/blink/renderer/core/editing/commands/apply_style_command.cc
+index 917382b95ae7b..c9e75d412ca18 100644
+--- third_party/blink/renderer/core/editing/commands/apply_style_command.cc
++++ third_party/blink/renderer/core/editing/commands/apply_style_command.cc
+@@ -1177,9 +1177,10 @@ bool ApplyStyleCommand::RemoveInlineStyleFromElement(
+   if (IsStyledInlineElementToRemove(element)) {
+     if (mode == kRemoveNone)
+       return true;
+-    if (extracted_style)
++    // do not apply the style to children if we want to remove it
++    /*if (extracted_style)
+       extracted_style->MergeInlineStyleOfElement(element,
+-                                                 EditingStyle::kOverrideValues);
++                                                 EditingStyle::kOverrideValues);*/
+     RemoveNodePreservingChildren(element, editing_state);
+     if (editing_state->IsAborted())
+       return false;
