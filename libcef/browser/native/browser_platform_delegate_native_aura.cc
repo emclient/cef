@@ -22,7 +22,9 @@ CefBrowserPlatformDelegateNativeAura::CefBrowserPlatformDelegateNativeAura(
 
 void CefBrowserPlatformDelegateNativeAura::InstallRootWindowBoundsCallback() {
   auto* host_view = GetHostView();
-  CHECK(host_view);
+  if (!host_view) {
+    return;
+  }
 
   host_view->SetRootWindowBoundsCallback(base::BindRepeating(
       [](base::WeakPtr<CefBrowserPlatformDelegateNativeAura> self) {
