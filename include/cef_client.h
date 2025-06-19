@@ -58,6 +58,7 @@
 #include "include/cef_process_message.h"
 #include "include/cef_render_handler.h"
 #include "include/cef_request_handler.h"
+#include "include/cef_spellcheck_handler.h"
 
 ///
 /// Implement this interface to provide handler implementations.
@@ -197,6 +198,17 @@ class CefClient : public virtual CefBaseRefCounted {
                                         CefRefPtr<CefProcessMessage> message) {
     return false;
   }
+
+#if CEF_API_ADDED(CEF_NEXT)
+  ///
+  /// Return the handler for spell checker. This method is called on the main
+  /// thread in the browser process.
+  ///
+  /*--cef(added=next)--*/
+  virtual CefRefPtr<CefSpellCheckHandler> GetSpellCheckHandler() {
+    return nullptr;
+  }
+#endif
 };
 
 #endif  // CEF_INCLUDE_CEF_CLIENT_H_
