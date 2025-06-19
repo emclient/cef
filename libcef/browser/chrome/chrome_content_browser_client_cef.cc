@@ -24,6 +24,7 @@
 #include "cef/libcef/browser/net_service/resource_request_handler_wrapper.h"
 #include "cef/libcef/browser/prefs/browser_prefs.h"
 #include "cef/libcef/browser/prefs/renderer_prefs.h"
+#include "cef/libcef/browser/spell_check_host_impl.h"
 #include "cef/libcef/browser/x509_certificate_impl.h"
 #include "cef/libcef/common/app_manager.h"
 #include "cef/libcef/common/cef_switches.h"
@@ -42,6 +43,7 @@
 #include "content/public/browser/render_widget_host_view.h"
 #include "content/public/browser/weak_document_ptr.h"
 #include "content/public/common/content_switches.h"
+#include "mojo/public/cpp/bindings/self_owned_receiver.h"
 #include "net/ssl/ssl_cert_request_info.h"
 #include "net/ssl/ssl_private_key.h"
 #include "third_party/blink/public/common/web_preferences/web_preferences.h"
@@ -669,6 +671,19 @@ void ChromeContentBrowserClientCef::RegisterBrowserInterfaceBindersForFrame(
 
   CefBrowserFrame::RegisterBrowserInterfaceBindersForFrame(render_frame_host,
                                                            map);
+
+//#if BUILDFLAG(ENABLE_SPELLCHECK)
+  auto create_spellcheck_host =
+      [](content::RenderFrameHost* render_frame_host,
+        mojo::PendingReceiver<spellcheck::mojom::SpellCheckHost> receiver) {
+        auto client = CefBrowserHostBase::GetBrowserForHost(render_frame_host)->GetClient();
+        mojo::MakeSelfOwnedReceiver(std::make_unique<CefSpellCheckHostImpl>(client),
+                                    std::move(receiver));
+      };
+  map->Add<spellcheck::mojom::SpellCheckHost>(
+      base::BindRepeating(create_spellcheck_host),
+      content::GetUIThreadTaskRunner({}));
+//#endif
 }
 
 std::unique_ptr<content::WebContentsViewDelegate>
