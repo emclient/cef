@@ -893,6 +893,10 @@ if options.clientdistrib or options.clientdistribonly:
 # CEF branch.
 cef_branch = options.branch
 
+cef_branch_raw = cef_branch
+if cef_branch.startswith("em-"):
+  cef_branch = cef_branch[3:]
+
 branch_is_master = (cef_branch == 'master' or cef_branch == 'trunk')
 if not branch_is_master:
   # Verify that the branch value is numeric.
@@ -1059,7 +1063,7 @@ if not options.nocefupdate and os.path.exists(cef_dir):
         'Requested CEF checkout URL %s does not match existing URL %s' %
         (cef_url, cef_existing_url))
 
-msg("CEF Branch: %s" % (cef_branch))
+msg("CEF Branch: %s" % (cef_branch_raw))
 msg("CEF URL: %s" % (cef_url))
 msg("CEF Source Directory: %s" % (cef_dir))
 
@@ -1069,7 +1073,7 @@ if options.checkout == '':
   if branch_is_master:
     cef_checkout = 'origin/master'
   else:
-    cef_checkout = 'origin/' + cef_branch
+    cef_checkout = 'origin/' + cef_branch_raw
 else:
   cef_checkout = options.checkout
 
@@ -1127,7 +1131,7 @@ os.environ['DEPOT_TOOLS_UPDATE'] = '0'
 # Manage the out directory.
 ##
 
-out_dir = os.path.join(download_dir, 'out_' + cef_branch)
+out_dir = os.path.join(download_dir, 'out_' + cef_branch_raw)
 
 # Delete the existing out directory if requested.
 if options.forceclean and os.path.exists(out_dir):
@@ -1244,7 +1248,7 @@ if options.forceclean and os.path.exists(out_src_dir):
 if os.path.exists(out_src_dir):
   old_branch = read_branch_config_file(out_src_dir)
   if old_branch != '' and (chromium_checkout_changed or
-                           old_branch != cef_branch):
+                           old_branch != cef_branch_raw):
     old_out_dir = os.path.join(download_dir, 'out_' + old_branch)
     move_directory(out_src_dir, old_out_dir)
 
@@ -1298,7 +1302,7 @@ elif not out_src_dir_exists:
   create_directory(out_src_dir)
 
 # Write the config file for identifying the branch.
-write_branch_config_file(out_src_dir, cef_branch)
+write_branch_config_file(out_src_dir, cef_branch_raw)
 
 if options.logchromiumchanges and chromium_checkout != chromium_compat_version:
   log_chromium_changes()
@@ -1374,7 +1378,7 @@ if not options.nobuild and (chromium_checkout_changed or \
     msg(args_path + ' contents:\n' + read_file(args_path))
 
     run(command + build_path + target, chromium_src_dir, depot_tools_dir,
-        os.path.join(download_dir, 'build-%s-debug.log' % (cef_branch)) \
+        os.path.join(download_dir, 'build-%s-debug.log' % (cef_branch_raw)) \
           if options.buildlogfile else None)
 
     if platform in sandbox_lib_platforms:
@@ -1385,7 +1389,7 @@ if not options.nobuild and (chromium_checkout_changed or \
         msg(args_path + ' contents:\n' + read_file(args_path))
 
         run(command + build_path + ' cef_sandbox', chromium_src_dir, depot_tools_dir,
-            os.path.join(download_dir, 'build-%s-debug-sandbox.log' % (cef_branch)) \
+            os.path.join(download_dir, 'build-%s-debug-sandbox.log' % (cef_branch_raw)) \
               if options.buildlogfile else None)
 
   # Make a CEF Release build.
@@ -1395,7 +1399,7 @@ if not options.nobuild and (chromium_checkout_changed or \
     msg(args_path + ' contents:\n' + read_file(args_path))
 
     run(command + build_path + target, chromium_src_dir, depot_tools_dir,
-        os.path.join(download_dir, 'build-%s-release.log' % (cef_branch)) \
+        os.path.join(download_dir, 'build-%s-release.log' % (cef_branch_raw)) \
           if options.buildlogfile else None)
 
     if platform in sandbox_lib_platforms:
@@ -1406,7 +1410,7 @@ if not options.nobuild and (chromium_checkout_changed or \
         msg(args_path + ' contents:\n' + read_file(args_path))
 
         run(command + build_path + ' cef_sandbox', chromium_src_dir, depot_tools_dir,
-            os.path.join(download_dir, 'build-%s-release-sandbox.log' % (cef_branch)) \
+            os.path.join(download_dir, 'build-%s-release-sandbox.log' % (cef_branch_raw)) \
               if options.buildlogfile else None)
 
 elif not options.nobuild:
