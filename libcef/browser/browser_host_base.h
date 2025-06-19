@@ -244,6 +244,7 @@ class CefBrowserHostBase : public CefBrowserHost,
   bool HasDevTools() override;
   void ReplaceMisspelling(const CefString& word) override;
   void AddWordToDictionary(const CefString& word) override;
+  void RecheckSpelling() override;
   void SendKeyEvent(const CefKeyEvent& event) override;
   void SendMouseClickEvent(const CefMouseEvent& event,
                            MouseButtonType type,
