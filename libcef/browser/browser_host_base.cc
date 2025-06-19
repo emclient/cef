@@ -928,6 +928,29 @@ void CefBrowserHostBase::AddWordToDictionary(const CefString& word) {
 #endif
 }
 
+void CefBrowserHostBase::RecheckSpelling() {
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    CEF_POST_TASK(CEF_UIT, base::BindOnce(&CefBrowserHostBase::RecheckSpelling, this));
+    return;
+  }
+
+  auto web_contents = GetWebContents();
+  if (!web_contents) {
+    return;
+  }
+
+  // Clear the cache and force recheck by sending a dummy custom dictionary
+  // change.
+  content::BrowserContext* browser_context = web_contents->GetBrowserContext();
+  if (browser_context) {
+    auto spellcheck = SpellcheckServiceFactory::GetForContext(browser_context);
+    if (spellcheck) {
+      SpellcheckCustomDictionary::Change dummy_change;
+      spellcheck->OnCustomDictionaryChanged(dummy_change);
+    }
+  }
+}
+
 void CefBrowserHostBase::SendKeyEvent(const CefKeyEvent& event) {
   if (!CEF_CURRENTLY_ON_UIT()) {
     CEF_POST_TASK(CEF_UIT, base::BindOnce(&CefBrowserHostBase::SendKeyEvent,
