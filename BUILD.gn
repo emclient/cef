@@ -697,6 +697,8 @@ source_set("libcef_static") {
     "libcef/browser/setting_helper.h",
     "libcef/browser/simple_menu_model_impl.cc",
     "libcef/browser/simple_menu_model_impl.h",
+    "libcef/browser/spell_check_host_impl.cc",
+    "libcef/browser/spell_check_host_impl.h",
     "libcef/browser/ssl_info_impl.cc",
     "libcef/browser/ssl_info_impl.h",
     "libcef/browser/ssl_status_impl.cc",
