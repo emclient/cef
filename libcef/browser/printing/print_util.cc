@@ -129,9 +129,12 @@ void PrintToPDF(content::WebContents* web_contents,
 
   if (auto* print_manager =
           printing::PrintViewManager::FromWebContents(web_contents)) {
+    std::get<printing::mojom::PrintPagesParamsPtr>(print_pages_params)->
+      params->selection_only = !!settings.selection_only;
+
     print_manager->PrintToPdf(
         web_contents->GetPrimaryMainFrame(), CefString(&settings.page_ranges),
-        std::move(absl::get<printing::mojom::PrintPagesParamsPtr>(
+        std::move(std::get<printing::mojom::PrintPagesParamsPtr>(
             print_pages_params)),
         base::BindOnce(&OnPDFCreated, path, callback));
     return;
