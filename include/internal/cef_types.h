@@ -2932,6 +2932,13 @@ typedef struct _cef_pdf_print_settings_t {
   /// Set to true (1) to generate a document outline.
   ///
   int generate_document_outline;
+
+#if CEF_API_ADDED(CEF_NEXT)
+  ///
+  /// Set to true (1) to print the selection only or false (0) to print all.
+  ///
+  int selection_only;
+#endif
 } cef_pdf_print_settings_t;
 
 ///
