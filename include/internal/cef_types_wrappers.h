@@ -713,6 +713,7 @@ struct CefPdfPrintSettingsTraits {
 
     target->generate_tagged_pdf = src->generate_tagged_pdf;
     target->generate_document_outline = src->generate_document_outline;
+    target->selection_only = src->selection_only;
   }
 };
 
