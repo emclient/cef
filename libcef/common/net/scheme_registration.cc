@@ -21,7 +21,7 @@ bool IsInternalHandledScheme(const std::string& scheme) {
       content::kChromeUIUntrustedScheme,
       url::kDataScheme,
       extensions::kExtensionScheme,
-      // url::kFileScheme,
+      url::kFileScheme,
       url::kFileSystemScheme,
       url::kHttpScheme,
       url::kHttpsScheme,
