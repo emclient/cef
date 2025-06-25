@@ -1,17 +1,18 @@
 diff --git chrome/browser/resources/pdf/pdf_viewer.ts chrome/browser/resources/pdf/pdf_viewer.ts
-index 087c90555657d..d2e906a94befb 100644
+index 087c90555657d..53b52b4e5af8d 100644
 --- chrome/browser/resources/pdf/pdf_viewer.ts
 +++ chrome/browser/resources/pdf/pdf_viewer.ts
-@@ -89,6 +89,8 @@ enum PostMessageDataType {
+@@ -89,6 +89,9 @@ enum PostMessageDataType {
    GET_SELECTED_TEXT = 0,
    PRINT = 1,
    SELECT_ALL = 2,
 +  ZOOM = 3,
 +  GO_TO_PAGE = 4,
++  INSERT_STYLE = 5,
  }
  
  interface EmailMessageData {
-@@ -913,6 +915,27 @@ export class PdfViewerElement extends PdfViewerBaseElement {
+@@ -913,6 +916,40 @@ export class PdfViewerElement extends PdfViewerBaseElement {
          messageType = PostMessageDataType.SELECT_ALL;
          this.pluginController_.selectAll();
          break;
@@ -36,10 +37,23 @@ index 087c90555657d..d2e906a94befb 100644
 +          this.viewport.goToPage(pageValue);
 +        }
 +        break;
++      case 'insertStyle':
++        messageType = PostMessageDataType.INSERT_STYLE;
++        var styleEl : HTMLStyleElement | null;
++        if (message.data.id && message.data.style) {
++          styleEl = document.querySelector("style[id='" + message.data.id + "']");
++          if (!styleEl) {
++            styleEl = document.createElement("style");
++            styleEl.id = message.data.id;
++            document.head.appendChild(styleEl);
++          }
++          styleEl.textContent = message.data.style;
++        }
++        break;
        default:
          return false;
      }
-@@ -940,6 +963,10 @@ export class PdfViewerElement extends PdfViewerBaseElement {
+@@ -940,6 +977,10 @@ export class PdfViewerElement extends PdfViewerBaseElement {
          return;
        case 'documentDimensions':
          this.setDocumentDimensions(convertDocumentDimensionsMessage(data));
@@ -101,15 +115,16 @@ index dc1ed59896437..354d96eac5019 100644
  
      if (fitHeight) {
 diff --git tools/metrics/histograms/metadata/pdf/enums.xml tools/metrics/histograms/metadata/pdf/enums.xml
-index 673aa593ec789..e004d6e265ee2 100644
+index 2c54adde30779..ab2c9368be13f 100644
 --- tools/metrics/histograms/metadata/pdf/enums.xml
 +++ tools/metrics/histograms/metadata/pdf/enums.xml
-@@ -243,6 +243,8 @@ chromium-metrics-reviews@google.com.
+@@ -257,6 +257,9 @@ chromium-metrics-reviews@google.com.
    <int value="0" label="getSelectedText"/>
    <int value="1" label="print"/>
    <int value="2" label="selectAll"/>
 +  <int value="3" label="zoom"/>
 +  <int value="4" label="goToPage"/>
++  <int value="5" label="insertStyle"/>
  </enum>
  
  <enum name="PDFVersion">
