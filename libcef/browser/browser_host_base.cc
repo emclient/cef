@@ -612,6 +612,23 @@ void CefBrowserHostBase::Print() {
   print_util::Print(web_contents, print_preview_disabled);
 }
 
+void CefBrowserHostBase::PrintWithSettings(CefRefPtr<CefDictionaryValue> job_settings,
+                                           CefRefPtr<CefPrintCallback> callback) {
+  if (!CEF_CURRENTLY_ON_UIT()) {
+    CEF_POST_TASK(CEF_UIT, base::BindOnce(&CefBrowserHostBase::PrintWithSettings, this,
+                                          job_settings, callback));
+    return;
+  }
+
+  auto web_contents = GetWebContents();
+  if (!web_contents) {
+    return;
+  }
+
+  print_util::PrintWithSettings(web_contents, job_settings, callback);
+}
+
+
 void CefBrowserHostBase::PrintToPDF(const CefString& path,
                                     const CefPdfPrintSettings& settings,
                                     CefRefPtr<CefPdfPrintCallback> callback) {
