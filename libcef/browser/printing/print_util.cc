@@ -46,12 +46,43 @@ void OnPDFCreated(const CefString& path,
       base::BindOnce(&SavePdfFile, path, callback, std::move(data)));
 }
 
+/*void OnPrintFinished(CefRefPtr<CefPrintCallback> callback,
+                     bool success) {
+  callback->OnPrintFinished(success);
+}*/
+
 }  // namespace
 
 void Print(content::WebContents* web_contents, bool print_preview_disabled) {
   // Like chrome::Print() but specifying the WebContents.
   printing::StartPrint(web_contents, print_preview_disabled,
                        /*has_selection=*/false);
+}
+
+void PrintWithSettings(content::WebContents* web_contents,
+                       CefRefPtr<CefDictionaryValue> job_settings,
+                       CefRefPtr<CefPrintCallback> callback) {
+  /*
+  if (auto* print_manager =
+          printing::PrintViewManager::FromWebContents(web_contents)) {
+    std::get<printing::mojom::PrintPagesParamsPtr>(print_pages_params)->
+      params->selection_only = !!settings.selection_only;
+
+      CefDictionaryValueImpl* impl =
+        static_cast<CefDictionaryValueImpl*>(job_settings.get());
+    CefValueController::AutoLock lock_scope(impl->controller());
+
+    print_manager->PrintNow(
+        web_contents->GetPrimaryMainFrame(),
+        impl->GetValueUnsafe()->GetIfDict(),
+        base::BindOnce(&OnPrintFinished, callback));
+
+    return;
+  }
+  */
+
+  LOG(ERROR) << "PrintWithSettings was not handled.";
+  callback->OnPrintFinished(false);
 }
 
 // Implementation based on PageHandler::PrintToPDF.
