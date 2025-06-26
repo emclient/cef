@@ -233,6 +233,8 @@ class CefBrowserHostBase : public CefBrowserHost,
                      bool bypass_cache,
                      CefRefPtr<CefDownloadImageCallback> callback) override;
   void Print() override;
+  void PrintWithSettings(CefRefPtr<CefDictionaryValue> job_settings,
+                         CefRefPtr<CefPrintCallback> callback) override;
   void PrintToPDF(const CefString& path,
                   const CefPdfPrintSettings& settings,
                   CefRefPtr<CefPdfPrintCallback> callback) override;

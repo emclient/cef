@@ -6,6 +6,7 @@
 
 #include "base/files/file_util.h"
 #include "cef/libcef/browser/thread_util.h"
+#include "cef/libcef/common/values_impl.h"
 #include "chrome/browser/printing/print_view_manager.h"
 #include "chrome/browser/printing/print_view_manager_common.h"
 #include "components/printing/browser/print_to_pdf/pdf_print_utils.h"
@@ -46,12 +47,43 @@ void OnPDFCreated(const CefString& path,
       base::BindOnce(&SavePdfFile, path, callback, std::move(data)));
 }
 
+void OnPrintFinished(CefRefPtr<CefPrintCallback> callback,
+                     bool success) {
+  callback->OnPrintFinished(success);
+}
+
 }  // namespace
 
 void Print(content::WebContents* web_contents, bool print_preview_disabled) {
   // Like chrome::Print() but specifying the WebContents.
   printing::StartPrint(web_contents, print_preview_disabled,
                        /*has_selection=*/false);
+}
+
+void PrintWithSettings(content::WebContents* web_contents,
+                       CefRefPtr<CefDictionaryValue> job_settings,
+                       CefRefPtr<CefPrintCallback> callback) {
+  auto rfh_to_use = printing::GetRenderFrameHostToUse(web_contents);
+
+  if (rfh_to_use) {
+    auto* print_manager = printing::PrintViewManager::FromWebContents(
+        content::WebContents::FromRenderFrameHost(rfh_to_use));
+
+    if (print_manager) {
+      CefDictionaryValueImpl* impl =
+          static_cast<CefDictionaryValueImpl*>(job_settings.get());
+
+      print_manager->PrintNow(
+          rfh_to_use,
+          std::move(*impl->CopyValue().GetIfDict()),
+          base::BindOnce(&OnPrintFinished, callback));
+
+      return;
+    }
+  }
+
+  LOG(ERROR) << "PrintWithSettings was not handled.";
+  callback->OnPrintFinished(false);
 }
 
 // Implementation based on PageHandler::PrintToPDF.

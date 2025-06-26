@@ -17,6 +17,11 @@ namespace print_util {
 // Called from CefBrowserHostBase::Print.
 void Print(content::WebContents* web_contents, bool print_preview_disabled);
 
+// Called from CefBrowserHostBase::PrintWithSettings.
+void PrintWithSettings(content::WebContents* web_contents,
+                       CefRefPtr<CefDictionaryValue> job_settings,
+                       CefRefPtr<CefPrintCallback> callback);
+
 // Called from CefBrowserHostBase::PrintToPDF.
 void PrintToPDF(content::WebContents* web_contents,
                 const CefString& path,
