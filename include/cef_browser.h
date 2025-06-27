@@ -557,7 +557,7 @@ class CefBrowserHost : public virtual CefBaseRefCounted {
   ///
   /// Print the current browser contents.
   ///
-  /*--cef(added=next)--*/
+  /*--cef(added=next,optional_param=callback)--*/
   virtual void PrintWithSettings(CefRefPtr<CefDictionaryValue> job_settings,
                                  CefRefPtr<CefPrintCallback> callback) = 0;
 #endif
