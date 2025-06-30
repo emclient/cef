@@ -1,0 +1,61 @@
+diff --git chrome/browser/resources/pdf/open_pdf_params_parser.ts chrome/browser/resources/pdf/open_pdf_params_parser.ts
+index 360f548a09e95..8e4fd0e3f735d 100644
+--- chrome/browser/resources/pdf/open_pdf_params_parser.ts
++++ chrome/browser/resources/pdf/open_pdf_params_parser.ts
+@@ -308,6 +308,21 @@ export class OpenPdfParamsParser {
+     return navpanes === '1';
+   }
+ 
++  /**
++   * @param url that needs to be parsed.
++   * @return Whether the toolbar UI element should be shown.
++   */
++  getBackgroundColorOverride(url: string): number | null {
++    const urlParams = this.parseUrlParams_(url);
++    const backgroundColor = urlParams.get('background-color');
++
++    if (backgroundColor === null) {
++      return null;
++    }
++
++    return parseInt(backgroundColor);
++  }
++
+   /**
+    * Fetch text fragment directives that appear in the PDF URL if any.
+    *
+diff --git chrome/browser/resources/pdf/pdf_viewer.ts chrome/browser/resources/pdf/pdf_viewer.ts
+index 70b818cb9b552..6513a718e23df 100644
+--- chrome/browser/resources/pdf/pdf_viewer.ts
++++ chrome/browser/resources/pdf/pdf_viewer.ts
+@@ -312,6 +312,7 @@ export class PdfViewerElement extends PdfViewerBaseElement {
+   // </if>
+   protected accessor viewportZoom_: number = 1;
+   protected accessor zoomBounds_: ZoomBounds = {min: 0, max: 0};
++  protected backgroundColorOverride_: number | null = null;
+   private hasSearchifyText_: boolean = false;
+ 
+   // <if expr="enable_ink">
+@@ -377,6 +378,9 @@ export class PdfViewerElement extends PdfViewerBaseElement {
+   // </if> enable_ink or enable_pdf_ink2
+ 
+   getBackgroundColor(): number {
++    if (this.backgroundColorOverride_ !== null) {
++      return this.backgroundColorOverride_;
++    }
+     return BACKGROUND_COLOR;
+   }
+ 
+@@ -432,6 +436,12 @@ export class PdfViewerElement extends PdfViewerBaseElement {
+       // immediately.
+       window.focus();
+     }
++
++    this.backgroundColorOverride_ = this.paramsParser.getBackgroundColorOverride(
++        this.originalUrl);
++    if (this.backgroundColorOverride_ !== null) {
++      this.pluginController_.setBackgroundColor(this.backgroundColorOverride_);
++    }
+   }
+ 
+   handleKeyEvent(e: KeyboardEvent) {
