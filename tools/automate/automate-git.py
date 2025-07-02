@@ -1150,6 +1150,7 @@ if not os.path.exists(gclient_file) or options.forceconfig:
         "'url': '" + chromium_url + "', "+\
         "'custom_vars': {"+\
           "'checkout_pgo_profiles': " + ('True' if options.withpgoprofiles else 'False') + ", "+\
+          "'siso_version': 'git_revision:4ac6aa83563aed91e78947b2b466eb6d49d51a21', "+\
         "}, "+\
         "'custom_deps': {"+\
           "'build': None, "+\
