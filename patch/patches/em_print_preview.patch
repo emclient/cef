@@ -1,8 +1,51 @@
+diff --git chrome/browser/resources/pdf/controller.ts chrome/browser/resources/pdf/controller.ts
+index b30eb710e0540..082568a749e67 100644
+--- chrome/browser/resources/pdf/controller.ts
++++ chrome/browser/resources/pdf/controller.ts
+@@ -464,6 +464,14 @@ export class PluginController implements ContentController {
+     });
+   }
+ 
++  insertStyle(id: string, style: string) {
++    this.postMessage_({
++      type: 'insertStyle',
++      id: id,
++      style: style
++    });
++  }
++
+   save(requestType: SaveRequestType) {
+     const resolver =
+         new PromiseResolver<{fileName: string, dataToSave: ArrayBuffer}|null>();
+diff --git chrome/browser/resources/pdf/pdf_internal_plugin_wrapper.ts chrome/browser/resources/pdf/pdf_internal_plugin_wrapper.ts
+index 1b3f68d37c1ef..f4fb4088a3b7f 100644
+--- chrome/browser/resources/pdf/pdf_internal_plugin_wrapper.ts
++++ chrome/browser/resources/pdf/pdf_internal_plugin_wrapper.ts
+@@ -107,6 +107,19 @@ channel.port1.onmessage = e => {
+         }
+       }
+       break;
++
++    case 'insertStyle':
++      var styleEl : HTMLStyleElement | null;
++      if (e.data.id && e.data.style) {
++        styleEl = document.querySelector("style[id='" + e.data.id + "']");
++        if (!styleEl) {
++          styleEl = document.createElement("style");
++          styleEl.id = e.data.id;
++          document.head.appendChild(styleEl);
++        }
++        styleEl.textContent = e.data.style;
++      }
++      return;
+   }
+ 
+   plugin.postMessage(e.data);
 diff --git chrome/browser/resources/pdf/pdf_viewer.ts chrome/browser/resources/pdf/pdf_viewer.ts
-index 087c90555657d..53b52b4e5af8d 100644
+index 0c87709097988..b823872e4f48a 100644
 --- chrome/browser/resources/pdf/pdf_viewer.ts
 +++ chrome/browser/resources/pdf/pdf_viewer.ts
-@@ -89,6 +89,9 @@ enum PostMessageDataType {
+@@ -92,6 +92,9 @@ enum PostMessageDataType {
    GET_SELECTED_TEXT = 0,
    PRINT = 1,
    SELECT_ALL = 2,
@@ -12,7 +55,7 @@ index 087c90555657d..53b52b4e5af8d 100644
  }
  
  interface EmailMessageData {
-@@ -913,6 +916,40 @@ export class PdfViewerElement extends PdfViewerBaseElement {
+@@ -935,6 +938,33 @@ export class PdfViewerElement extends PdfViewerBaseElement {
          messageType = PostMessageDataType.SELECT_ALL;
          this.pluginController_.selectAll();
          break;
@@ -39,21 +82,14 @@ index 087c90555657d..53b52b4e5af8d 100644
 +        break;
 +      case 'insertStyle':
 +        messageType = PostMessageDataType.INSERT_STYLE;
-+        var styleEl : HTMLStyleElement | null;
 +        if (message.data.id && message.data.style) {
-+          styleEl = document.querySelector("style[id='" + message.data.id + "']");
-+          if (!styleEl) {
-+            styleEl = document.createElement("style");
-+            styleEl.id = message.data.id;
-+            document.head.appendChild(styleEl);
-+          }
-+          styleEl.textContent = message.data.style;
++          this.pluginController_.insertStyle(message.data.id, message.data.style);
 +        }
 +        break;
        default:
          return false;
      }
-@@ -940,6 +977,10 @@ export class PdfViewerElement extends PdfViewerBaseElement {
+@@ -962,6 +992,10 @@ export class PdfViewerElement extends PdfViewerBaseElement {
          return;
        case 'documentDimensions':
          this.setDocumentDimensions(convertDocumentDimensionsMessage(data));
@@ -102,10 +138,10 @@ index 10f5be7ef50af..fa50170ad7f9e 100644
        } else {
          targetOrigin = this.originalUrl;
 diff --git chrome/browser/resources/pdf/viewport.ts chrome/browser/resources/pdf/viewport.ts
-index dc1ed59896437..354d96eac5019 100644
+index b2d496089211c..818548260cccf 100644
 --- chrome/browser/resources/pdf/viewport.ts
 +++ chrome/browser/resources/pdf/viewport.ts
-@@ -924,7 +924,7 @@ export class Viewport {
+@@ -1056,7 +1056,7 @@ export class Viewport {
      let zoomHeight: number|null = null;
  
      if (fitWidth) {
