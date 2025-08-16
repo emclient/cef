@@ -31,7 +31,7 @@ void CefWindowDelegateView::Init(gfx::AcceleratedWidget parent_widget,
   web_view_->SetWebContents(web_contents);
   web_view_->SetPreferredSize(bounds.size());
 
-  SetCanResize(true);
+  // SetCanResize(true);
 
   views::Widget* widget = new views::Widget;
 
