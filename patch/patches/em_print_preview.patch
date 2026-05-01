@@ -1,0 +1,166 @@
+diff --git chrome/browser/resources/pdf/controller.ts chrome/browser/resources/pdf/controller.ts
+index 22a6126e84b3c3ffa3fb2bffd7d449ad9360b5ae..fb57419c72de7f95a6d956d851d818912a8fff2c 100644
+--- chrome/browser/resources/pdf/controller.ts
++++ chrome/browser/resources/pdf/controller.ts
+@@ -466,6 +466,14 @@ export class PluginController implements ContentController {
+     });
+   }
+ 
++  insertStyle(id: string, style: string) {
++    this.postMessage_({
++      type: 'insertStyle',
++      id: id,
++      style: style
++    });
++  }
++
+   save(requestType: SaveRequestType) {
+     const resolver =
+         new PromiseResolver<{fileName: string, dataToSave: ArrayBuffer}|null>();
+diff --git chrome/browser/resources/pdf/pdf_internal_plugin_wrapper.ts chrome/browser/resources/pdf/pdf_internal_plugin_wrapper.ts
+index 4871cba750e7fd07a55daccddb21b45be2bb925e..3bc1377a48fe5ec48845fc2147d202e21a1d52b1 100644
+--- chrome/browser/resources/pdf/pdf_internal_plugin_wrapper.ts
++++ chrome/browser/resources/pdf/pdf_internal_plugin_wrapper.ts
+@@ -110,6 +110,19 @@ channel.port1.onmessage = e => {
+ 
+     default:
+       break;
++
++    case 'insertStyle':
++      var styleEl : HTMLStyleElement | null;
++      if (e.data.id && e.data.style) {
++        styleEl = document.querySelector("style[id='" + e.data.id + "']");
++        if (!styleEl) {
++          styleEl = document.createElement("style");
++          styleEl.id = e.data.id;
++          document.head.appendChild(styleEl);
++        }
++        styleEl.textContent = e.data.style;
++      }
++      return;
+   }
+ 
+   plugin.postMessage(e.data);
+diff --git chrome/browser/resources/pdf/pdf_viewer.ts chrome/browser/resources/pdf/pdf_viewer.ts
+index bf1640e5a16f3a9bee663c8ded5d3cf31c6b39a5..1dd27aae013fab6d82bbd0598199579f5d384836 100644
+--- chrome/browser/resources/pdf/pdf_viewer.ts
++++ chrome/browser/resources/pdf/pdf_viewer.ts
+@@ -105,6 +105,9 @@ enum PostMessageDataType {
+   GET_SELECTED_TEXT = 0,
+   PRINT = 1,
+   SELECT_ALL = 2,
++  ZOOM = 3,
++  GO_TO_PAGE = 4,
++  INSERT_STYLE = 5,
+ }
+ 
+ interface EmailMessageData {
+@@ -964,6 +967,33 @@ export class PdfViewerElement extends PdfViewerBaseElement {
+         messageType = PostMessageDataType.SELECT_ALL;
+         this.pluginController_.selectAll();
+         break;
++      case 'zoom':
++        messageType = PostMessageDataType.ZOOM;
++        const zoomData = message.data.zoom.toString();
++        if (zoomData == 'fitToPage')
++          this.viewport.fitToPage();
++        else if (zoomData == 'fitToWidth')
++          this.viewport.fitToWidth();
++        else {
++          var zoomValue = parseFloat(zoomData);
++          if (!isNaN(zoomValue)) {
++            this.viewport.setZoom(zoomValue);
++          }
++        }
++        break;
++      case 'goToPage':
++        messageType = PostMessageDataType.GO_TO_PAGE;
++        var pageValue = parseInt(message.data.page.toString());
++        if (!isNaN(pageValue)) {
++          this.viewport.goToPage(pageValue);
++        }
++        break;
++      case 'insertStyle':
++        messageType = PostMessageDataType.INSERT_STYLE;
++        if (message.data.id && message.data.style) {
++          this.pluginController_.insertStyle(message.data.id, message.data.style);
++        }
++        break;
+       default:
+         return false;
+     }
+@@ -991,6 +1021,10 @@ export class PdfViewerElement extends PdfViewerBaseElement {
+         return;
+       case 'documentDimensions':
+         this.setDocumentDimensions(convertDocumentDimensionsMessage(data));
++        this.sendScriptingMessage({
++          type: 'documentDimensionsChanged',
++          pageCount: this.documentDimensions?.pageDimensions.length
++        });
+         return;
+       case 'documentFocusChanged':
+         const hasFocusData = data as unknown as {hasFocus: boolean};
+diff --git chrome/browser/resources/pdf/pdf_viewer_base.ts chrome/browser/resources/pdf/pdf_viewer_base.ts
+index 99ba24df6669fb63901d91e331f3c46b4aea023b..a74b3e1507e8e7e674c5092559de2de0ccd0f879 100644
+--- chrome/browser/resources/pdf/pdf_viewer_base.ts
++++ chrome/browser/resources/pdf/pdf_viewer_base.ts
+@@ -230,9 +230,11 @@ export abstract class PdfViewerBaseElement extends HelpBubbleCrLitElementBase {
+         (zoom: number) => this.zoomManager_!.onBrowserZoomChange(zoom));
+ 
+     // Request translated strings.
+-    chrome.resourcesPrivate.getStrings(
+-        chrome.resourcesPrivate.Component.PDF,
+-        strings => this.handleStrings(strings));
++    if (chrome.resourcesPrivate) {
++      chrome.resourcesPrivate.getStrings(
++          chrome.resourcesPrivate.Component.PDF,
++          strings => this.handleStrings(strings));
++    }
+   }
+ 
+   /**
+@@ -306,6 +308,7 @@ export abstract class PdfViewerBaseElement extends HelpBubbleCrLitElementBase {
+       pageWidth: visiblePageDimensions.width,
+       viewportWidth: size.width,
+       viewportHeight: size.height,
++      firstPage: visiblePage
+     });
+   }
+ 
+@@ -505,7 +508,8 @@ export abstract class PdfViewerBaseElement extends HelpBubbleCrLitElementBase {
+         targetOrigin = this.parentOrigin_;
+       } else if (
+           message.type === 'documentLoaded' ||
+-          message.type === 'passwordPrompted') {
++          message.type === 'passwordPrompted' ||
++          this.parentOrigin_ === 'chrome://print') {
+         targetOrigin = '*';
+       } else {
+         targetOrigin = this.originalUrl;
+diff --git chrome/browser/resources/pdf/viewport.ts chrome/browser/resources/pdf/viewport.ts
+index cff9846b51770cfe868b752d7ea3c96120339b39..1d87f08020c3847c650f5eb25f8d41b034581f09 100644
+--- chrome/browser/resources/pdf/viewport.ts
++++ chrome/browser/resources/pdf/viewport.ts
+@@ -1070,7 +1070,7 @@ export class Viewport {
+     let zoomHeight: number|null = null;
+ 
+     if (fitWidth) {
+-      zoomWidth = windowWidth / pageWidth;
++      zoomWidth = (windowWidth - 1) / pageWidth;
+     }
+ 
+     if (fitHeight) {
+diff --git tools/metrics/histograms/metadata/pdf/enums.xml tools/metrics/histograms/metadata/pdf/enums.xml
+index 0c4c514fefc9daef3007b7a0d5183dcbe49ab407..f24befb9a31e9237d794446d4cb31b39f4421b89 100644
+--- tools/metrics/histograms/metadata/pdf/enums.xml
++++ tools/metrics/histograms/metadata/pdf/enums.xml
+@@ -279,6 +279,9 @@ chromium-metrics-reviews@google.com.
+   <int value="0" label="getSelectedText"/>
+   <int value="1" label="print"/>
+   <int value="2" label="selectAll"/>
++  <int value="3" label="zoom"/>
++  <int value="4" label="goToPage"/>
++  <int value="5" label="insertStyle"/>
+ </enum>
+ 
+ <!-- LINT.IfChange(PDFSaveToDriveBubbleAction) -->
