@@ -314,7 +314,7 @@ index 3b131e1fc804a55c80b3b2704686270211fcf9fb..c2a7dd560f841aaa7d4f74ea831a5758
  #include "third_party/crashpad/crashpad/client/crash_report_database.h"
  #include "third_party/crashpad/crashpad/client/crashpad_client.h"
  #include "third_party/crashpad/crashpad/client/crashpad_info.h"
-@@ -38,15 +41,22 @@ std::map<std::string, std::string> GetProcessSimpleAnnotations() {
+@@ -38,15 +41,22 @@
      std::map<std::string, std::string> process_annotations;
      @autoreleasepool {
        NSBundle* outer_bundle = base::apple::OuterBundle();
@@ -343,7 +343,7 @@ index 3b131e1fc804a55c80b3b2704686270211fcf9fb..c2a7dd560f841aaa7d4f74ea831a5758
  
  #if BUILDFLAG(GOOGLE_CHROME_BRANDING)
        // Empty means stable.
-@@ -77,12 +87,20 @@ std::map<std::string, std::string> GetProcessSimpleAnnotations() {
+@@ -77,12 +87,20 @@
          }
        }
  

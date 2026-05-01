@@ -223,7 +223,7 @@ index 6e30193b92bc8ece7c61b9d01d4574f536cceb5b..5c2c1d6cfe686defca52c757ff49651b
  #include "chrome/app/chrome_crash_reporter_client.h"
  #include "chrome/app_shim/app_shim_application.h"
  #include "chrome/app_shim/app_shim_controller.h"
-@@ -75,7 +76,9 @@ std::optional<int> AppShimMainDelegate::BasicStartupComplete() {
+@@ -75,7 +76,9 @@ void HandleBadMessage(const std::string& error) {
  }
  
  void AppShimMainDelegate::PreSandboxStartup() {
@@ -401,7 +401,7 @@ index f0ffab06679024d5d455d084d12655c5c700da88..8ba47dab473e49af8b3b7bf06422972c
  #import "chrome/browser/app_controller_mac.h"
  #include "chrome/browser/apps/app_shim/app_shim_listener.h"
  #include "chrome/browser/browser_process.h"
-@@ -155,6 +156,7 @@ int ChromeBrowserMainPartsMac::PreCreateThreads() {
+@@ -155,6 +156,7 @@
      return ret;
    }
  
@@ -409,7 +409,7 @@ index f0ffab06679024d5d455d084d12655c5c700da88..8ba47dab473e49af8b3b7bf06422972c
    // Create the app delegate by requesting the shared AppController.
    CHECK_EQ(nil, NSApp.delegate);
    AppController* app_controller = AppController.sharedController;
-@@ -165,6 +167,7 @@ int ChromeBrowserMainPartsMac::PreCreateThreads() {
+@@ -165,6 +167,7 @@
                          /*is_pwa=*/false,
                          /*is_rtl=*/base::i18n::IsRTL());
    [app_controller mainMenuCreated];
@@ -417,7 +417,7 @@ index f0ffab06679024d5d455d084d12655c5c700da88..8ba47dab473e49af8b3b7bf06422972c
  
    return content::RESULT_CODE_NORMAL_EXIT;
  }
-@@ -183,5 +186,7 @@ void ChromeBrowserMainPartsMac::PostProfileInit(Profile* profile,
+@@ -183,5 +186,7 @@
  }
  
  void ChromeBrowserMainPartsMac::DidEndMainMessageLoop() {

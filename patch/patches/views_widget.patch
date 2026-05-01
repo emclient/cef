@@ -534,7 +534,7 @@ diff --git ui/views/widget/native_widget_mac.mm ui/views/widget/native_widget_ma
 index 1bbf0c62d8dd868a22c38e0d7b510845bfcc30c3..ccc13a8a8b62ed4acde13ae4d7a98fd864a079a2 100644
 --- ui/views/widget/native_widget_mac.mm
 +++ ui/views/widget/native_widget_mac.mm
-@@ -762,6 +762,7 @@ void NativeWidgetMac::Show(ui::mojom::WindowShowState show_state,
+@@ -762,6 +762,7 @@ void OnDidChangeFocus(View* focused_before, View* focused_now) override {
        break;
      case ui::mojom::WindowShowState::kMaximized:
      case ui::mojom::WindowShowState::kFullscreen:

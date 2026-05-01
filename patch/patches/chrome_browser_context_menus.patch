@@ -139,7 +139,7 @@ diff --git chrome/browser/ui/cocoa/renderer_context_menu/render_view_context_men
 index 24afb177067748704df9a4f94927bd887c33dbbf..857df9a4ae500ded5186a83950c56202ceade126 100644
 --- chrome/browser/ui/cocoa/renderer_context_menu/render_view_context_menu_mac_cocoa.mm
 +++ chrome/browser/ui/cocoa/renderer_context_menu/render_view_context_menu_mac_cocoa.mm
-@@ -75,6 +75,10 @@ RenderViewContextMenuMacCocoa::~RenderViewContextMenuMacCocoa() {
+@@ -75,6 +75,10 @@
  }
  
  void RenderViewContextMenuMacCocoa::Show() {
@@ -150,7 +150,7 @@ index 24afb177067748704df9a4f94927bd887c33dbbf..857df9a4ae500ded5186a83950c56202
    views::Widget* widget = views::Widget::GetTopLevelWidgetForNativeView(
        source_web_contents_->GetNativeView());
  
-@@ -99,6 +103,10 @@ void RenderViewContextMenuMacCocoa::Show() {
+@@ -99,6 +103,10 @@
                        views::ElementTrackerViews::GetContextForWidget(widget));
  }
  
@@ -177,7 +177,7 @@ diff --git chrome/browser/ui/cocoa/renderer_context_menu/render_view_context_men
 index ec7a5fdef0fdf08dedb1c3932c78d485730a7a1a..ba772758fe13ebcff3935bfb53a9e97a88909225 100644
 --- chrome/browser/ui/cocoa/renderer_context_menu/render_view_context_menu_mac_remote_cocoa.mm
 +++ chrome/browser/ui/cocoa/renderer_context_menu/render_view_context_menu_mac_remote_cocoa.mm
-@@ -48,6 +48,10 @@ void RenderViewContextMenuMacRemoteCocoa::Show() {
+@@ -48,6 +48,10 @@
        target_view_id_);
  }
  
@@ -280,7 +280,7 @@ diff --git chrome/browser/ui/views/tab_contents/chrome_web_contents_view_delegat
 index d7b6c91979fdcfb754cddceb8cd3280f858269a2..cb48c85c4978afc5331dc50d836367ebd7fc5ff1 100644
 --- chrome/browser/ui/views/tab_contents/chrome_web_contents_view_delegate_views_mac.mm
 +++ chrome/browser/ui/views/tab_contents/chrome_web_contents_view_delegate_views_mac.mm
-@@ -194,6 +194,10 @@ void ChromeWebContentsViewDelegateViewsMac::ShowMenu(
+@@ -194,6 +194,10 @@
    context_menu_->Show();
  }
  

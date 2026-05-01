@@ -677,7 +677,7 @@ diff --git ui/views/controls/menu/menu_runner_impl_cocoa.mm ui/views/controls/me
 index 05322e627acabef3dd9c498b9fea4ee07cd1799a..a866a76c5037276de78ce1f1efdf9ce7d5a20553 100644
 --- ui/views/controls/menu/menu_runner_impl_cocoa.mm
 +++ ui/views/controls/menu/menu_runner_impl_cocoa.mm
-@@ -72,6 +72,7 @@ void MenuRunnerImplCocoa::RunMenuAt(
+@@ -72,6 +72,7 @@
      ui::mojom::MenuSourceType source_type,
      int32_t run_types,
      gfx::NativeView native_view_for_gestures,
@@ -726,7 +726,7 @@ diff --git ui/views/controls/menu/menu_runner_impl_mac.mm ui/views/controls/menu
 index 1b5d97c3f6b49dbd4daa6dff81e44b1e3d56e283..3da7b69d6f7d073d6a9a3812f829ee661762c7d7 100644
 --- ui/views/controls/menu/menu_runner_impl_mac.mm
 +++ ui/views/controls/menu/menu_runner_impl_mac.mm
-@@ -48,6 +48,7 @@ void MenuRunnerImplMac::RunMenuAt(
+@@ -48,6 +48,7 @@
      ui::mojom::MenuSourceType source_type,
      int32_t run_types,
      gfx::NativeView native_view_for_gestures,
@@ -734,7 +734,7 @@ index 1b5d97c3f6b49dbd4daa6dff81e44b1e3d56e283..3da7b69d6f7d073d6a9a3812f829ee66
      std::optional<gfx::RoundedCornersF> corners,
      std::optional<std::string> show_menu_host_duration_histogram) {
    if (!implementation_) {
-@@ -61,7 +62,8 @@ void MenuRunnerImplMac::RunMenuAt(
+@@ -61,7 +62,8 @@
    }
    implementation_->RunMenuAt(parent, button_controller, bounds, anchor,
                               source_type, run_types, native_view_for_gestures,
@@ -760,7 +760,7 @@ diff --git ui/views/controls/menu/menu_runner_impl_remote_cocoa.mm ui/views/cont
 index da772edd48c0029b2672e3af0a07e1e695d383e6..43c930e932287a4ee597c5c8b6a35a3e5bd30a22 100644
 --- ui/views/controls/menu/menu_runner_impl_remote_cocoa.mm
 +++ ui/views/controls/menu/menu_runner_impl_remote_cocoa.mm
-@@ -71,6 +71,7 @@ void MenuRunnerImplRemoteCocoa::RunMenuAt(
+@@ -71,6 +71,7 @@
      ui::mojom::MenuSourceType source_type,
      int32_t run_types,
      gfx::NativeView native_view_for_gestures,
