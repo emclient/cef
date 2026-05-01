@@ -1,0 +1,182 @@
+diff --git third_party/blink/renderer/platform/fonts/win/font_cache_skia_win.cc third_party/blink/renderer/platform/fonts/win/font_cache_skia_win.cc
+index 1c42577ddc41d367f377f705583d45af3d1392b5..167c1753440fc85508056210012066beb0bda1e6 100644
+--- third_party/blink/renderer/platform/fonts/win/font_cache_skia_win.cc
++++ third_party/blink/renderer/platform/fonts/win/font_cache_skia_win.cc
+@@ -313,115 +313,6 @@ const SimpleFontData* FontCache::PlatformFallbackFontForCharacter(
+   return hardcoded_list_fallback_font;
+ }
+ 
+-static inline bool DeprecatedEqualIgnoringCase(const AtomicString& a,
+-                                               const SkString& b) {
+-  return DeprecatedEqualIgnoringCase(a, ToAtomicString(b));
+-}
+-
+-static bool TypefacesMatchesFamily(const SkTypeface* tf,
+-                                   const AtomicString& family) {
+-  SkTypeface::LocalizedStrings* actual_families =
+-      tf->createFamilyNameIterator();
+-  bool matches_requested_family = false;
+-  SkTypeface::LocalizedString actual_family;
+-
+-  while (actual_families->next(&actual_family)) {
+-    if (DeprecatedEqualIgnoringCase(family, actual_family.fString)) {
+-      matches_requested_family = true;
+-      break;
+-    }
+-  }
+-  actual_families->unref();
+-
+-  // getFamilyName may return a name not returned by the
+-  // createFamilyNameIterator.
+-  // Specifically in cases where Windows substitutes the font based on the
+-  // HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\FontSubstitutes registry
+-  // entries.
+-  if (!matches_requested_family) {
+-    SkString family_name;
+-    tf->getFamilyName(&family_name);
+-    if (DeprecatedEqualIgnoringCase(family, family_name))
+-      matches_requested_family = true;
+-  }
+-
+-  return matches_requested_family;
+-}
+-
+-static bool TypefacesHasWeightSuffix(const AtomicString& family,
+-                                     AtomicString& adjusted_name,
+-                                     FontSelectionValue& variant_weight) {
+-  struct FamilyWeightSuffix {
+-    const char* suffix;
+-    wtf_size_t length;
+-    FontSelectionValue weight;
+-  };
+-  // Mapping from suffix to weight from the DirectWrite documentation.
+-  // http://msdn.microsoft.com/en-us/library/windows/desktop/dd368082.aspx
+-  //
+-  // The list is intentionally incomplete, because it is for the backward
+-  // compatibility with GDI. See issues for crrev.com/c/542603004.
+-  const static FamilyWeightSuffix kVariantForSuffix[] = {
+-      {" thin", 5, FontSelectionValue(100)},
+-      {" extralight", 11, FontSelectionValue(200)},
+-      {" ultralight", 11, FontSelectionValue(200)},
+-      {" light", 6, FontSelectionValue(300)},
+-      {" regular", 8, FontSelectionValue(400)},
+-      {" medium", 7, FontSelectionValue(500)},
+-      {" demibold", 9, FontSelectionValue(600)},
+-      {" semibold", 9, FontSelectionValue(600)},
+-      {" extrabold", 10, FontSelectionValue(800)},
+-      {" ultrabold", 10, FontSelectionValue(800)},
+-      {" black", 6, FontSelectionValue(900)},
+-      {" heavy", 6, FontSelectionValue(900)}};
+-  for (const auto& entry : kVariantForSuffix) {
+-    if (family.EndsWithIgnoringAsciiCase(entry.suffix)) {
+-      StringView family_name(family);
+-      family_name.remove_suffix(entry.length);
+-      adjusted_name = AtomicString(family_name);
+-      variant_weight = entry.weight;
+-      return true;
+-    }
+-  }
+-
+-  return false;
+-}
+-
+-static bool TypefacesHasStretchSuffix(const AtomicString& family,
+-                                      AtomicString& adjusted_name,
+-                                      FontSelectionValue& variant_stretch) {
+-  struct FamilyStretchSuffix {
+-    const char* suffix;
+-    wtf_size_t length;
+-    FontSelectionValue stretch;
+-  };
+-  // Mapping from suffix to stretch value from the DirectWrite documentation.
+-  // http://msdn.microsoft.com/en-us/library/windows/desktop/dd368078.aspx
+-  // Also includes Narrow as a synonym for Condensed to to support Arial
+-  // Narrow and other fonts following the same naming scheme.
+-  const static FamilyStretchSuffix kVariantForSuffix[] = {
+-      {" ultracondensed", 15, kUltraCondensedWidthValue},
+-      {" extracondensed", 15, kExtraCondensedWidthValue},
+-      {" condensed", 10, kCondensedWidthValue},
+-      {" narrow", 7, kCondensedWidthValue},
+-      {" semicondensed", 14, kSemiCondensedWidthValue},
+-      {" semiexpanded", 13, kSemiExpandedWidthValue},
+-      {" expanded", 9, kExpandedWidthValue},
+-      {" extraexpanded", 14, kExtraExpandedWidthValue},
+-      {" ultraexpanded", 14, kUltraExpandedWidthValue}};
+-  for (const auto& entry : kVariantForSuffix) {
+-    if (family.EndsWithIgnoringAsciiCase(entry.suffix)) {
+-      StringView family_name(family);
+-      family_name.remove_suffix(entry.length);
+-      adjusted_name = AtomicString(family_name);
+-      variant_stretch = entry.stretch;
+-      return true;
+-    }
+-  }
+-
+-  return false;
+-}
+-
+ const FontPlatformData* FontCache::CreateFontPlatformData(
+     const FontDescription& font_description,
+     const FontFaceCreationParams& creation_params,
+@@ -447,58 +338,9 @@ const FontPlatformData* FontCache::CreateFontPlatformData(
+     typeface = CreateTypeface(font_description, creation_params, name);
+ 
+     // For a family match, Windows will always give us a valid pointer here,
+-    // even if the face name is non-existent. We have to double-check and see if
+-    // the family name was really used.
+-    if (!typeface ||
+-        !TypefacesMatchesFamily(typeface.get(), creation_params.Family())) {
+-      AtomicString adjusted_name;
+-      FontSelectionValue variant_weight;
+-      FontSelectionValue variant_stretch;
+-
+-      // TODO: crbug.com/627143 LocalFontFaceSource.cpp, which implements
+-      // retrieving src: local() font data uses getFontData, which in turn comes
+-      // here, to retrieve fonts from the cache and specifies the argument to
+-      // local() as family name. So we do not match by full font name or
+-      // postscript name as the spec says:
+-      // https://drafts.csswg.org/css-fonts-3/#src-desc
+-
+-      // Prevent one side effect of the suffix translation below where when
+-      // matching local("Roboto Regular") it tries to find the closest match
+-      // even though that can be a bold font in case of Roboto Bold.
+-      if (alternate_font_name == AlternateFontName::kLocalUniqueFace) {
+-        return nullptr;
+-      }
+-
+-      if (alternate_font_name == AlternateFontName::kLastResort) {
+-        if (!typeface)
+-          return nullptr;
+-      } else if (TypefacesHasWeightSuffix(creation_params.Family(),
+-                                          adjusted_name, variant_weight)) {
+-        FontFaceCreationParams adjusted_params(adjusted_name);
+-        FontDescription adjusted_font_description = font_description;
+-        adjusted_font_description.SetWeight(variant_weight);
+-        typeface =
+-            CreateTypeface(adjusted_font_description, adjusted_params, name);
+-        if (!typeface ||
+-            !TypefacesMatchesFamily(typeface.get(), adjusted_name)) {
+-          return nullptr;
+-        }
+-
+-      } else if (TypefacesHasStretchSuffix(creation_params.Family(),
+-                                           adjusted_name, variant_stretch)) {
+-        FontFaceCreationParams adjusted_params(adjusted_name);
+-        FontDescription adjusted_font_description = font_description;
+-        adjusted_font_description.SetStretch(variant_stretch);
+-        typeface =
+-            CreateTypeface(adjusted_font_description, adjusted_params, name);
+-        if (!typeface ||
+-            !TypefacesMatchesFamily(typeface.get(), adjusted_name)) {
+-          return nullptr;
+-        }
+-      } else {
+-        return nullptr;
+-      }
+-    }
++    // even if the face name is non-existent.
++    if (!typeface)
++      return nullptr;
+   }
+ 
+   bool synthetic_bold_requested =
