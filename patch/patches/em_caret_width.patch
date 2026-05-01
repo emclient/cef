@@ -1,0 +1,138 @@
+diff --git third_party/blink/common/web_preferences/web_preferences_mojom_traits.cc third_party/blink/common/web_preferences/web_preferences_mojom_traits.cc
+index 9ab1b47509c8b72b7844e83f1d69499d13e26837..6ef5d99badb9125092d55dd907a463b061f6f3d6 100644
+--- third_party/blink/common/web_preferences/web_preferences_mojom_traits.cc
++++ third_party/blink/common/web_preferences/web_preferences_mojom_traits.cc
+@@ -160,6 +160,7 @@ bool StructTraits<blink::mojom::WebPreferencesDataView,
+   out->double_tap_to_zoom_enabled = data.double_tap_to_zoom_enabled();
+   out->fullscreen_supported = data.fullscreen_supported();
+   out->text_autosizing_enabled = data.text_autosizing_enabled();
++  out->caret_width = data.caret_width();
+ #if BUILDFLAG(IS_ANDROID)
+   out->font_scale_factor = data.font_scale_factor();
+   out->font_weight_adjustment = data.font_weight_adjustment();
+diff --git third_party/blink/public/common/web_preferences/web_preferences.h third_party/blink/public/common/web_preferences/web_preferences.h
+index efcb7d9457045c2d58ecec4b68d7c4547cb5d08a..ddea6eda6e10060568a372a3bcee0c54c50ed1f9 100644
+--- third_party/blink/public/common/web_preferences/web_preferences.h
++++ third_party/blink/public/common/web_preferences/web_preferences.h
+@@ -249,6 +249,8 @@ struct BLINK_COMMON_EXPORT WebPreferences {
+ 
+   bool text_autosizing_enabled = BUILDFLAG(IS_ANDROID);
+ 
++  float caret_width = 1;
++
+   // Representation of the Web App Manifest scope if any.
+   GURL web_app_scope;
+ 
+diff --git third_party/blink/public/common/web_preferences/web_preferences_mojom_traits.h third_party/blink/public/common/web_preferences/web_preferences_mojom_traits.h
+index fade1dd1310d8339fff45b9ae74ebff4673eec37..d5fa932fff206cb57614f274a8633995dd6cb449 100644
+--- third_party/blink/public/common/web_preferences/web_preferences_mojom_traits.h
++++ third_party/blink/public/common/web_preferences/web_preferences_mojom_traits.h
+@@ -531,6 +531,10 @@ struct BLINK_COMMON_EXPORT StructTraits<blink::mojom::WebPreferencesDataView,
+     return r.text_autosizing_enabled;
+   }
+ 
++  static int caret_width(const blink::web_pref::WebPreferences& r) {
++    return r.caret_width;
++  }
++
+   static const GURL& web_app_scope(const ::blink::web_pref::WebPreferences& r) {
+     return r.web_app_scope;
+   }
+diff --git third_party/blink/public/mojom/webpreferences/web_preferences.mojom third_party/blink/public/mojom/webpreferences/web_preferences.mojom
+index c637783517d250b7aa6f34af11fd3ca804a2a705..a5caaa6e60e1f9ca6f2bab02da5d4c6f49773703 100644
+--- third_party/blink/public/mojom/webpreferences/web_preferences.mojom
++++ third_party/blink/public/mojom/webpreferences/web_preferences.mojom
+@@ -275,6 +275,8 @@ struct WebPreferences {
+ 
+   bool text_autosizing_enabled;
+ 
++  float caret_width;
++
+   // Representation of the Web App Manifest scope if any.
+   url.mojom.Url web_app_scope;
+ 
+diff --git third_party/blink/public/web/web_settings.h third_party/blink/public/web/web_settings.h
+index 0a926570fbec825cc0bfcb2d519892985407e099..1a128a4b7457deda3586b1921f21ccb7db554b50 100644
+--- third_party/blink/public/web/web_settings.h
++++ third_party/blink/public/web/web_settings.h
+@@ -113,6 +113,7 @@ class WebSettings {
+       bool) = 0;
+   virtual void SetAutoZoomFocusedEditableToLegibleScale(bool) = 0;
+   virtual void SetCaretBrowsingEnabled(bool) = 0;
++  virtual void SetCaretWidth(float) = 0;
+   virtual void SetClobberUserAgentInitialScaleQuirk(bool) = 0;
+   virtual void SetCookieEnabled(bool) = 0;
+   virtual void SetCursiveFontFamily(const WebString&,
+diff --git third_party/blink/renderer/core/exported/web_settings_impl.cc third_party/blink/renderer/core/exported/web_settings_impl.cc
+index 2debd43e3f223dcba37098aef96d6af37ea93a3d..1b088091e41766a73d9b31887dc52c5f12de8234 100644
+--- third_party/blink/renderer/core/exported/web_settings_impl.cc
++++ third_party/blink/renderer/core/exported/web_settings_impl.cc
+@@ -659,6 +659,10 @@ void WebSettingsImpl::SetCaretBrowsingEnabled(bool enabled) {
+   settings_->SetCaretBrowsingEnabled(enabled);
+ }
+ 
++void WebSettingsImpl::SetCaretWidth(float caret_width) {
++  settings_->SetCaretWidth(caret_width);
++}
++
+ void WebSettingsImpl::SetCookieEnabled(bool enabled) {
+   dev_tools_emulator_->SetCookieEnabled(enabled);
+ }
+diff --git third_party/blink/renderer/core/exported/web_settings_impl.h third_party/blink/renderer/core/exported/web_settings_impl.h
+index 2356aa4b4b25ce87c23d22c0d83763fed04dfb25..c573747f6a7dabc495d552579d39ac3be8db86f0 100644
+--- third_party/blink/renderer/core/exported/web_settings_impl.h
++++ third_party/blink/renderer/core/exported/web_settings_impl.h
+@@ -72,6 +72,7 @@ class CORE_EXPORT WebSettingsImpl final : public WebSettings {
+   void SetClobberUserAgentInitialScaleQuirk(bool) override;
+   void SetCookieEnabled(bool) override;
+   void SetCaretBrowsingEnabled(bool) override;
++  void SetCaretWidth(float) override;
+   void SetCursiveFontFamily(const WebString&,
+                             UScriptCode = USCRIPT_COMMON) override;
+   void SetDNSPrefetchingEnabled(bool) override;
+diff --git third_party/blink/renderer/core/exported/web_view_impl.cc third_party/blink/renderer/core/exported/web_view_impl.cc
+index b5a7e1b177f031837f670c26bff7394315eb6ea5..8f73e5c6b03706870bb00fb268af970ec1bc905f 100644
+--- third_party/blink/renderer/core/exported/web_view_impl.cc
++++ third_party/blink/renderer/core/exported/web_view_impl.cc
+@@ -1733,6 +1733,7 @@ void WebView::ApplyWebPreferences(const web_pref::WebPreferences& prefs,
+   settings->SetFullscreenSupported(prefs.fullscreen_supported);
+   settings->SetTextAutosizingEnabled(prefs.text_autosizing_enabled);
+   settings->SetDoubleTapToZoomEnabled(prefs.double_tap_to_zoom_enabled);
++  settings->SetCaretWidth(prefs.caret_width);
+   blink::WebNetworkStateNotifier::SetNetworkQualityWebHoldback(
+       static_cast<blink::WebEffectiveConnectionType>(
+           prefs.network_quality_estimator_web_holdback));
+diff --git third_party/blink/renderer/core/frame/local_frame_view.cc third_party/blink/renderer/core/frame/local_frame_view.cc
+index b930ef73fc38c2ab956ad434c3ebb493c38c8f48..28e47b12076b44bfa2a682235f119c16fe2cf439 100644
+--- third_party/blink/renderer/core/frame/local_frame_view.cc
++++ third_party/blink/renderer/core/frame/local_frame_view.cc
+@@ -4997,8 +4997,11 @@ void LocalFrameView::MapLocalToRemoteMainFrame(
+ }
+ 
+ LayoutUnit LocalFrameView::BarCaretWidth() const {
++  float width = 1.0f;
++  if (frame_->GetSettings())
++    width = frame_->GetSettings()->GetCaretWidth();
+   return LayoutUnit(std::max<float>(
+-      1.0f, GetChromeClient()->WindowToViewportScalar(&GetFrame(), 1.0f)));
++      1.0f, GetChromeClient()->WindowToViewportScalar(&GetFrame(), width)));
+ }
+ 
+ void LocalFrameView::RegisterTapEvent(Element* target) {
+diff --git third_party/blink/renderer/core/frame/settings.json5 third_party/blink/renderer/core/frame/settings.json5
+index 487ddf05050f98d4eb4b08067f2ba14993794acf..36511c804af3bd73eaaab9bd7cc11e824611086a 100644
+--- third_party/blink/renderer/core/frame/settings.json5
++++ third_party/blink/renderer/core/frame/settings.json5
+@@ -527,6 +527,12 @@
+       invalidate: ["Style"],
+     },
+ 
++    {
++      name: "caretWidth",
++      initial: 1.0,
++      type: "float",
++    },
++
+     // Font scale factor for accessibility, applied as part of text autosizing.
+     {
+       name: "accessibilityFontScaleFactor",
