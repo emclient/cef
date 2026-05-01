@@ -253,6 +253,23 @@ class CefPdfPrintCallback : public virtual CefBaseRefCounted {
   virtual void OnPdfPrintFinished(const CefString& path, bool ok) = 0;
 };
 
+#if CEF_API_ADDED(CEF_EXPERIMENTAL)
+///
+/// Callback interface for CefBrowserHost::PrintWithSettings. The methods of this
+/// class will be called on the browser process UI thread.
+///
+/*--cef(source=client,added=experimental)--*/
+class CefPrintCallback : public virtual CefBaseRefCounted {
+ public:
+  ///
+  /// Method that will be executed when the printing has completed. |ok|
+  /// will be true if the printing completed successfully or false otherwise.
+  ///
+  /*--cef()--*/
+  virtual void OnPrintFinished(bool ok) = 0;
+};
+#endif
+
 ///
 /// Callback interface for CefBrowserHost::DownloadImage. The methods of this
 /// class will be called on the browser process UI thread.
@@ -535,6 +552,15 @@ class CefBrowserHost : public virtual CefBaseRefCounted {
   ///
   /*--cef()--*/
   virtual void Print() = 0;
+
+#if CEF_API_ADDED(CEF_EXPERIMENTAL)
+  ///
+  /// Print the current browser contents.
+  ///
+  /*--cef(added=experimental,optional_param=callback)--*/
+  virtual void PrintWithSettings(CefRefPtr<CefDictionaryValue> job_settings,
+                                 CefRefPtr<CefPrintCallback> callback) = 0;
+#endif
 
   ///
   /// Print the current browser contents to the PDF file specified by |path| and
@@ -1072,6 +1098,22 @@ class CefBrowserHost : public virtual CefBaseRefCounted {
   ///
   /*--cef(default_retval=CEF_RUNTIME_STYLE_DEFAULT)--*/
   virtual cef_runtime_style_t GetRuntimeStyle() = 0;
+
+#if CEF_API_ADDED(CEF_EXPERIMENTAL)
+  ///
+  /// Inserts an url into the list of visited urls.
+  ///
+  /*--cef(added=experimental)--*/
+  virtual void RecheckSpelling() = 0;
+#endif
+
+#if CEF_API_ADDED(CEF_EXPERIMENTAL)
+  ///
+  /// Inserts an url into the list of visited urls.
+  ///
+  /*--cef(added=experimental)--*/
+  virtual void AddVisitedURL(const CefString& url) = 0;
+#endif
 
 #if CEF_API_ADDED(CEF_EXPERIMENTAL)
   ///

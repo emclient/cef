@@ -234,6 +234,8 @@ class CefBrowserHostBase : public CefBrowserHost,
                      bool bypass_cache,
                      CefRefPtr<CefDownloadImageCallback> callback) override;
   void Print() override;
+  void PrintWithSettings(CefRefPtr<CefDictionaryValue> job_settings,
+                         CefRefPtr<CefPrintCallback> callback) override;
   void PrintToPDF(const CefString& path,
                   const CefPdfPrintSettings& settings,
                   CefRefPtr<CefPdfPrintCallback> callback) override;
@@ -250,6 +252,7 @@ class CefBrowserHostBase : public CefBrowserHost,
   bool HasDevTools() override;
   void ReplaceMisspelling(const CefString& word) override;
   void AddWordToDictionary(const CefString& word) override;
+  void RecheckSpelling() override;
   void SendKeyEvent(const CefKeyEvent& event) override;
   void SendMouseClickEvent(const CefMouseEvent& event,
                            MouseButtonType type,
@@ -304,6 +307,7 @@ class CefBrowserHostBase : public CefBrowserHost,
   size_t GetFrameCount() override;
   void GetFrameIdentifiers(std::vector<CefString>& identifiers) override;
   void GetFrameNames(std::vector<CefString>& names) override;
+  void AddVisitedURL(const CefString& url) override;
   void SetAccessibilityState(cef_state_t accessibility_state) override;
 
   // CefBrowserContentsDelegate::Observer methods:

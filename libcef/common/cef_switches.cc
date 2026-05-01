@@ -113,6 +113,9 @@ const char kUserAgentProductAndVersion[] = "user-agent-product";
 const char kDisableRequestHandlingForTesting[] =
     "disable-request-handling-for-testing";
 
+// Set width of caret when editing
+const char kCaretWidth[] = "caret-width";
+
 #if BUILDFLAG(IS_MAC)
 // Path to the framework directory.
 const char kFrameworkDirPath[] = "framework-dir-path";
