@@ -71,7 +71,7 @@ void CefNativeWidgetDelegate::Init(gfx::AcceleratedWidget parent_widget,
   web_view_->SetWebContents(web_contents);
   web_view_->SetPreferredSize(bounds.size());
 
-  SetCanResize(true);
+  // SetCanResize(true);
 
   widget_ = std::make_unique<views::Widget>();
 

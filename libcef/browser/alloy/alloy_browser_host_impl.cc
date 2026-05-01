@@ -282,7 +282,7 @@ void AlloyBrowserHostImpl::CloseBrowser(bool force_close) {
     }
 
     content::WebContents* contents = web_contents();
-    if (contents && contents->NeedToFireBeforeUnloadOrUnloadEvents()) {
+    if (contents && contents->NeedToFireBeforeUnloadOrUnloadEvents() && !force_close) {
       // Will result in a call to BeforeUnloadFired() and, if the close isn't
       // canceled, CloseContents().
       contents->DispatchBeforeUnload(false /* auto_cancel */);
