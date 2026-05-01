@@ -1,0 +1,106 @@
+diff --git components/spellcheck/renderer/spellcheck.cc components/spellcheck/renderer/spellcheck.cc
+index 73ba7252116f9fad1b753a8ce375e6d74aa7fc8a..e9882bc14c6490122eb759fd3bd23ad50dab75f0 100644
+--- components/spellcheck/renderer/spellcheck.cc
++++ components/spellcheck/renderer/spellcheck.cc
+@@ -322,7 +322,7 @@ bool SpellCheck::SpellCheckWord(
+     suggestions_list.clear();
+ 
+     for (auto language = languages_.begin(); language != languages_.end();) {
+-#if BUILDFLAG(IS_WIN) && BUILDFLAG(USE_BROWSER_SPELLCHECKER)
++#if false && BUILDFLAG(IS_WIN) && BUILDFLAG(USE_BROWSER_SPELLCHECKER)
+       if (!(*language)->IsEnabled()) {
+         // In the case of hybrid spell checking on Windows, languages that are
+         // handled on the browser side are marked as disabled on the renderer
+@@ -398,7 +398,7 @@ bool SpellCheck::SpellCheckWord(
+       return false;
+     }
+ 
+-#if BUILDFLAG(IS_WIN) && BUILDFLAG(USE_BROWSER_SPELLCHECKER)
++#if false && BUILDFLAG(IS_WIN) && BUILDFLAG(USE_BROWSER_SPELLCHECKER)
+     // If we're performing a hybrid spell check, we're only interested in
+     // knowing whether some Hunspell languages considered this text range as
+     // correctly spelled. If no misspellings were found, but the entire text was
+diff --git components/spellcheck/renderer/spellcheck_provider.cc components/spellcheck/renderer/spellcheck_provider.cc
+index 72162131f3791142dca5b99fd4e03366a3484754..998f3025b1c56e690ea665a65bc16d65f7226d19 100644
+--- components/spellcheck/renderer/spellcheck_provider.cc
++++ components/spellcheck/renderer/spellcheck_provider.cc
+@@ -102,7 +102,11 @@ void SpellCheckProvider::DictionaryUpdateObserverImpl::OnDictionaryUpdated(
+   // owner_->render_frame() is nullptr in unit tests.
+   if (auto* render_frame = owner_->render_frame()) {
+     DCHECK(render_frame->GetWebFrame());
+-    render_frame->GetWebFrame()->RemoveSpellingMarkersUnderWords(words_added);
++    if (words_added.empty()) {
++      render_frame->GetWebFrame()->RecheckSpelling();
++    } else {
++      render_frame->GetWebFrame()->RemoveSpellingMarkersUnderWords(words_added);
++    }
+   }
+ }
+ 
+@@ -151,7 +155,7 @@ void SpellCheckProvider::RequestTextChecking(
+ 
+ #if BUILDFLAG(USE_BROWSER_SPELLCHECKER)
+   if (spellcheck::UseBrowserSpellChecker()) {
+-#if BUILDFLAG(IS_WIN)
++#if false && BUILDFLAG(IS_WIN)
+     if (!dictionaries_loaded_) {
+       // Initialize the spellcheck service on demand (this spellcheck request
+       // could be the result of the first click in editable content), then
+@@ -293,7 +297,7 @@ void SpellCheckProvider::CheckSpelling(
+   std::u16string word = text.Utf16();
+ 
+   if (optional_suggestions) {
+-#if BUILDFLAG(IS_WIN) && BUILDFLAG(USE_BROWSER_SPELLCHECKER)
++#if false && BUILDFLAG(IS_WIN) && BUILDFLAG(USE_BROWSER_SPELLCHECKER)
+     base::TimeTicks suggestions_start = base::TimeTicks::Now();
+ #endif  // BUILDFLAG(IS_WIN) && BUILDFLAG(USE_BROWSER_SPELLCHECKER)
+     // Retrieve suggestions from Hunspell. Windows platform spellchecker
+@@ -303,7 +307,7 @@ void SpellCheckProvider::CheckSpelling(
+     spellcheck_->SpellCheckWord(word, GetSpellCheckHost(), &offset, &length,
+                                 &per_language_suggestions);
+ 
+-#if BUILDFLAG(IS_WIN) && BUILDFLAG(USE_BROWSER_SPELLCHECKER)
++#if false && BUILDFLAG(IS_WIN) && BUILDFLAG(USE_BROWSER_SPELLCHECKER)
+     spellcheck_renderer_metrics::RecordHunspellSuggestionDuration(
+         base::TimeTicks::Now() - suggestions_start);
+ #endif  // BUILDFLAG(IS_WIN) && BUILDFLAG(USE_BROWSER_SPELLCHECKER)
+diff --git third_party/blink/public/web/web_local_frame.h third_party/blink/public/web/web_local_frame.h
+index 2da12ab6b451403244a4d9ef30ca978819eb4a82..1ed428b682e7671b43d526a83388b6047b44891f 100644
+--- third_party/blink/public/web/web_local_frame.h
++++ third_party/blink/public/web/web_local_frame.h
+@@ -646,6 +646,7 @@ class BLINK_EXPORT WebLocalFrame : public WebFrame {
+   virtual void RemoveSpellingMarkers() = 0;
+   virtual void RemoveSpellingMarkersUnderWords(
+       const std::vector<WebString>& words) = 0;
++  virtual void RecheckSpelling() = 0;
+ 
+   // Content Settings -------------------------------------------------------
+ 
+diff --git third_party/blink/renderer/core/frame/web_local_frame_impl.cc third_party/blink/renderer/core/frame/web_local_frame_impl.cc
+index d2b005438958f685e2187d8853926a94211427ad..889a50f2e5eb564fe395329ad28bce3f413bd62f 100644
+--- third_party/blink/renderer/core/frame/web_local_frame_impl.cc
++++ third_party/blink/renderer/core/frame/web_local_frame_impl.cc
+@@ -1439,6 +1439,11 @@ void WebLocalFrameImpl::RemoveSpellingMarkersUnderWords(
+   GetFrame()->RemoveSpellingMarkersUnderWords(converted_words);
+ }
+ 
++void WebLocalFrameImpl::RecheckSpelling() {
++  GetFrame()->GetSpellChecker().RemoveSpellingMarkers();
++  GetFrame()->GetSpellChecker().RespondToChangedContents();
++}
++
+ bool WebLocalFrameImpl::HasSelection() const {
+   DCHECK(GetFrame());
+   WebPluginContainerImpl* plugin_container =
+diff --git third_party/blink/renderer/core/frame/web_local_frame_impl.h third_party/blink/renderer/core/frame/web_local_frame_impl.h
+index 66f31022b1470069b27af42c538e14376c64eed7..fb64140b7326ee55fb12b19c391ec436259bf63c 100644
+--- third_party/blink/renderer/core/frame/web_local_frame_impl.h
++++ third_party/blink/renderer/core/frame/web_local_frame_impl.h
+@@ -282,6 +282,7 @@ class CORE_EXPORT WebLocalFrameImpl final
+   void RemoveSpellingMarkers() override;
+   void RemoveSpellingMarkersUnderWords(
+       const std::vector<WebString>& words) override;
++  void RecheckSpelling() override;
+   WebContentSettingsClient* GetContentSettingsClient() const override;
+   void SetContentSettingsClient(WebContentSettingsClient*) override;
+   const mojom::RendererContentSettingsPtr& GetContentSettings() const override;
