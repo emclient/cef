@@ -6,7 +6,7 @@ index d2b005438958f685e2187d8853926a94211427ad..a147215c2112c39e24b922bdafbc46f6
      mojo::PendingAssociatedRemote<mojom::blink::ContextMenuClient> client,
      const blink::ContextMenuData& data,
      const std::optional<gfx::Point>& host_context_menu_location) {
-+  if (data.source_type == blink::kMenuSourceLongTap)
++  if (data.source_type == ui::mojom::blink::MenuSourceType::kLongTap)
 +    return;
    UntrustworthyContextMenuParams params =
        blink::ContextMenuParamsBuilder::Build(data);
