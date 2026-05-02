@@ -41,8 +41,10 @@ class CefSpellCheckHostImpl : public spellcheck::mojom::SpellCheckHost {
   void FillSuggestionList(const std::u16string& word,
                           FillSuggestionListCallback) override;
 
-  void RequestTextCheck(const std::u16string& text,
-                        RequestTextCheckCallback callback) override;
+  void RequestTextCheck(
+      const std::u16string& text,
+      const std::vector<spellcheck::SpellingMarker>& spelling_markers,
+      RequestTextCheckCallback callback) override;
 
   void InitializeDictionaries(InitializeDictionariesCallback callback) override;
 

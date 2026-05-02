@@ -84,8 +84,10 @@ void CefSpellCheckHostImpl::FillSuggestionList(const std::u16string& word,
   DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
 }
 
-void CefSpellCheckHostImpl::RequestTextCheck(const std::u16string& text,
-                                             RequestTextCheckCallback callback) {
+void CefSpellCheckHostImpl::RequestTextCheck(
+    const std::u16string& text,
+    const std::vector<spellcheck::SpellingMarker>&,
+    RequestTextCheckCallback callback) {
   DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
 
   if (text.empty()) {

@@ -701,8 +701,7 @@ void ChromeContentBrowserClientCef::RegisterBrowserInterfaceBindersForFrame(
                                     std::move(receiver));
       };
   map->Add<spellcheck::mojom::SpellCheckHost>(
-      base::BindRepeating(create_spellcheck_host),
-      content::GetUIThreadTaskRunner({}));
+      base::BindRepeating(create_spellcheck_host));
 //#endif
 }
 
