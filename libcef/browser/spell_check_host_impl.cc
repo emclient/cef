@@ -33,7 +33,9 @@ class CefSpellCheckCallbackImpl
       std::vector<SpellCheckResult> results;
       for (const CefRange& r : ranges) {
         std::vector<std::u16string> suggestions_for_word;
-        results.push_back(SpellCheckResult(SpellCheckResult::SPELLING, r.from, r.to, suggestions_for_word));
+        results.push_back(SpellCheckResult(spellcheck::Decoration::SPELLING,
+                                           r.from, r.to,
+                                           suggestions_for_word));
       }
       std::move(callback_).Run(results);
     }
