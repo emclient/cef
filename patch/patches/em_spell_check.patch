@@ -20,6 +20,15 @@ index 73ba7252116f9fad1b753a8ce375e6d74aa7fc8a..e9882bc14c6490122eb759fd3bd23ad5
      // If we're performing a hybrid spell check, we're only interested in
      // knowing whether some Hunspell languages considered this text range as
      // correctly spelled. If no misspellings were found, but the entire text was
+@@ -555,7 +555,7 @@ void SpellCheck::CreateTextCheckingResults(
+     const std::vector<std::u16string>& replacements =
+         spellcheck_result.replacements;
+     spellcheck::Decoration decoration = spellcheck_result.decoration;
+-#if BUILDFLAG(IS_WIN) && BUILDFLAG(USE_BROWSER_SPELLCHECKER)
++#if false && BUILDFLAG(IS_WIN) && BUILDFLAG(USE_BROWSER_SPELLCHECKER)
+     // Ignore words that are in a script not supported by any of the enabled
+     // spellcheck languages.
+     if (spellcheck::UseBrowserSpellChecker() &&
 diff --git components/spellcheck/renderer/spellcheck_provider.cc components/spellcheck/renderer/spellcheck_provider.cc
 index 72162131f3791142dca5b99fd4e03366a3484754..998f3025b1c56e690ea665a65bc16d65f7226d19 100644
 --- components/spellcheck/renderer/spellcheck_provider.cc
