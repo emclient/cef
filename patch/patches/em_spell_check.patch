@@ -46,6 +46,15 @@ index 72162131f3791142dca5b99fd4e03366a3484754..998f3025b1c56e690ea665a65bc16d65
      if (!dictionaries_loaded_) {
        // Initialize the spellcheck service on demand (this spellcheck request
        // could be the result of the first click in editable content), then
+@@ -189,7 +193,7 @@ void SpellCheckProvider::RequestTextCheckingFromBrowser(
+     const std::u16string& text,
+     const std::vector<spellcheck::SpellingMarker>& spelling_markers) {
+   DCHECK(spellcheck::UseBrowserSpellChecker());
+-#if BUILDFLAG(IS_WIN)
++#if false && BUILDFLAG(IS_WIN)
+
+   // Determine whether a hybrid check is needed.
+   bool use_hunspell = spellcheck_->EnabledLanguageCount() > 0;
 @@ -293,7 +297,7 @@ void SpellCheckProvider::CheckSpelling(
    std::u16string word = text.Utf16();
  
