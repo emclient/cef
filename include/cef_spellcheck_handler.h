@@ -55,6 +55,17 @@ class CefSpellCheckCallback : public virtual CefBaseRefCounted {
   ///
   /*--cef(capi_name=cont)--*/
   virtual void Continue(const std::vector<CefRange>& ranges) = 0;
+
+  ///
+  /// Same as Continue(), and also attaches |tags| to the misspellings, one per
+  /// range in the same order. An empty tag attaches nothing. The tag of the
+  /// misspelling a context menu is invoked on is returned by
+  /// CefContextMenuParams::GetMisspelledWordTag(). A tag must not contain
+  /// newlines or apostrophes.
+  ///
+  /*--cef()--*/
+  virtual void ContinueWithTags(const std::vector<CefRange>& ranges,
+                                const std::vector<CefString>& tags) = 0;
 };
 
 ///

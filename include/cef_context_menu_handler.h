@@ -308,6 +308,15 @@ class CefContextMenuParams : public virtual CefBaseRefCounted {
   /*--cef()--*/
   virtual CefString GetMisspelledWord() = 0;
 
+#if CEF_API_ADDED(CEF_EXPERIMENTAL)
+  ///
+  /// Returns the tag attached to the misspelled word by
+  /// CefSpellCheckCallback::ContinueWithTags(), if any.
+  ///
+  /*--cef(added=experimental)--*/
+  virtual CefString GetMisspelledWordTag() = 0;
+#endif
+
   ///
   /// Returns true if suggestions exist, false otherwise. Fills in |suggestions|
   /// from the spell check service for the misspelled word if there is one.

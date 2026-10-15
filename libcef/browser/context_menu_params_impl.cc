@@ -5,6 +5,7 @@
 #include "cef/libcef/browser/context_menu_params_impl.h"
 
 #include "base/logging.h"
+#include "cef/libcef/browser/spell_check_tag.h"
 #include "third_party/blink/public/mojom/context_menu/context_menu.mojom.h"
 
 CefContextMenuParamsImpl::CefContextMenuParamsImpl(
@@ -115,6 +116,11 @@ CefString CefContextMenuParamsImpl::GetMisspelledWord() {
   return const_value().misspelled_word;
 }
 
+CefString CefContextMenuParamsImpl::GetMisspelledWordTag() {
+  CEF_VALUE_VERIFY_RETURN(false, CefString());
+  return GetSpellCheckTag(const_value().dictionary_suggestions);
+}
+
 bool CefContextMenuParamsImpl::GetDictionarySuggestions(
     std::vector<CefString>& suggestions) {
   CEF_VALUE_VERIFY_RETURN(false, false);
@@ -123,12 +129,14 @@ bool CefContextMenuParamsImpl::GetDictionarySuggestions(
     suggestions.clear();
   }
 
-  if (const_value().dictionary_suggestions.empty()) {
+  const auto& dictionary_suggestions = const_value().dictionary_suggestions;
+  const size_t count = GetSpellCheckSuggestionCount(dictionary_suggestions);
+  if (count == 0) {
     return false;
   }
 
-  for (const auto& suggestion : const_value().dictionary_suggestions) {
-    suggestions.push_back(suggestion);
+  for (size_t i = 0; i < count; ++i) {
+    suggestions.push_back(dictionary_suggestions[i]);
   }
 
   return true;

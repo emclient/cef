@@ -13,6 +13,7 @@
 #include "cef/libcef/browser/alloy/alloy_browser_host_impl.h"
 #include "cef/libcef/browser/context_menu_params_impl.h"
 #include "cef/libcef/browser/menu_runner.h"
+#include "cef/libcef/browser/spell_check_tag.h"
 #include "cef/libcef/browser/thread_util.h"
 #include "cef/libcef/common/app_manager.h"
 #include "chrome/grit/generated_resources.h"
@@ -388,8 +389,11 @@ void CefMenuManager::CreateDefaultModel() {
       // "No spelling suggestions".
       model_->AddSeparator();
 
-      if (!params_.dictionary_suggestions.empty()) {
-        for (size_t i = 0; i < params_.dictionary_suggestions.size() &&
+      // The tag of the misspelling, if any, is not a suggestion.
+      const size_t suggestion_count =
+          GetSpellCheckSuggestionCount(params_.dictionary_suggestions);
+      if (suggestion_count > 0) {
+        for (size_t i = 0; i < suggestion_count &&
                            MENU_ID_SPELLCHECK_SUGGESTION_0 + i <=
                                MENU_ID_SPELLCHECK_SUGGESTION_LAST;
              ++i) {
@@ -445,7 +449,8 @@ void CefMenuManager::ExecuteDefaultCommand(int command_id) {
       command_id <= MENU_ID_SPELLCHECK_SUGGESTION_LAST) {
     const size_t suggestion_index =
         static_cast<size_t>(command_id) - MENU_ID_SPELLCHECK_SUGGESTION_0;
-    if (suggestion_index < params_.dictionary_suggestions.size()) {
+    if (suggestion_index <
+        GetSpellCheckSuggestionCount(params_.dictionary_suggestions)) {
       browser_->ReplaceMisspelling(
           params_.dictionary_suggestions[suggestion_index]);
     }

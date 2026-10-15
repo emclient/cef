@@ -7,6 +7,7 @@
 #include "build/build_config.h"
 #include "components/spellcheck/spellcheck_buildflags.h"
 #include "content/public/browser/browser_thread.h"
+#include "cef/libcef/browser/spell_check_tag.h"
 #include "cef/libcef/common/app_manager.h"
 
 class CefSpellCheckCallbackImpl
@@ -29,12 +30,21 @@ class CefSpellCheckCallbackImpl
   }
 
   void Continue(const std::vector<CefRange>& ranges) override {
+    ContinueWithTags(ranges, {});
+  }
+
+  void ContinueWithTags(const std::vector<CefRange>& ranges,
+                        const std::vector<CefString>& tags) override {
     if (!callback_.is_null()) {
       std::vector<SpellCheckResult> results;
-      for (const CefRange& r : ranges) {
+      for (size_t i = 0; i < ranges.size(); ++i) {
         std::vector<std::u16string> suggestions_for_word;
+        if (i < tags.size() && !tags[i].empty()) {
+          suggestions_for_word.push_back(
+              MakeSpellCheckTag(tags[i].ToString16()));
+        }
         results.push_back(SpellCheckResult(spellcheck::Decoration::SPELLING,
-                                           r.from, r.to,
+                                           ranges[i].from, ranges[i].to,
                                            suggestions_for_word));
       }
       std::move(callback_).Run(results);
