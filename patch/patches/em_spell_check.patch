@@ -95,16 +95,44 @@ index 2da12ab6b451403244a4d9ef30ca978819eb4a82..1ed428b682e7671b43d526a83388b604
    // Content Settings -------------------------------------------------------
  
 diff --git third_party/blink/renderer/core/frame/web_local_frame_impl.cc third_party/blink/renderer/core/frame/web_local_frame_impl.cc
-index d2b005438958f685e2187d8853926a94211427ad..889a50f2e5eb564fe395329ad28bce3f413bd62f 100644
+index d2b005438958f685e2187d8853926a94211427ad..d650e186326491917a5cf87684ce0fb22cb7eeb6 100644
 --- third_party/blink/renderer/core/frame/web_local_frame_impl.cc
 +++ third_party/blink/renderer/core/frame/web_local_frame_impl.cc
-@@ -1439,6 +1439,11 @@ void WebLocalFrameImpl::RemoveSpellingMarkersUnderWords(
+@@ -181,6 +181,7 @@
+ #include "third_party/blink/renderer/core/editing/selection_template.h"
+ #include "third_party/blink/renderer/core/editing/serializers/serialization.h"
+ #include "third_party/blink/renderer/core/editing/set_selection_options.h"
++#include "third_party/blink/renderer/core/editing/spellcheck/spell_check_requester.h"
+ #include "third_party/blink/renderer/core/editing/spellcheck/spell_checker.h"
+ #include "third_party/blink/renderer/core/editing/text_affinity.h"
+ #include "third_party/blink/renderer/core/editing/visible_position.h"
+@@ -1439,6 +1440,31 @@ void WebLocalFrameImpl::RemoveSpellingMarkersUnderWords(
    GetFrame()->RemoveSpellingMarkersUnderWords(converted_words);
  }
  
 +void WebLocalFrameImpl::RecheckSpelling() {
-+  GetFrame()->GetSpellChecker().RemoveSpellingMarkers();
-+  GetFrame()->GetSpellChecker().RespondToChangedContents();
++  SpellChecker& spell_checker = GetFrame()->GetSpellChecker();
++  spell_checker.RemoveSpellingMarkers();
++  if (!spell_checker.IsSpellCheckingEnabled())
++    return;
++
++  // The idle spell checker would check only around the selection and skip the
++  // content it has fully checked before, so check the whole editable content
++  // right away, bypassing the cached results.
++  Document& document = *GetFrame()->GetDocument();
++  document.UpdateStyleAndLayout(DocumentUpdateReason::kSpellCheck);
++  const Position focus =
++      GetFrame()->Selection().GetSelectionInDOMTree().Focus();
++  const Element* root_editable = DynamicTo<Element>(HighestEditableRoot(focus));
++  if (!root_editable && document.body() && IsEditable(*document.body()))
++    root_editable = document.body();
++  if (root_editable && root_editable->isConnected() &&
++      spell_checker.GetSpellCheckRequester().RequestCheckingFor(
++          EphemeralRange::RangeOfContents(*root_editable), /*request_num=*/0,
++          /*should_force_refresh=*/true)) {
++    return;
++  }
++  spell_checker.RespondToChangedContents();
 +}
 +
  bool WebLocalFrameImpl::HasSelection() const {
